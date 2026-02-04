@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="../build/QuizService.API.props" />
+</Project>

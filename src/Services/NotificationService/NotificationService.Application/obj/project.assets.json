@@ -1,0 +1,94 @@
+{
+  "version": 3,
+  "targets": {
+    "net8.0": {
+      "NotificationService.Domain/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "compile": {
+          "bin/placeholder/NotificationService.Domain.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/NotificationService.Domain.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "NotificationService.Domain/1.0.0": {
+      "type": "project",
+      "path": "../NotificationService.Domain/NotificationService.Domain.csproj",
+      "msbuildProject": "../NotificationService.Domain/NotificationService.Domain.csproj"
+    }
+  },
+  "projectFileDependencyGroups": {
+    "net8.0": [
+      "NotificationService.Domain >= 1.0.0"
+    ]
+  },
+  "packageFolders": {
+    "/Users/dimkpaallison/.nuget/packages/": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/NotificationService/NotificationService.Application/NotificationService.Application.csproj",
+      "projectName": "NotificationService.Application",
+      "projectPath": "/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/NotificationService/NotificationService.Application/NotificationService.Application.csproj",
+      "packagesPath": "/Users/dimkpaallison/.nuget/packages/",
+      "outputPath": "/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/NotificationService/NotificationService.Application/obj/",
+      "projectStyle": "PackageReference",
+      "configFilePaths": [
+        "/Users/dimkpaallison/.nuget/NuGet/NuGet.Config"
+      ],
+      "originalTargetFrameworks": [
+        "net8.0"
+      ],
+      "sources": {
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "projectReferences": {
+            "/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/NotificationService/NotificationService.Domain/NotificationService.Domain.csproj": {
+              "projectPath": "/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/NotificationService/NotificationService.Domain/NotificationService.Domain.csproj"
+            }
+          }
+        }
+      },
+      "warningProperties": {
+        "warnAsError": [
+          "NU1605"
+        ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
+      }
+    },
+    "frameworks": {
+      "net8.0": {
+        "targetAlias": "net8.0",
+        "imports": [
+          "net461",
+          "net462",
+          "net47",
+          "net471",
+          "net472",
+          "net48",
+          "net481"
+        ],
+        "assetTargetFallback": true,
+        "warn": true,
+        "frameworkReferences": {
+          "Microsoft.NETCore.App": {
+            "privateAssets": "all"
+          }
+        },
+        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.417/PortableRuntimeIdentifierGraph.json"
+      }
+    }
+  }
+}
