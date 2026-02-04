@@ -1,0 +1,15 @@
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/ResultService/ResultService.Application/bin/Debug/net8.0/ResultService.Application.deps.json
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/ResultService/ResultService.Application/bin/Debug/net8.0/ResultService.Application.dll
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/ResultService/ResultService.Application/bin/Debug/net8.0/ResultService.Application.pdb
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/ResultService/ResultService.Application/bin/Debug/net8.0/ResultService.Domain.dll
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/ResultService/ResultService.Application/bin/Debug/net8.0/ResultService.Domain.pdb
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/ResultService/ResultService.Application/obj/Debug/net8.0/ResultService.Application.csproj.AssemblyReference.cache
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/ResultService/ResultService.Application/obj/Debug/net8.0/ResultService.Application.GeneratedMSBuildEditorConfig.editorconfig
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/ResultService/ResultService.Application/obj/Debug/net8.0/ResultService.Application.AssemblyInfoInputs.cache
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/ResultService/ResultService.Application/obj/Debug/net8.0/ResultService.Application.AssemblyInfo.cs
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/ResultService/ResultService.Application/obj/Debug/net8.0/ResultService.Application.csproj.CoreCompileInputs.cache
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/ResultService/ResultService.Application/obj/Debug/net8.0/ResultSe.A1DCF51A.Up2Date
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/ResultService/ResultService.Application/obj/Debug/net8.0/ResultService.Application.dll
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/ResultService/ResultService.Application/obj/Debug/net8.0/refint/ResultService.Application.dll
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/ResultService/ResultService.Application/obj/Debug/net8.0/ResultService.Application.pdb
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/ResultService/ResultService.Application/obj/Debug/net8.0/ref/ResultService.Application.dll

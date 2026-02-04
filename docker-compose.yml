@@ -1,0 +1,76 @@
+version: '3.4'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: quizapp-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Password123!
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlvolume:/var/opt/mssql
+
+  authservice:
+    image: ${DOCKER_REGISTRY-}authservice
+    build:
+      context: .
+      dockerfile: src/Services/AuthService/AuthService.API/Dockerfile
+    ports:
+      - "5001:8080"
+    depends_on:
+      - sqlserver
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=AuthDb;User Id=sa;Password=Password123!;TrustServerCertificate=True
+
+  userservice:
+    image: ${DOCKER_REGISTRY-}userservice
+    build:
+      context: .
+      dockerfile: src/Services/UserService/UserService.API/Dockerfile
+    ports:
+      - "5002:8080"
+    depends_on:
+      - sqlserver
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=UserDb;User Id=sa;Password=Password123!;TrustServerCertificate=True
+
+  quizservice:
+    image: ${DOCKER_REGISTRY-}quizservice
+    build:
+      context: .
+      dockerfile: src/Services/QuizService/QuizService.API/Dockerfile
+    ports:
+      - "5003:8080"
+    depends_on:
+      - sqlserver
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=QuizDb;User Id=sa;Password=Password123!;TrustServerCertificate=True
+
+  resultservice:
+    image: ${DOCKER_REGISTRY-}resultservice
+    build:
+      context: .
+      dockerfile: src/Services/ResultService/ResultService.API/Dockerfile
+    ports:
+      - "5004:8080"
+    depends_on:
+      - sqlserver
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=ResultDb;User Id=sa;Password=Password123!;TrustServerCertificate=True
+
+  notificationservice:
+    image: ${DOCKER_REGISTRY-}notificationservice
+    build:
+      context: .
+      dockerfile: src/Services/NotificationService/NotificationService.API/Dockerfile
+    ports:
+      - "5005:8080"
+    depends_on:
+      - sqlserver
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=NotificationDb;User Id=sa;Password=Password123!;TrustServerCertificate=True
+
+volumes:
+  sqlvolume:

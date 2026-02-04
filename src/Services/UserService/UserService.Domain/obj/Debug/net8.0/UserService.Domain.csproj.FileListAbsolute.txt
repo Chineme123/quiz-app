@@ -1,0 +1,11 @@
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/UserService/UserService.Domain/bin/Debug/net8.0/UserService.Domain.deps.json
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/UserService/UserService.Domain/bin/Debug/net8.0/UserService.Domain.dll
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/UserService/UserService.Domain/bin/Debug/net8.0/UserService.Domain.pdb
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/UserService/UserService.Domain/obj/Debug/net8.0/UserService.Domain.GeneratedMSBuildEditorConfig.editorconfig
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/UserService/UserService.Domain/obj/Debug/net8.0/UserService.Domain.AssemblyInfoInputs.cache
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/UserService/UserService.Domain/obj/Debug/net8.0/UserService.Domain.AssemblyInfo.cs
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/UserService/UserService.Domain/obj/Debug/net8.0/UserService.Domain.csproj.CoreCompileInputs.cache
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/UserService/UserService.Domain/obj/Debug/net8.0/UserService.Domain.dll
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/UserService/UserService.Domain/obj/Debug/net8.0/refint/UserService.Domain.dll
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/UserService/UserService.Domain/obj/Debug/net8.0/UserService.Domain.pdb
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/UserService/UserService.Domain/obj/Debug/net8.0/ref/UserService.Domain.dll
