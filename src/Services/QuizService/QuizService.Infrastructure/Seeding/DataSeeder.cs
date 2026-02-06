@@ -47,7 +47,7 @@ namespace QuizService.Infrastructure.Seeding
                  }
                  else
                  {
-                     logger.LogInformation("Seeding Development Data: Classroom '{ClassroomName}' already exists. Skipping.", classroomName);
+                     logger.LogInformation("Seeding Development Data: Classroom '{ClassroomName}' | '{ClassroomId}' already exists. Skipping.", classroomName, existingClassroom.Id);
                  }
             }
             catch (Exception ex)
