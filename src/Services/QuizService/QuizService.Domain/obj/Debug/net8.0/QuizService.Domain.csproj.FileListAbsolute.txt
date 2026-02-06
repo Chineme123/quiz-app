@@ -9,3 +9,4 @@
 /Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/QuizService/QuizService.Domain/obj/Debug/net8.0/refint/QuizService.Domain.dll
 /Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/QuizService/QuizService.Domain/obj/Debug/net8.0/QuizService.Domain.pdb
 /Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/QuizService/QuizService.Domain/obj/Debug/net8.0/ref/QuizService.Domain.dll
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/QuizService/QuizService.Domain/obj/Debug/net8.0/QuizService.Domain.sourcelink.json

@@ -141,3 +141,4 @@
 /Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/QuizService/QuizService.API/obj/Debug/net8.0/QuizService.API.genruntimeconfig.cache
 /Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/QuizService/QuizService.API/obj/Debug/net8.0/ref/QuizService.API.dll
 /Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/QuizService/QuizService.API/bin/Debug/net8.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll
+/Users/dimkpaallison/.gemini/antigravity/scratch/QuizApp/src/Services/QuizService/QuizService.API/obj/Debug/net8.0/QuizService.API.sourcelink.json

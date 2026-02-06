@@ -10,7 +10,7 @@ namespace QuizService.API.Controllers
 {
     [ApiController]
     [Route("api")]
-    [Authorize] // Require Auth for all endpoints
+    //[Authorize] // Require Auth for all endpoints
     public class QuizController : ControllerBase
     {
         private readonly IQuizAppService _quizService;
