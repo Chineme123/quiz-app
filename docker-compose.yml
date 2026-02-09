@@ -47,6 +47,7 @@ services:
       - sqlserver
     environment:
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=QuizDb;User Id=sa;Password=Password123!;TrustServerCertificate=True
+      - ASPNETCORE_ENVIRONMENT=Development
 
   resultservice:
     image: ${DOCKER_REGISTRY-}resultservice
