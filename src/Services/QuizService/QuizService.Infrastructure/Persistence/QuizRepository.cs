@@ -21,7 +21,7 @@ namespace QuizService.Infrastructure.Persistence
             await _context.SaveChangesAsync();
         }
 
-        public async Task<Quiz> GetByIdAsync(Guid id)
+        public async Task<Quiz?> GetByIdAsync(Guid id)
         {
             return await _context.Quizzes
                          .Include(q => q.Questions)
@@ -34,7 +34,7 @@ namespace QuizService.Infrastructure.Persistence
             await _context.SaveChangesAsync();
         }
 
-        public async Task<Classroom> GetClassroomAsync(Guid classroomId)
+        public async Task<Classroom?> GetClassroomAsync(Guid classroomId)
         {
             return await _context.Classrooms.FindAsync(classroomId);
         }
