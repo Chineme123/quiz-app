@@ -6,7 +6,7 @@ services:
     container_name: quizapp-sqlserver
     environment:
       - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=Password123!
+      - MSSQL_SA_PASSWORD=${SA_PASSWORD:-Password123!}
     ports:
       - "1433:1433"
     volumes:
@@ -42,7 +42,7 @@ services:
       context: .
       dockerfile: src/Services/QuizService/QuizService.API/Dockerfile
     ports:
-      - "5003:8080"
+      - "5224:8080"
     depends_on:
       - sqlserver
     environment:
