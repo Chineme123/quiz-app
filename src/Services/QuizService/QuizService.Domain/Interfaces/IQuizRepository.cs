@@ -10,6 +10,7 @@ namespace QuizService.Domain.Interfaces
         Task<Quiz> GetByIdAsync(Guid id);
         Task UpdateAsync(Quiz quiz);
         Task<Classroom> GetClassroomAsync(Guid classroomId);
+        Task<bool> IsStudentEnrolledAsync(Guid studentId, Guid classroomId);
         // Additional methods as needed
     }
 }

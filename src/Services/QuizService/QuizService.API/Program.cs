@@ -55,6 +55,16 @@ builder.Services.AddScoped<IQuizRepository, QuizRepository>();
 builder.Services.AddScoped<IQuizAppService, QuizAppService>();
 builder.Services.AddScoped<IQuestionGenerationStrategy, StubLLMQuestionGenerationStrategy>();
 
+// UC8 Registrations
+builder.Services.AddScoped<IQuizAttemptRepository, QuizAttemptRepository>();
+builder.Services.AddScoped<IStrategyFactory, StrategyFactory>();
+builder.Services.AddScoped<QuizCommandInvoker>();
+builder.Services.AddScoped<TakeQuizFacade>();
+builder.Services.AddScoped<IEventDispatcher, QuizService.Infrastructure.Events.EventDispatcher>();
+
+// Observers
+builder.Services.AddScoped<QuizService.Domain.Observers.IObserver<QuizService.Domain.Events.QuizAttemptGradedEvent>, QuizService.Infrastructure.Observers.DashboardProjectionUpdater>();
+
 // Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
