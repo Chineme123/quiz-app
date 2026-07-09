@@ -4,9 +4,14 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QuizService.Application.Interfaces;
 using QuizService.Application.Services;
+using QuizService.Application.Facades;
+using QuizService.Application.Invokers;
 using QuizService.Domain.Interfaces;
+using QuizService.Domain.Factories;
+using QuizService.Domain.Events;
 using QuizService.Infrastructure.Persistence;
 using QuizService.Infrastructure.Strategies;
+using QuizService.Infrastructure.Factories;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
