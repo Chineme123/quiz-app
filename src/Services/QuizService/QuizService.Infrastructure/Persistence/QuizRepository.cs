@@ -38,5 +38,12 @@ namespace QuizService.Infrastructure.Persistence
         {
             return await _context.Classrooms.FindAsync(classroomId);
         }
+
+        public async Task<bool> IsStudentEnrolledAsync(Guid studentId, Guid classroomId)
+        {
+            // FR7: only students enrolled in the classroom may take its quizzes.
+            return await _context.Enrollments
+                .AnyAsync(e => e.StudentId == studentId && e.ClassroomId == classroomId);
+        }
     }
 }

@@ -14,10 +14,9 @@ namespace QuizService.Domain.Interfaces
         Task<bool> HasCommandBeenProcessedAsync(Guid commandId);
         Task MarkCommandAsProcessedAsync(Guid commandId, string type);
         
-        // Transaction support
-        Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy GetExecutionStrategy();
-        Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync();
-        Task CommitTransactionAsync(Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction);
-        Task RollbackTransactionAsync(Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction);
+        // Transaction support — runs `operation` inside a retriable transaction.
+        // The execution strategy + commit/rollback live in Infrastructure so the
+        // Domain layer stays free of EF Core types (code-standards.md §3).
+        Task ExecuteInTransactionAsync(Func<Task> operation);
     }
 }

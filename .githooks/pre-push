@@ -1,0 +1,10 @@
+#!/bin/sh
+# Quiztin — block direct pushes to main. Push a feature branch and open a PR.
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+  case "$remote_ref" in
+    refs/heads/main)
+      echo "✗ Direct push to 'main' is blocked. Push a feature branch and open a PR." >&2
+      exit 1 ;;
+  esac
+done
+exit 0

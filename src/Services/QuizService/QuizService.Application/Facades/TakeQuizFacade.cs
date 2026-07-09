@@ -93,26 +93,13 @@ namespace QuizService.Application.Facades
             var feedbackStrategy = _strategyFactory.GetFeedbackStrategy("Standard");
             attempt.GenerateFeedback(feedbackStrategy);
 
-            // 3. Save changes & Mark Command Processed (Atomic)
-            var strategy = _attemptRepository.GetExecutionStrategy();
-            await strategy.ExecuteAsync(async () =>
+            // 3. Save changes & Mark Command Processed (atomic + retriable).
+            // Event dispatch stays AFTER the commit (accepted at-least-once seam,
+            // no outbox in v1 — see foundation.md §9/§10).
+            await _attemptRepository.ExecuteInTransactionAsync(async () =>
             {
-                using var transaction = await _attemptRepository.BeginTransactionAsync();
-                try 
-                {
-                    await _attemptRepository.UpdateAsync(attempt);
-                    await _attemptRepository.MarkCommandAsProcessedAsync(submission.CommandId, "SubmitQuiz");
-                    await _attemptRepository.CommitTransactionAsync(transaction);
-                    
-                    // 4. Dispatch events - Done after commit to ensure consistency
-                    // If dispatch fails, we might have inconsistency between DB and Event Bus. 
-                     // Outbox pattern is better here but for now this is "safer" than before.
-                }
-                catch
-                {
-                    await _attemptRepository.RollbackTransactionAsync(transaction);
-                    throw;
-                }
+                await _attemptRepository.UpdateAsync(attempt);
+                await _attemptRepository.MarkCommandAsProcessedAsync(submission.CommandId, "SubmitQuiz");
             });
 
              // 4. Dispatch events (After commit)
