@@ -128,3 +128,8 @@ $RECYCLE.BIN/
 
 # Quiztin — local holding pen for cut/archived files (not versioned)
 quiz-trash/
+
+# Stray Windows-path build artifact dirs — literally named "bin\Debug" (backslash),
+# so the [Bb]in/ rule above doesn't catch them. They break MSBuild's **/*.resx glob
+# on macOS/Linux (MSB3552). Never commit these.
+bin\\Debug/
