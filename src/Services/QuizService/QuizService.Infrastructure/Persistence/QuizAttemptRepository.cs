@@ -74,24 +74,25 @@ namespace QuizService.Infrastructure.Persistence
             await _context.SaveChangesAsync();
         }
 
-        public Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy GetExecutionStrategy()
+        public async Task ExecuteInTransactionAsync(Func<Task> operation)
         {
-            return _context.Database.CreateExecutionStrategy();
-        }
-
-        public async Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync()
-        {
-            return await _context.Database.BeginTransactionAsync();
-        }
-
-        public async Task CommitTransactionAsync(Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction)
-        {
-            await transaction.CommitAsync();
-        }
-
-        public async Task RollbackTransactionAsync(Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction)
-        {
-            await transaction.RollbackAsync();
+            // Execution strategy owns the transaction so a transient-failure retry
+            // re-runs the whole unit (EnableRetryOnFailure requirement).
+            var strategy = _context.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
+            {
+                await using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    await operation();
+                    await transaction.CommitAsync();
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            });
         }
     }
 }
