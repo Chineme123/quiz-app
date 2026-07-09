@@ -19,8 +19,8 @@ The core rule. Minimize what crosses the boundary to Claude:
 - **Store derived, not raw:** persist the resulting feedback text; do not store raw model request/response transcripts beyond what the feature needs.
 
 ## §3 Secrets & credentials (the crown jewels)
-- **Env vars / user-secrets only.** DB connection string, JWT signing key, and Claude API key come from configuration/environment — never hardcoded, never committed, never sent to the frontend. ⬜
-- ⚠️ **Current violations to fix (Layer 0):** the JWT signing key is hardcoded in `QuizService/Program.cs` (`"SuperSecretKey…"`) and duplicated in UserService `appsettings.json`; the Postgres/DB password is committed. These move to secrets as part of the auth/identity must-fix.
+- **Env vars / user-secrets only.** DB connection string, JWT signing key, and Claude API key come from configuration/environment — never hardcoded, never committed, never sent to the frontend. ✅ (JWT key + DB passwords done; Claude key pending its integration)
+- ✅ **Resolved 2026-07-09:** the JWT signing key (was hardcoded in `QuizService/Program.cs` and duplicated in `appsettings.json`) now comes from configuration — a gitignored `.env` for docker-compose, user-secrets for local dev — with an empty value in committed config. The key was **rotated** to a new random value and the old value **purged from git history**. DB passwords likewise moved to `${POSTGRES_PASSWORD}`.
 - **Least exposure:** the Claude API key lives only in the service(s) that call Claude (QuizService for generation + feedback), not spread across all five.
 
 ## §4 App auth / sessions
