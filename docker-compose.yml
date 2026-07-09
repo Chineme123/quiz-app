@@ -41,7 +41,8 @@ services:
     depends_on:
       - postgres
     environment:
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=userdb;Username=postgres;Password=postgres
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=userdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
+      - JwtSettings__Secret=${JWT_SECRET}
 
   quizservice:
     image: ${DOCKER_REGISTRY-}quizservice
@@ -53,7 +54,8 @@ services:
     depends_on:
       - postgres
     environment:
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=quizdb;Username=postgres;Password=postgres
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=quizdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
+      - JwtSettings__Secret=${JWT_SECRET}
       - ASPNETCORE_ENVIRONMENT=Development
 
   resultservice:
