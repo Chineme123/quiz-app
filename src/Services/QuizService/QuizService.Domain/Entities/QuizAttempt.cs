@@ -16,7 +16,6 @@ namespace QuizService.Domain.Entities
         public DateTime? GradedAt { get; private set; }
         public decimal? TotalScore { get; set; }
         public string CurrentStateName { get; private set; }
-        public byte[] RowVersion { get; set; } // For Optimistic Concurrency
 
         private List<QuizAnswer> _answers = new();
         public IReadOnlyCollection<QuizAnswer> Answers => _answers.AsReadOnly();

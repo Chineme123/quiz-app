@@ -1,16 +1,18 @@
 version: '3.4'
 
 services:
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: quizapp-sqlserver
+  postgres:
+    image: postgres:17
+    container_name: quizapp-postgres
     environment:
-      - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=${SA_PASSWORD:-***REMOVED***}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=postgres
     ports:
-      - "1433:1433"
+      - "5432:5432"
     volumes:
-      - sqlvolume:/var/opt/mssql
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
   authservice:
     image: ${DOCKER_REGISTRY-}authservice
@@ -20,9 +22,9 @@ services:
     ports:
       - "5001:8080"
     depends_on:
-      - sqlserver
+      - postgres
     environment:
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=AuthDb;User Id=sa;Password=***REMOVED***;TrustServerCertificate=True
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=authdb;Username=postgres;Password=postgres
 
   userservice:
     image: ${DOCKER_REGISTRY-}userservice
@@ -32,9 +34,9 @@ services:
     ports:
       - "5002:8080"
     depends_on:
-      - sqlserver
+      - postgres
     environment:
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=UserDb;User Id=sa;Password=***REMOVED***;TrustServerCertificate=True
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=userdb;Username=postgres;Password=postgres
 
   quizservice:
     image: ${DOCKER_REGISTRY-}quizservice
@@ -44,9 +46,9 @@ services:
     ports:
       - "5224:8080"
     depends_on:
-      - sqlserver
+      - postgres
     environment:
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=QuizDb;User Id=sa;Password=***REMOVED***;TrustServerCertificate=True
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=quizdb;Username=postgres;Password=postgres
       - ASPNETCORE_ENVIRONMENT=Development
 
   resultservice:
@@ -57,9 +59,9 @@ services:
     ports:
       - "5004:8080"
     depends_on:
-      - sqlserver
+      - postgres
     environment:
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=ResultDb;User Id=sa;Password=***REMOVED***;TrustServerCertificate=True
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=resultdb;Username=postgres;Password=postgres
 
   notificationservice:
     image: ${DOCKER_REGISTRY-}notificationservice
@@ -69,9 +71,9 @@ services:
     ports:
       - "5005:8080"
     depends_on:
-      - sqlserver
+      - postgres
     environment:
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=NotificationDb;User Id=sa;Password=***REMOVED***;TrustServerCertificate=True
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=notificationdb;Username=postgres;Password=postgres
 
 volumes:
-  sqlvolume:
+  pgdata:
