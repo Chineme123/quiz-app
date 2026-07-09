@@ -57,7 +57,7 @@ namespace QuizService.Infrastructure.Persistence
             modelBuilder.Entity<MultipleChoiceQuestion>(entity =>
             {
                 // Store Options list as JSON string
-                entity.Property(e => e.Options).HasConversion(
+                entity.Property(e => e.Options).HasColumnType("jsonb").HasConversion(
                     v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
                     v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null) ?? new List<string>()
                 ).Metadata.SetValueComparer(
@@ -82,8 +82,9 @@ namespace QuizService.Infrastructure.Persistence
                 
                 entity.Ignore("_currentState");
                 entity.Ignore("_answers");
-                
-                entity.Property(e => e.RowVersion).IsRowVersion();
+
+                // Optimistic concurrency via Postgres' xmin system column.
+                entity.Property<uint>("xmin").HasColumnName("xmin").IsRowVersion();
             });
 
             modelBuilder.Entity<QuizAnswer>(entity =>
