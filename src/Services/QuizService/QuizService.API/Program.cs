@@ -70,7 +70,9 @@ builder.Services.AddScoped<IEventDispatcher, QuizService.Infrastructure.Events.E
 // Observers
 builder.Services.AddScoped<QuizService.Domain.Observers.IObserver<QuizService.Domain.Events.QuizAttemptGradedEvent>, QuizService.Infrastructure.Observers.DashboardProjectionUpdater>();
 
-// Authentication
+// Authentication — JWT settings come from configuration (env/user-secrets in
+// practice; the signing key is never hardcoded — see security.md §3).
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -80,9 +82,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = "http://localhost:5000", // Example
-            ValidAudience = "quiz-app",
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("***REMOVED***")) // Example key, should match Auth Service
+            ValidIssuer = jwtSettings.GetValue<string>("Issuer"),
+            ValidAudience = jwtSettings.GetValue<string>("Audience"),
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtSettings.GetValue<string>("Secret")
+                    ?? throw new InvalidOperationException("JwtSettings:Secret is not configured (set JwtSettings__Secret).")))
         };
     });
 
