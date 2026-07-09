@@ -20,6 +20,13 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [refactor] Rotate secrets out of committed config (auth, Layer-0)
+- **Date:** 2026-07-09
+- **Area:** backend / infra / security
+- **What:** Moved the JWT signing key out of `QuizService/Program.cs` (was hardcoded) and out of every `appsettings.json` into configuration/env — new random key in a **gitignored `.env`** (docker-compose passes `JwtSettings__Secret=${JWT_SECRET}`) plus **user-secrets** for local dev; `JwtSettings:Secret` in committed config is now empty. Unified JWT issuer/audience to `quiztin` (was mismatched `quiz-app` vs `http://localhost:5000`). Scrubbed `***REMOVED***` from the 3 stub services' configs; DB password via `${POSTGRES_PASSWORD}`. Added `.env.example`. Generated a fresh signing key — the previously-exposed one is now worthless.
+- **Result:** no old secret (`SuperSecretKey`/`Password123`) in any tracked file; new key only in `.env` + user-secrets; build 0 errors, 13/13 tests pass.
+- **Notes:** Next — **purge** the old secrets from git *history* (filter-repo) + force-push, then the repo can safely go public. Remaining Layer-0 auth: `Guid` identity from JWT claims, remove hardcoded IDs, build the token-issuing AuthService, `[Authorize]` enforcement.
+
 ### [refactor] Switch DB provider SQL Server → PostgreSQL (Layer-0)
 - **Date:** 2026-07-09
 - **Area:** backend / db / infra
