@@ -33,7 +33,7 @@ Applies even though this is a solo project. The working tree stays **local** (no
 - Merge to `main` with `--no-ff` once the work is done, green, and logged.
 
 **Commits — Conventional Commits**
-- Format: `<type>(<optional scope>): <imperative summary>`. Types: `feat` · `fix` · `refactor` · `chore` · `docs` · `test` · `build` · `perf`.
+- Format: `<type>(<optional scope>): <imperative summary>`. Types: `feat` · `fix` · `refactor` · `chore` · `docs` · `test` · `build` · `ci` · `perf` · `style` · `revert`.
 - Small, focused commits. Summary says *what*; body says *why* when not obvious.
 - Enforced by the `commit-msg` hook in `.githooks/`. One-time per clone: `git config core.hooksPath .githooks`.
 
