@@ -20,6 +20,13 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [chore] Live Postgres up (Homebrew) + migrations applied end-to-end
+- **Date:** 2026-07-09
+- **Area:** db / infra
+- **What:** Docker Hub image pull is blocked on this machine (`postgres:17` pull hangs — OIT network), so installed **Postgres 17 via Homebrew** (`brew services`) instead. Created a `postgres` superuser + the 5 per-service databases matching the connection strings; applied both `InitialCreate` migrations against the live DB.
+- **Result:** `quizdb` now physically has all 7 tables (Classrooms, Quizzes, Questions, QuizAttempts, QuizAnswers, Enrollments, ProcessedCommands) — the runtime-breaking stale-migration bug is confirmed fixed **end-to-end**, not just at scaffold level.
+- **Notes:** Local dev DB is **Homebrew `postgresql@17` on localhost:5432**, not Docker. Docker Hub pulls don't work on this machine — use Homebrew locally (or the Codespace) for containers.
+
 ### [refactor] Rotate secrets out of committed config (auth, Layer-0)
 - **Date:** 2026-07-09
 - **Area:** backend / infra / security
