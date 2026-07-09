@@ -125,3 +125,6 @@ $RECYCLE.BIN/
 # User requests
 .gemini/
 .env
+
+# Quiztin — local holding pen for cut/archived files (not versioned)
+quiz-trash/
