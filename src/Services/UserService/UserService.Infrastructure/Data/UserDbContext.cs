@@ -45,9 +45,8 @@ namespace UserService.Infrastructure.Data
                 entity.Property(e => e.CreatedAt).IsRequired();
                 entity.Property(e => e.UpdatedAt).IsRequired();
                 
-                // RowVersion for concurrency
-                entity.Property<byte[]>("RowVersion")
-                      .IsRowVersion();
+                // Optimistic concurrency via Postgres' xmin system column.
+                entity.Property<uint>("xmin").HasColumnName("xmin").IsRowVersion();
             });
         }
     }

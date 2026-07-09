@@ -20,6 +20,13 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [refactor] Switch DB provider SQL Server → PostgreSQL (Layer-0)
+- **Date:** 2026-07-09
+- **Area:** backend / db / infra
+- **What:** Swapped the EF provider to **Npgsql** across all 5 services. `docker-compose` now runs `postgres:17` with a per-service DB init script (`docker/postgres-init.sql`: authdb/userdb/quizdb/resultdb/notificationdb); QuizService + UserService `Program.cs` use `UseNpgsql` (added `EnableRetryOnFailure` to UserService per §7 #18); connection strings → Npgsql format; `QuizDbContext` `Options` → `jsonb`, concurrency → **xmin** (manual `Property<uint>("xmin")…IsRowVersion()` mapping — `UseXminAsConcurrencyToken` isn't in Npgsql 10's `Microsoft.EntityFrameworkCore` namespace); removed the vestigial `QuizAttempt.RowVersion` byte[] property. Deleted the stale SQL Server migrations and regenerated fresh `InitialCreate` migrations for QuizService + UserService on Postgres.
+- **Result:** build 0 errors; tests **13/13 pass**. The new QuizService migration includes the previously-**missing** attempt-side tables (QuizAttempts/QuizAnswers/Enrollments/ProcessedCommands) — so this one step fixes the runtime-breaking stale-migration bug **and** the provider switch. `jsonb` + `xmin` confirmed in the migration.
+- **Notes:** Not yet run against a live Postgres (`dotnet ef database update` needs a running container; Docker not yet verified on this Mac) — runtime verification pending. Layer-0 remaining: scoring-contract redesign, identity/auth.
+
 ### [chore] .NET 10 toolchain installed locally; Layer-0 framework pin done — solution builds + tests GREEN
 - **Date:** 2026-07-09
 - **Area:** infra / backend
