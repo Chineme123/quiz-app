@@ -20,9 +20,9 @@ For the *distilled, current* decisions, read `../context/foundation.md` — it's
 | `uc14-create-user-profile.md` | UC14 full design |
 | `uc14-ui-ux-brief.md` | UC14 UI/UX design brief |
 | `diagrams/` | `.drawio` diagrams (microservice architecture + general) |
-| `context-system.skill` | The context-system skill bundle (the tool that built `context/`) |
+| `specs/` | Build specs (`/architect` output). `0001-frontend-foundation/` is the frontend + auth-session decision |
 
 ## Status vs. code
 Built: UC6, UC8, UC14. In v1 scope but undesigned/broken: UC2 (create classroom), UC3 (join). Deferred: UC4/5/7/9–13/15–19. See `../context/build-graph.md` and `../context/foundation.md` §8.
 
-> Note (`foundation.md` §11): these docs live only on this machine by the developer's deliberate local-only choice — an accepted tradeoff, not an oversight.
+> The `context-system` skill bundle that built `context/` used to live here as `context-system.skill`. It is now installed system-wide at `~/.claude/skills/context-system/` and is no longer tracked in this repo.

@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [chore] context-system skill installed system-wide; bundle purged from the repo
+- **Date:** 2026-07-10
+- **Area:** infra / docs
+- **What:** `docs/context-system.skill` (a 26KB zip: `SKILL.md` + `references/` + 10 `assets/*.template.md`) is no longer tracked. Extracted and installed system-wide to `~/.claude/skills/context-system/` (16/16 files; every internal `references/` + `assets/` path verified to resolve). Purged the blob from **all git history** via `git-filter-repo --path docs/context-system.skill --invert-paths` + force-push (`main` c7c4d27 → 57b650c, 32 commits rewritten). Branch protection was temporarily set `allow_force_pushes=true` for the push and **restored to `false`** immediately after. Removed the dead `docs/README.md` row and its stale "these docs live only on this machine" note.
+- **Notes:** ⚠️ **The purge is incomplete on GitHub's side, and cannot be completed from the CLI.** The bundle is still fetchable at `raw.githubusercontent.com/Chineme123/quiz-app/2e67e5f…/docs/context-system.skill` (verified HTTP 200) because `refs/pull/16..20/head` each have the old commit `2e67e5f` as an ancestor. GitHub never deletes `refs/pull/*` and the repo owner cannot delete them, so **garbage collection will not free the blob**. Only two full fixes exist: (a) GitHub Support purges the unreachable objects, or (b) delete + recreate the repo (0 stars, 0 forks — but PRs #15–#20 and their discussion are lost). Same limitation applied to the earlier secrets purge. Not treated as urgent: this is the developer's own skill, not a credential. A mirror backup was taken before rewriting. **Old commit SHAs are now dead** — SHAs cited in PRs #15–#20 and in earlier progress entries refer to rewritten commits.
+
 ### [docs] Spec 0001 — frontend foundation + the auth session it depends on
 - **Date:** 2026-07-10
 - **Area:** context / docs / (designs: frontend + backend auth)
