@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [chore] Remove the devcontainer / Codespaces path (local-only dev)
+- **Date:** 2026-07-10
+- **Area:** infra / context
+- **What:** Deleted `.devcontainer/` (`devcontainer.json` + the auto-generated `devcontainer-lock.json`) — the developer no longer uses GitHub Codespaces. The config had also drifted badly: it forwarded the **SQL Server** port `1433` and shipped the `ms-mssql.mssql` extension (both pre-Postgres), forwarded only QuizService `5224` (missing Auth `5005`, User `5079`, Postgres `5432`, frontend `5173`), and carried no Node for the `frontend/`. Updated `foundation.md`'s Dev-environment bullet: the canonical host is now the developer's **local macOS** (.NET 10 SDK under `~/.dotnet` + Homebrew Postgres 17 on `localhost:5432`; Docker not run locally).
+- **Notes:** CI (`.github/workflows/ci.yml`) never referenced the devcontainer, so nothing breaks. Residual **historical** mentions left as-is on purpose: `docs/project-environment-and-architecture.md` (a faithful AUM-corpus extraction, already stale-by-design — it still lists SQL Server 2022 + Codespaces), `foundation.md` §7 #13's rationale ("Devcontainer/tooling… already on 10" — true at decision time, LOCKED), and `library-docs.md`'s `global.json` gotcha. Living source-of-truth is reconciled.
+
 ### [decision] Context system stays canonical; skills invoked on demand, not bridged
 - **Date:** 2026-07-10
 - **Area:** context / docs
