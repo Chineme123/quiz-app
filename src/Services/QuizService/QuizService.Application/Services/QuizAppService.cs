@@ -21,7 +21,7 @@ namespace QuizService.Application.Services
             _strategies = strategies;
         }
 
-        public async Task<QuizDto> CreateQuizAsync(Guid classroomId, string teacherId, CreateQuizDto input)
+        public async Task<QuizDto> CreateQuizAsync(Guid classroomId, Guid teacherId, CreateQuizDto input)
         {
             // Verify classroom ownership (optional if Repository handles it, but good to check)
             var classroom = await _quizRepository.GetClassroomAsync(classroomId);
@@ -40,7 +40,7 @@ namespace QuizService.Application.Services
             return MapToDto(quiz);
         }
 
-        public async Task<QuizDto> AddQuestionAsync(Guid quizId, string teacherId, AddQuestionDto input)
+        public async Task<QuizDto> AddQuestionAsync(Guid quizId, Guid teacherId, AddQuestionDto input)
         {
             var quiz = await _quizRepository.GetByIdAsync(quizId);
             if (quiz == null) throw new KeyNotFoundException("Quiz not found.");
@@ -69,7 +69,7 @@ namespace QuizService.Application.Services
             return MapToDto(quiz);
         }
 
-        public async Task<QuizDto> GenerateQuestionsAsync(Guid quizId, string teacherId, GenerateQuestionsDto input)
+        public async Task<QuizDto> GenerateQuestionsAsync(Guid quizId, Guid teacherId, GenerateQuestionsDto input)
         {
             var quiz = await _quizRepository.GetByIdAsync(quizId);
             if (quiz == null) throw new KeyNotFoundException("Quiz not found.");

@@ -5,11 +5,11 @@ namespace QuizService.Domain.Entities
     public class Classroom
     {
         public Guid Id { get; set; }
-        public string TeacherId { get; set; } // From JWT
+        public Guid TeacherId { get; set; } // canonical teacher identity (JWT NameIdentifier)
         public string Name { get; set; }
         public ICollection<Quiz> Quizzes { get; set; } = new List<Quiz>();
 
-        public Classroom(string teacherId, string name)
+        public Classroom(Guid teacherId, string name)
         {
              Id = Guid.NewGuid();
              TeacherId = teacherId;

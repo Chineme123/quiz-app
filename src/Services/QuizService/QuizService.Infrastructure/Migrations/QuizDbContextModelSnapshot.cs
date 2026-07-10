@@ -32,9 +32,8 @@ namespace QuizService.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("TeacherId")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<Guid>("TeacherId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -132,9 +131,8 @@ namespace QuizService.Infrastructure.Migrations
                     b.Property<Guid>("ClassroomId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("CreatedByTeacherId")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<Guid>("CreatedByTeacherId")
+                        .HasColumnType("uuid");
 
                     b.Property<int>("DurationMinutes")
                         .HasColumnType("integer");

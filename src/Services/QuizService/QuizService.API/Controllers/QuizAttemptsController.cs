@@ -1,5 +1,7 @@
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QuizService.Application.DTOs;
 using QuizService.Application.Facades;
@@ -8,6 +10,7 @@ namespace QuizService.API.Controllers
 {
     [ApiController]
     [Route("api/attempts")]
+    [Authorize]
     public class QuizAttemptsController : ControllerBase
     {
         private readonly TakeQuizFacade _facade;
@@ -17,21 +20,21 @@ namespace QuizService.API.Controllers
             _facade = facade;
         }
 
+        private Guid GetCurrentUserId()
+        {
+            var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(id, out var userId))
+                throw new UnauthorizedAccessException("No valid user identity in the token.");
+            return userId;
+        }
+
         // POST /api/quizzes/{quizId}/start
         // Note: Route is slightly different to match standard resource but per requirement:
         // POST /api/quizzes/{quizId}/start
         [HttpPost("~/api/quizzes/{quizId}/start")] 
         public async Task<IActionResult> StartQuiz(Guid quizId)
         {
-            // Get student ID from context (Auth)
-            // For now, hardcode or get from header for testing
-             var studentId = Guid.Parse("11111111-1111-1111-1111-111111111111"); // Stub
-             // Try get from User.Claims if available
-             if (User.Identity?.IsAuthenticated == true)
-             {
-                 // parsing logic
-             }
-
+            var studentId = GetCurrentUserId();
             try
             {
                 var attemptId = await _facade.StartQuizAsync(studentId, quizId);
