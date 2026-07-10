@@ -20,6 +20,13 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [fix] Redesign the scoring contract so grading sees the correct answers (Layer-0)
+- **Date:** 2026-07-10
+- **Area:** backend (QuizService)
+- **What:** The old `IScoringStrategy.Score(QuizAttempt)` couldn't see the `Question` entities, so `PointsScoringStrategy` was a dummy (any non-empty answer = 10 pts). Redesigned per **Information Expert**: each `Question` subtype grades its own answer — `Question.IsCorrect(providedAnswer)` (MC by selected index, with option-text fallback; TF by bool; Short by trimmed case-insensitive match). `IScoringStrategy`/`IFeedbackStrategy` now take the `questions`; `PointsScoringStrategy` awards `question.Points` for correct answers only; `StandardFeedbackStrategy` gives encouraging brand-voiced fallback text. `TakeQuizFacade` loads the quiz's questions and passes them to `Evaluate`/`GenerateFeedback`.
+- **Result:** build 0 errors; **tests 15/15** (added 2: per-type grading + end-to-end scoring). Real scoring replaces the dummy.
+- **Notes:** MC answer encoding = selected option **index** (string), with option-text fallback. **Layer-0 remaining: identity/auth** (Guid from JWT claims, remove hardcoded IDs, build AuthService, `[Authorize]`).
+
 ### [feat] UI trio generated from the Claude Design export
 - **Date:** 2026-07-09
 - **Area:** context / design
