@@ -24,9 +24,10 @@ This repo is driven by a **context system**: a set of source-of-truth markdown f
 | `context/progress-log.md` | Living build record; add an entry after any work | ✅ |
 | `CLAUDE.md` (root) | Mandatory per-session rules (read-first, log-after) | ✅ |
 | `context/claude-design-handoff.md` | Claude Design intake + the prompt to generate the UI trio | ✅ |
-| `context/ui-tokens.md` | Design tokens | ⏳ PENDING (awaits Claude Design export) |
-| `context/ui-rules.md` | How tokens compose into UI | ⏳ PENDING (awaits Claude Design export) |
-| `context/ui-registry.md` | Component registry | ⏳ PENDING (awaits Claude Design export) |
+| `context/ui-tokens.md` | Design tokens (from the export) | ✅ |
+| `context/ui-rules.md` | How tokens compose into UI | ✅ |
+| `context/ui-registry.md` | Component registry | ✅ |
+| `design-system/` | The Claude Design export — tokens, `styles.css`, brand docs (token source of truth) | ✅ |
 
 ### Reading order
 `foundation` → `project-overview` → `architecture` → `security` → `code-standards` → `library-docs` → `build-graph` → `progress-log`, then the UI trio once it exists.
@@ -53,4 +54,4 @@ When a decision changes, update `foundation.md` **first**, then ripple the chang
 - **The AI loop must degrade, not break.** Every Claude call has a deterministic fallback.
 
 ## Status
-Foundation converged (v3); the full context system is written. The **UI trio is PENDING** until the Claude Design export is committed (see `context/claude-design-handoff.md`). No product code has changed yet — this is the decision/design layer. The `quiz-trash/` cleanup and the structural moves (`Quiz Application/` → `docs/`, add `frontend/` + `src/Gateway/`) are pending.
+Foundation converged (v3); the full context system is written, and the **UI trio is generated** from the Claude Design export (`design-system/`) — nothing PENDING. Repo is **public** with CI + PR/auto-merge. Layer-0 backend is underway (framework pin, live Postgres migration, and secrets rotation done; identity/auth + scoring redesign remain). The frontend (`frontend/`) isn't scaffolded yet. See `context/progress-log.md` for the running state.

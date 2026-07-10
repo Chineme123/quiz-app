@@ -1,0 +1,31 @@
+/* ==========================================================================
+   Quiztin — Spacing tokens
+   4px base grid, but Quiztin leans GENEROUS: default gaps skew larger so the
+   product breathes and feels calm. Reach for --space-4/-6 before -2/-3.
+   ========================================================================== */
+:root {
+  --space-0:  0;
+  --space-px: 1px;
+  --space-1:  0.25rem;  /*  4 */
+  --space-2:  0.5rem;   /*  8 */
+  --space-3:  0.75rem;  /* 12 */
+  --space-4:  1rem;     /* 16 — default gap between related items          */
+  --space-5:  1.25rem;  /* 20 */
+  --space-6:  1.5rem;   /* 24 — card padding, comfortable group spacing    */
+  --space-7:  2rem;     /* 32 — between blocks                             */
+  --space-8:  2.5rem;   /* 40 */
+  --space-9:  3rem;     /* 48 — section rhythm                             */
+  --space-10: 4rem;     /* 64 */
+  --space-11: 5rem;     /* 80 */
+  --space-12: 6rem;     /* 96 — hero / page top-bottom                     */
+
+  /* Semantic spacing */
+  --gutter:        var(--space-6); /* default page/side gutter             */
+  --gutter-lg:     var(--space-9);
+  --stack:         var(--space-4); /* default vertical rhythm in a stack   */
+  --field-gap:     var(--space-5); /* between form fields                  */
+  --section-gap:   var(--space-10);
+  --content-max:   72rem;          /* 1152px comfortable content width     */
+  --reading-max:   40rem;          /* 640px long-form measure              */
+  --tap-min:       2.75rem;        /* 44px minimum hit target (a11y)       */
+}
