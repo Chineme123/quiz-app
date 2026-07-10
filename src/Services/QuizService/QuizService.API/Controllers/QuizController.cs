@@ -10,7 +10,7 @@ namespace QuizService.API.Controllers
 {
     [ApiController]
     [Route("api")]
-    //[Authorize] // Require Auth for all endpoints
+    [Authorize] // Require a valid JWT for all endpoints
     public class QuizController : ControllerBase
     {
         private readonly IQuizAppService _quizService;
@@ -20,11 +20,14 @@ namespace QuizService.API.Controllers
             _quizService = quizService;
         }
 
-        private string GetCurrentTeacherId()
+        // Canonical identity: the Guid from the JWT NameIdentifier claim. No fallback —
+        // [Authorize] guarantees an authenticated principal; a missing/invalid id is a 403.
+        private Guid GetCurrentTeacherId()
         {
-            // For now, assume 'sub' claim holds the user ID. 
-            // In a real app, might separate TeacherId from UserId or have role checks.
-            return User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value ?? "teacher-1";
+            var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(id, out var teacherId))
+                throw new UnauthorizedAccessException("No valid user identity in the token.");
+            return teacherId;
         }
 
         [HttpPost("classrooms/{classroomId}/quizzes")]

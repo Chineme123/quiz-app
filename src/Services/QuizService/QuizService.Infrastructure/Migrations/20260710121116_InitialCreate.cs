@@ -16,7 +16,7 @@ namespace QuizService.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TeacherId = table.Column<string>(type: "text", nullable: false),
+                    TeacherId = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
@@ -60,7 +60,7 @@ namespace QuizService.Infrastructure.Migrations
                     ClassroomId = table.Column<Guid>(type: "uuid", nullable: false),
                     Title = table.Column<string>(type: "text", nullable: false),
                     DurationMinutes = table.Column<int>(type: "integer", nullable: false),
-                    CreatedByTeacherId = table.Column<string>(type: "text", nullable: false),
+                    CreatedByTeacherId = table.Column<Guid>(type: "uuid", nullable: false),
                     IsPublished = table.Column<bool>(type: "boolean", nullable: false),
                     AvailableFrom = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     AvailableTo = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),

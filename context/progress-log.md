@@ -20,6 +20,13 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [feat] Identity/auth — token-issuing AuthService + Guid identity from JWT (Layer-0)
+- **Date:** 2026-07-10
+- **Area:** backend (AuthService, QuizService) / db
+- **What:** (1) Built the minimal **AuthService**: `AuthUser` (Guid Id, Email, PasswordHash, Role) → `POST /api/auth/register` + `/login` that issue **HS256 JWTs** (NameIdentifier = the canonical Guid, plus email + role claims; issuer/audience `quiztin`; secret from config/env, never committed). Password hashing is **PBKDF2/SHA-256, framework-only** (no dependency). Own `AuthDbContext` (authdb) + migration. (2) **QuizService identity:** `Quiz.CreatedByTeacherId` + `Classroom.TeacherId` `string`→`Guid`; `IQuizAppService`/`QuizAppService` take `Guid teacherId`; controllers now `[Authorize]` and read the real Guid from the `NameIdentifier` claim — **removed the hardcoded `"teacher-1"` and the stub studentId**; `DataSeeder` uses a Guid. Regenerated the QuizService migration (TeacherId now `uuid`).
+- **Result:** build 0 errors; **tests 15/15**; both migrations applied to live Postgres (authdb + quizdb with `uuid` teacher ids). **Auth smoke passed**: register→token (userId Guid + role), login→same user, wrong password→401.
+- **Notes:** New dep `System.IdentityModel.Tokens.Jwt` 8.0.2 (AuthService.Infrastructure) — sync into `library-docs.md` approved list (follow-up). Known seam (foundation §10): AuthService owns credentials while UserService has its own `User`/`Profile` — a user registered in AuthService still needs a UserService profile row; cross-service user provisioning is a later step. **This completes Layer-0.** (Framework pin ✅, Postgres migration ✅, scoring ✅, identity/auth ✅.)
+
 ### [fix] Redesign the scoring contract so grading sees the correct answers (Layer-0)
 - **Date:** 2026-07-10
 - **Area:** backend (QuizService)

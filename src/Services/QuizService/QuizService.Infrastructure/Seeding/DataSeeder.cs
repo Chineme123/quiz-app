@@ -14,7 +14,7 @@ namespace QuizService.Infrastructure.Seeding
         // Fixed ID for the seed teacher to ensure consistency across restarts
         // In a real microservice with Auth, this ID should match the seeded user in AuthService.
         // For now, we assume this is the ID the developer will use in their JWT tokens.
-        public const string SeedTeacherId = "teacher-1"; 
+        public static readonly Guid SeedTeacherId = Guid.Parse("11111111-0000-0000-0000-000000000001");
         
         public static async Task SeedDevelopmentDataAsync(IServiceProvider serviceProvider)
         {

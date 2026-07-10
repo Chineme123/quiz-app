@@ -9,7 +9,7 @@ namespace QuizService.Application.DTOs
         public string Title { get; set; }
         public int DurationMinutes { get; set; }
         public Guid ClassroomId { get; set; }
-        public string TeacherId { get; set; }
+        public Guid TeacherId { get; set; }
         public List<QuestionDto> Questions { get; set; }
     }
 

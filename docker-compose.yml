@@ -29,7 +29,8 @@ services:
     depends_on:
       - postgres
     environment:
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=authdb;Username=postgres;Password=postgres
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=authdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
+      - JwtSettings__Secret=${JWT_SECRET}
 
   userservice:
     image: ${DOCKER_REGISTRY-}userservice
