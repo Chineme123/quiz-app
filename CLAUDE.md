@@ -4,6 +4,9 @@ Read this first, every session. Then read the context system — `README.md` has
 
 This is a **solo project** (foundation §0). There is no team collaboration layer (no `COLLAB.md`, no branch/PR ceremony required). The discipline below is what keeps the context system honest anyway.
 
+## Tooling — context-first, skills on demand
+The **context system is the single source of truth**: `foundation.md`, the other `context/*.md`, this file, and `progress-log.md`. This repo deliberately does **not** adopt the skills toolchain's file convention — do **not** create `AGENTS.md`, `docs/scope/`, or `docs/reviews/`. Skills (`/architect`, `/develop`, `/verify`, `/test`, `/check`, …) are invoked **on demand** and read the `context/` files, never `AGENTS.md`. The one already wired in is `/architect`, which writes `docs/specs/` — and `foundation.md` cites those specs. When you work, route through the relevant `context/` files and **cite them as you go**, so the use of the system is visible rather than implicit.
+
 ## Before you write any code
 1. Read `context/code-standards.md` top to bottom — it's the implementation law.
 2. Read the context file(s) relevant to the work (`architecture.md` for shape, `library-docs.md` before adding a dependency, `security.md` before touching student data or the LLM).
