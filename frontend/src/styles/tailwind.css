@@ -1,0 +1,104 @@
+/* ==========================================================================
+   Quiztin frontend — Tailwind v4 entry, bound to the design tokens.
+
+   Preflight is deliberately NOT loaded: we import only theme.css + utilities.css,
+   never bare `tailwindcss`. The design system's base.css is already the reset,
+   the focus ring, and the reduced-motion rules, and a second reset would fight it.
+
+   @theme inline makes a utility resolve to the token variable (bg-primary ->
+   var(--primary)), so "semantic tokens only, no raw hex" is enforced by the
+   compiler, not by review.
+   ========================================================================== */
+
+@layer theme, base, components, utilities;
+
+@import 'tailwindcss/theme.css' layer(theme);
+/* The design system: fonts + all token custom properties + the base reset.
+   Three levels up from src/styles/ to the repo-root sibling design-system/. */
+@import '../../../design-system/styles.css' layer(base);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/* Bind Tailwind's namespaces to the design tokens, by reference (semantic aliases only). */
+@theme inline {
+  /* Surfaces */
+  --color-bg: var(--color-bg);
+  --color-bg-subtle: var(--color-bg-subtle);
+  --color-surface-card: var(--surface-card);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-inverse: var(--surface-inverse);
+
+  /* Text */
+  --color-text-strong: var(--text-strong);
+  --color-text-body: var(--text-body);
+  --color-text-muted: var(--text-muted);
+  --color-text-subtle: var(--text-subtle);
+  --color-text-disabled: var(--text-disabled);
+  --color-text-on-primary: var(--text-on-primary);
+  --color-text-on-accent: var(--text-on-accent);
+  --color-text-link: var(--text-link);
+
+  /* Borders */
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-border-field: var(--border-field);
+
+  /* Primary (Blueberry) */
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-press: var(--primary-press);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-softer: var(--primary-softer);
+
+  /* Accent (Coral) + AI voice */
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-ai-surface: var(--ai-surface);
+  --color-ai-border: var(--ai-border);
+  --color-ai-accent: var(--ai-accent);
+
+  /* Status */
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-text: var(--success-text);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-text: var(--danger-text);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-text: var(--warning-text);
+
+  /* Radius */
+  --radius-button: var(--radius-button);
+  --radius-field: var(--radius-field);
+  --radius-card: var(--radius-card);
+  --radius-tile: var(--radius-tile);
+  --radius-chip: var(--radius-chip);
+
+  /* Fonts */
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+
+  /* Shadows */
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  /* Content widths */
+  --container-content: var(--content-max);
+  --container-reading: var(--reading-max);
+}
+
+/* Preflight normally sets `border-style: solid` globally. Without Preflight,
+   Tailwind's `border` utilities render invisible. Restore just that one rule. */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-width: 0;
+    border-style: solid;
+    border-color: var(--border);
+  }
+}

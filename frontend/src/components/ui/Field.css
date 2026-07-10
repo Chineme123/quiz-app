@@ -1,0 +1,125 @@
+/* Field chrome + text/select controls. Tokens only. */
+.qz-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.qz-field__label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--type-label);
+  color: var(--text-strong);
+}
+.qz-field__req {
+  color: var(--danger);
+}
+.qz-field__opt {
+  font: var(--type-fine);
+  color: var(--text-subtle);
+  font-weight: var(--weight-regular);
+}
+
+/* Control wrapper (holds an optional leading icon) */
+.qz-field__control-wrap {
+  position: relative;
+  display: flex;
+}
+.qz-field__lead-icon {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-subtle);
+  pointer-events: none;
+  display: inline-flex;
+}
+.qz-field__control-wrap--icon .qz-field__control {
+  padding-left: calc(var(--space-4) + 1.25em);
+}
+
+/* The input / textarea / select share this control surface */
+.qz-field__control,
+.qz-select {
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-sunken);
+  color: var(--text-body);
+  border: 1.5px solid var(--border-field);
+  border-radius: var(--radius-field);
+  font: var(--type-body);
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+.qz-field__control::placeholder {
+  color: var(--text-subtle);
+}
+.qz-field__control--multiline {
+  min-height: 6rem;
+  resize: vertical;
+  line-height: var(--leading-normal);
+}
+
+.qz-field__control:hover:not(:disabled),
+.qz-select:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+.qz-field__control:focus,
+.qz-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: var(--focus-ring-shadow);
+  background: var(--surface-card);
+}
+.qz-field__control:disabled,
+.qz-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--color-bg-subtle);
+}
+
+/* Error state — gentle rose, never a harsh red. */
+.qz-field--error .qz-field__control,
+.qz-field--error .qz-select {
+  border-color: var(--danger);
+}
+.qz-field--error .qz-field__control:focus,
+.qz-field--error .qz-select:focus {
+  box-shadow: 0 0 0 4px var(--danger-soft);
+}
+
+.qz-field__hint {
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
+.qz-field__error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--type-caption);
+  color: var(--danger-text);
+}
+
+/* Select caret + native reset */
+.qz-select-wrap {
+  position: relative;
+  display: flex;
+}
+.qz-select {
+  appearance: none;
+  padding-right: calc(var(--space-4) + 1.25em);
+  cursor: pointer;
+}
+.qz-select__caret {
+  position: absolute;
+  right: var(--space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+  display: inline-flex;
+}
