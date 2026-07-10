@@ -1,18 +1,94 @@
-import { Navigate } from 'react-router';
-import { Card } from '@/components/ui';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Link, Navigate, useLocation } from 'react-router';
+import { EnvelopeSimple, Lock } from '@phosphor-icons/react';
+import { Button, Select, TextField } from '@/components/ui';
 import { useAuth } from '@/lib/auth/useAuth';
+import { toUserMessage } from '@/lib/api/errorMessage';
+import { roleSchema } from '@/lib/auth/session';
+import { AuthScreen } from './AuthScreen';
+import { registerSchema } from './auth.schemas';
+import type { RegisterValues } from './auth.schemas';
 
-/** Placeholder. The real register form is build-plan task 6. */
+const ROLE_OPTIONS = roleSchema.options.map((role) => ({ value: role, label: role }));
+
 export function RegisterPage() {
-  const { status } = useAuth();
-  if (status === 'authenticated') return <Navigate to="/profile" replace />;
+  const { status, register: registerAccount } = useAuth();
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from ?? '/profile';
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { email: '', password: '' },
+  });
+
+  if (status === 'authenticated') return <Navigate to={from} replace />;
+
+  const onSubmit = async (values: RegisterValues) => {
+    setSubmitError(null);
+    try {
+      await registerAccount(values.email, values.password, values.role);
+    } catch (error) {
+      setSubmitError(toUserMessage(error, 'We could not create your account. Please try again.'));
+    }
+  };
 
   return (
-    <div className="grid min-h-screen place-items-center bg-bg p-6">
-      <Card variant="raised" padding="lg" className="w-full max-w-md text-center">
-        <h1 className="font-display text-2xl text-text-strong">Create your account</h1>
-        <p className="mt-3 text-text-body">The registration form arrives in the next build.</p>
-      </Card>
-    </div>
+    <AuthScreen
+      title="Create your account"
+      subtitle="Join Quiztin as a student or a teacher."
+      error={submitError}
+      footer={
+        <>
+          Already have an account?{' '}
+          <Link to="/sign-in" state={{ from }} className="text-text-link">
+            Sign in
+          </Link>
+        </>
+      }
+    >
+      <form
+        onSubmit={(e) => void handleSubmit(onSubmit)(e)}
+        noValidate
+        className="flex flex-col gap-5"
+      >
+        <TextField
+          label="Email"
+          type="email"
+          autoComplete="email"
+          icon={EnvelopeSimple}
+          required
+          error={errors.email?.message}
+          {...register('email')}
+        />
+        <TextField
+          label="Password"
+          type="password"
+          autoComplete="new-password"
+          icon={Lock}
+          required
+          hint="At least 8 characters."
+          error={errors.password?.message}
+          {...register('password')}
+        />
+        <Select
+          label="Role"
+          placeholder="Choose your role"
+          options={ROLE_OPTIONS}
+          required
+          error={errors.role?.message}
+          {...register('role')}
+        />
+        <Button type="submit" size="lg" fullWidth loading={isSubmitting}>
+          Create account
+        </Button>
+      </form>
+    </AuthScreen>
   );
 }
