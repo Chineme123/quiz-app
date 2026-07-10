@@ -1,0 +1,148 @@
+/* ==========================================================================
+   Quiztin — Color tokens
+   Warm, soft, welcoming. Blueberry (calm primary) + Coral (warm brand voice)
+   on warm Sand neutrals. Gentle semantics so nothing ever feels alarming.
+   All text pairings target WCAG AA (see comments).
+   ========================================================================== */
+:root {
+  /* --- Base palette: Sand (warm neutrals) ------------------------------- */
+  --sand-0:   #FFFDFB;  /* paper / cream base                              */
+  --sand-50:  #FBF7F2;
+  --sand-100: #F4EEE6;
+  --sand-200: #E9E0D5;  /* hairline borders, dividers                      */
+  --sand-300: #D8CCBD;  /* stronger borders, input outlines                */
+  --sand-400: #B9AB99;  /* disabled text / icons on light                  */
+  --sand-500: #948671;  /* subtle / placeholder text                       */
+  --sand-600: #6F6353;  /* muted / secondary text (AA on cream ~5.4:1)     */
+  --sand-700: #4F4638;  /* strong body text                                */
+  --sand-800: #352E24;
+  --sand-900: #211C15;  /* warm near-black ink — primary text (~14:1)      */
+
+  /* --- Base palette: Blueberry (calm primary) --------------------------- */
+  --blueberry-50:  #EEF1FE;
+  --blueberry-100: #DEE4FD;
+  --blueberry-200: #C2CCFB;
+  --blueberry-300: #9CACF7;
+  --blueberry-400: #7385F0;
+  --blueberry-500: #5566E6;
+  --blueberry-600: #4453D6;  /* primary action; white text ~6.4:1          */
+  --blueberry-700: #3742B0;  /* hover                                      */
+  --blueberry-800: #2C3488;  /* press / active                             */
+  --blueberry-900: #1F2560;
+
+  /* --- Base palette: Coral (warm brand voice + AI companion) ------------ */
+  --coral-50:  #FFF4EF;
+  --coral-100: #FFE6DC;
+  --coral-200: #FFCBB6;
+  --coral-300: #FFA98A;
+  --coral-400: #FB855E;
+  --coral-500: #F26A41;  /* the Quiztin mark colour                        */
+  --coral-600: #DD5530;  /* accent action (white text large / dark text)   */
+  --coral-700: #B7401F;  /* hover; white text ~5.3:1                       */
+  --coral-800: #8F3117;
+  --coral-900: #5F2210;
+
+  /* --- Base palette: semantic hues (gentle) ----------------------------- */
+  --green-50:  #E9F7EF;
+  --green-100: #CDEEDD;
+  --green-200: #A7E0C2;
+  --green-500: #2FA46B;
+  --green-600: #1E8A57;  /* correct / success; white text ~4.6:1           */
+  --green-700: #156E45;
+
+  --rose-50:   #FDEEF0;
+  --rose-100:  #FAD7DC;
+  --rose-200:  #F4B4BD;
+  --rose-500:  #E05663;
+  --rose-600:  #C8404E;  /* incorrect / danger; white text ~4.9:1          */
+  --rose-700:  #A32F3C;
+
+  --amber-50:  #FDF3E2;
+  --amber-100: #FAE4BD;
+  --amber-200: #F3CE84;
+  --amber-500: #E0921F;
+  --amber-600: #BE7712;  /* warning; dark text preferred                   */
+  --amber-700: #965B0A;
+
+  /* ======================================================================
+     SEMANTIC ALIASES — reach for these in components, not the raw scale.
+     ====================================================================== */
+
+  /* Surfaces & backgrounds */
+  --color-bg:            var(--sand-50);   /* app canvas (warm cream)       */
+  --color-bg-subtle:     var(--sand-100);  /* sunken areas, striping        */
+  --surface-card:        #FFFFFF;          /* cards, panels, sheets         */
+  --surface-raised:      #FFFFFF;          /* menus, popovers               */
+  --surface-sunken:      var(--sand-50);   /* wells, inputs on white        */
+  --surface-inverse:     var(--sand-900);  /* dark chips, tooltips          */
+
+  /* Text */
+  --text-strong:   var(--sand-900);  /* headings, key numbers              */
+  --text-body:     var(--sand-800);  /* default body                       */
+  --text-muted:    var(--sand-600);  /* secondary, captions                */
+  --text-subtle:   var(--sand-500);  /* placeholder, metadata              */
+  --text-disabled: var(--sand-400);
+  --text-on-primary: #FFFFFF;
+  --text-on-accent:  #FFFFFF;
+  --text-on-inverse: var(--sand-50);
+  --text-link:       var(--blueberry-700);
+  --text-link-hover: var(--blueberry-800);
+
+  /* Borders */
+  --border:         var(--sand-200);
+  --border-strong:  var(--sand-300);
+  --border-field:   var(--sand-300);
+  --divider:        var(--sand-200);
+
+  /* Primary (Blueberry) */
+  --primary:        var(--blueberry-600);
+  --primary-hover:  var(--blueberry-700);
+  --primary-press:  var(--blueberry-800);
+  --primary-soft:   var(--blueberry-100);  /* tinted fills, selected bg     */
+  --primary-softer: var(--blueberry-50);
+  --primary-text:   var(--blueberry-700);  /* primary colour used AS text   */
+
+  /* Accent (Coral) — brand moments, encouragement, the Quiztin voice */
+  --accent:         var(--coral-600);
+  --accent-hover:   var(--coral-700);
+  --accent-soft:    var(--coral-100);
+  --accent-softer:  var(--coral-50);
+  --accent-text:    var(--coral-700);
+  --brand-mark:     var(--coral-500);
+
+  /* Feedback / status */
+  --success:        var(--green-600);
+  --success-soft:   var(--green-50);
+  --success-border: var(--green-200);
+  --success-text:   var(--green-700);
+
+  --danger:         var(--rose-600);
+  --danger-soft:    var(--rose-50);
+  --danger-border:  var(--rose-200);
+  --danger-text:    var(--rose-700);
+
+  --warning:        var(--amber-600);
+  --warning-soft:   var(--amber-50);
+  --warning-border: var(--amber-200);
+  --warning-text:   var(--amber-700);
+
+  /* Quiz-specific answer states (used by AnswerChoice, ResultSummary) */
+  --answer-idle-border:     var(--sand-300);
+  --answer-selected-bg:     var(--blueberry-50);
+  --answer-selected-border: var(--blueberry-600);
+  --answer-correct-bg:      var(--green-50);
+  --answer-correct-border:  var(--green-600);
+  --answer-incorrect-bg:    var(--rose-50);
+  --answer-incorrect-border:var(--rose-600);
+
+  /* AI companion (Quiztin speaks) — warm apricot, distinct from blue chrome */
+  --ai-surface:  var(--coral-50);
+  --ai-border:   var(--coral-200);
+  --ai-accent:   var(--coral-600);
+  --ai-text:     var(--sand-800);
+
+  /* Focus ring — always visible, high contrast */
+  --focus-ring:        var(--blueberry-500);
+  --focus-ring-shadow: 0 0 0 4px rgba(85, 102, 230, 0.32);
+  --focus-ring-offset: var(--sand-0);
+}

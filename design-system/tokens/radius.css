@@ -1,0 +1,23 @@
+/* ==========================================================================
+   Quiztin — Radius tokens
+   Everything is softly rounded. Nothing sharp. Buttons/fields get a friendly
+   14px; cards go bigger; the brand loves a full pill for chips & progress.
+   ========================================================================== */
+:root {
+  --radius-xs:   6px;
+  --radius-sm:   10px;
+  --radius-md:   14px;   /* buttons, inputs, small tiles                   */
+  --radius-lg:   20px;   /* cards, panels                                  */
+  --radius-xl:   28px;   /* large surfaces, dialogs, answer tiles          */
+  --radius-2xl:  36px;   /* hero cards, feature blocks                     */
+  --radius-pill: 999px;  /* chips, badges, progress bars, avatars          */
+
+  /* Semantic */
+  --radius-button: var(--radius-md);
+  --radius-input:  var(--radius-md);
+  --radius-field:  var(--radius-md);
+  --radius-card:   var(--radius-lg);
+  --radius-tile:   var(--radius-xl);
+  --radius-modal:  var(--radius-xl);
+  --radius-chip:   var(--radius-pill);
+}
