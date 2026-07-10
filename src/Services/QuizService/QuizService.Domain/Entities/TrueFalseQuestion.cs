@@ -1,3 +1,5 @@
+using System;
+
 namespace QuizService.Domain.Entities
 {
     public class TrueFalseQuestion : Question
@@ -12,5 +14,10 @@ namespace QuizService.Domain.Entities
         }
         
         protected TrueFalseQuestion() {}
+
+        public override bool IsCorrect(string providedAnswer)
+        {
+            return bool.TryParse(providedAnswer?.Trim(), out var value) && value == CorrectAnswer;
+        }
     }
 }

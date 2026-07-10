@@ -55,17 +55,17 @@ namespace QuizService.Domain.Entities
             SubmittedAt = DateTime.UtcNow;
         }
 
-        public void Evaluate(IScoringStrategy strategy)
+        public void Evaluate(IScoringStrategy strategy, IReadOnlyList<Question> questions)
         {
             _currentState.Evaluate(this);
-            strategy.Score(this);
+            strategy.Score(this, questions);
             GradedAt = DateTime.UtcNow;
         }
 
-        public void GenerateFeedback(IFeedbackStrategy strategy)
+        public void GenerateFeedback(IFeedbackStrategy strategy, IReadOnlyList<Question> questions)
         {
             _currentState.GenerateFeedback(this);
-            strategy.Generate(this);
+            strategy.Generate(this, questions);
         }
         
         // Helper to hydrate state from name after EF load

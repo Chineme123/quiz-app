@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace QuizService.Domain.Entities
@@ -24,5 +25,17 @@ namespace QuizService.Domain.Entities
         }
 
         protected MultipleChoiceQuestion() {}
+
+        // The submitted answer is the selected option index (e.g. "2"); fall back to
+        // matching the option text so either encoding grades correctly.
+        public override bool IsCorrect(string providedAnswer)
+        {
+            if (string.IsNullOrWhiteSpace(providedAnswer)) return false;
+            var value = providedAnswer.Trim();
+            if (int.TryParse(value, out var index))
+                return index == CorrectOptionIndex;
+            return CorrectOptionIndex >= 0 && CorrectOptionIndex < Options.Count
+                && string.Equals(Options[CorrectOptionIndex]?.Trim(), value, StringComparison.OrdinalIgnoreCase);
+        }
     }
 }

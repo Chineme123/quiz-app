@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using QuizService.Domain.Entities;
 using QuizService.Domain.Interfaces;
@@ -84,14 +85,19 @@ namespace QuizService.Application.Facades
             // Execute command
             await _commandInvoker.ExecuteCommandAsync(command);
 
-            // Post-submission logic (Grading, etc.) orchestrated here
+            // Post-submission logic (Grading, etc.) orchestrated here.
+            // Load the quiz's questions — they carry the correct answers scoring/feedback need.
+            var quiz = await _quizRepository.GetByIdAsync(attempt.QuizId)
+                ?? throw new InvalidOperationException("Quiz not found for this attempt.");
+            var questions = quiz.Questions.ToList();
+
             // 1. Evaluate
-            var scoringStrategy = _strategyFactory.GetScoringStrategy("Points"); 
-            attempt.Evaluate(scoringStrategy);
+            var scoringStrategy = _strategyFactory.GetScoringStrategy("Points");
+            attempt.Evaluate(scoringStrategy, questions);
 
             // 2. Generate feedback
             var feedbackStrategy = _strategyFactory.GetFeedbackStrategy("Standard");
-            attempt.GenerateFeedback(feedbackStrategy);
+            attempt.GenerateFeedback(feedbackStrategy, questions);
 
             // 3. Save changes & Mark Command Processed (atomic + retriable).
             // Event dispatch stays AFTER the commit (accepted at-least-once seam,
