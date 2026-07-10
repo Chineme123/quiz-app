@@ -22,8 +22,13 @@
 
 ### Microsoft.AspNetCore.Authentication.JwtBearer — ✅
 - **Why:** foundation §7 #15 — HS256 JWTs, AuthService issues, all services validate.
-- **How used:** shared `ValidIssuer` + `ValidAudience` + `IssuerSigningKey` across services, from configuration.
-- **Gotchas:** ⚠️ key is currently hardcoded in `QuizService/Program.cs` and the audience disagrees between services (`quiz-app` vs `http://localhost:5000`) — unify and move the key to secrets (`security.md` §3). No service issues tokens yet; AuthService must be built.
+- **How used:** shared `ValidIssuer` + `ValidAudience` (both `quiztin`) + `IssuerSigningKey` across services, from configuration (`JwtSettings__Secret`).
+- **Gotchas:** the secret must be identical across Auth, User and Quiz or validation fails with a misleading 401. Per spec 0001 the access token drops to ~15 min (`AuthTokens__AccessTokenMinutes`); `ValidateLifetime` stays on and the default 5-minute clock skew still applies.
+
+### System.IdentityModel.Tokens.Jwt — ✅
+- **Why:** AuthService mints the tokens (`JwtTokenService`); this is the writing side of the JwtBearer pair.
+- **How used:** `JwtSecurityTokenHandler` builds the HS256 token; claims are `NameIdentifier` (the canonical `Guid`, foundation §7 #14), `Email`, `Role`.
+- **Gotchas:** the expiry is moving from a hardcoded `AddHours(8)` to configuration (spec 0001). The frontend never decodes this token — `/api/auth/refresh` returns `userId` and `role` in the body precisely so the SPA takes no JWT-parsing dependency.
 
 ### YARP (`Yarp.ReverseProxy`) — ✅ (new)
 - **Why:** foundation §7 #16 — single frontend origin, centralizes routing + CORS + (optionally) JWT validation.
@@ -43,11 +48,34 @@
 - **How used:** unit tests for the domain (state machine, scoring, gating). `QuizAttemptTests` exists.
 - **Gotchas:** ⚠️ remove empty `UnitTest1.cs` placeholders. DB integration tests use real Postgres (Testcontainers), not a substitute provider (`code-standards.md` §10).
 
-## Frontend — React + Vite (🕗 versions to confirm at scaffold time)
+## Frontend — React + Vite (stack settled by spec 0001; exact minors pinned at scaffold via `npm view`)
 
-### React + Vite (SPA) — ✅ (choice) / 🕗 (not yet scaffolded)
-- **Why:** foundation §7 #5. Lives in `frontend/`, its own toolchain, not in `QuizApp.sln`.
-- **Likely companions (confirm when scaffolding):** React Router (routing), TanStack Query (server state / data fetching against the gateway), Zod (form/response validation), and a styling layer bound to the design tokens. **Styling + component library are PENDING the Claude Design export** (`ui-tokens.md` / `ui-rules.md` / `ui-registry.md`) — don't hand-pick a palette or component kit before it exists.
+### React + Vite + TypeScript (SPA) — ✅ (choice) / 🕗 (not yet scaffolded)
+- **Why:** foundation §7 #5, #23. Lives in `frontend/`, its own toolchain, not in `QuizApp.sln` and not in CI until a Node job is added.
+- **Gotchas:** the Vite dev proxy is load-bearing, not a convenience — there is no CORS in any service (§7 #27). Route the proxy on specific prefixes (`/api/auth`, `/api/profile`, `/api/quizzes`…), never an `/api` catch-all, or auth calls reach the wrong service. Needs `changeOrigin: true` and `cookieDomainRewrite: ''` so the refresh cookie survives. Target the **http** launch profiles (5005 / 5079 / 5224); `UseHttpsRedirection()` is on everywhere.
+
+### Tailwind CSS v4 (`tailwindcss`, `@tailwindcss/vite`) — ✅ (new)
+- **Why:** foundation §7 #24 — binds utilities to the design tokens by reference, enforcing "no raw hex" at compile time.
+- **How used:** `@theme inline { --color-primary: var(--primary); … }` over the semantic aliases only. Import `tailwindcss/theme.css` + `tailwindcss/utilities.css`; **never bare `tailwindcss`**, which would pull in Preflight and fight `design-system/tokens/base.css`.
+- **Gotchas:** ⚠️ Preflight is also what sets `border-style: solid` globally. Without it every Tailwind `border` utility renders **invisible**. Restore it with a three-line `@layer base` rule. Declare `@layer theme, base, components, utilities;` first, or the design system reset outranks the utilities.
+
+### React Router v7 — ✅ (new)
+- **How used:** `createBrowserRouter` for routing only (nested routes, `errorElement`, lazy routes). **Loaders and actions stay unused** — TanStack Query owns server state (§7 #25).
+- **Gotchas:** do not adopt *framework mode*; its Vite plugin and server rendering are what #5 rejected with Next.js.
+
+### TanStack Query v5 — ✅ (new)
+- **How used:** all server state. Query keys centralized; never retry a 4xx.
+- **Gotchas:** the 401 → silent refresh → retry-once flow belongs in the fetch wrapper, **not** in Query's `retry`, or concurrent queries each fire their own refresh and trip the reuse detector.
+
+### React Hook Form + Zod v4 (`@hookform/resolvers`) — ✅ (new)
+- **How used:** forms, plus Zod schemas validating every response at the API boundary. Responses are **camelCase**.
+- **Gotchas:** `PUT /api/profile` returns a bare array of strings on validation failure, so errors are mapped back to fields by message prefix. Brittle — see spec 0001 Follow-up.
+
+### @phosphor-icons/react — ✅ (new)
+- **Why:** the icon set the design system was drawn against. `aria-hidden` unless given a label.
+
+### Vitest + Testing Library + vitest-axe — ✅ (new, test)
+- **How used:** component tests and an automated accessibility floor on the primitives.
 
 ## Approved dependencies
 
@@ -60,12 +88,19 @@ Do not install anything outside this list without adding it here first (with a w
 | Npgsql.EntityFrameworkCore.PostgreSQL (10.x) | Postgres provider | ✅ |
 | Microsoft.EntityFrameworkCore.Design (10.x) | Migrations tooling | ✅ |
 | Microsoft.AspNetCore.Authentication.JwtBearer (10.x) | JWT validation | ✅ |
+| System.IdentityModel.Tokens.Jwt (8.x) | JWT issuing (AuthService) | ✅ |
 | Yarp.ReverseProxy (2.x) | API gateway | ✅ (new) |
 | Swashbuckle.AspNetCore (6–7.x) | Swagger UI (dev) | ✅ |
 | Anthropic Claude client (typed HttpClient wrapper, or `Anthropic.SDK`) | AI generation + feedback | 🕗 mechanism |
 | xUnit, Moq, coverlet | Testing | ✅ |
-| React, Vite | Frontend SPA | ✅ (choice) |
-| React Router, TanStack Query, Zod | Routing, data, validation | 🕗 confirm at scaffold |
-| Styling + components | — | ⏳ PENDING Claude Design export |
+| React 19, Vite 8, TypeScript | Frontend SPA | ✅ (spec 0001) |
+| tailwindcss 4 + @tailwindcss/vite | Styling, bound to design tokens | ✅ (spec 0001) |
+| react-router 7 | Routing (data router, no loaders) | ✅ (spec 0001) |
+| @tanstack/react-query 5 | Server state | ✅ (spec 0001) |
+| react-hook-form + @hookform/resolvers + zod 4 | Forms and boundary validation | ✅ (spec 0001) |
+| @phosphor-icons/react 2 | Icons | ✅ (spec 0001) |
+| vitest, @testing-library/react, vitest-axe | Frontend tests + a11y floor | ✅ (spec 0001) |
+| eslint + typescript-eslint + eslint-plugin-jsx-a11y + prettier | Lint (a11y rules enforced) | ✅ (spec 0001) |
+| UI components | Authored in-repo from `design-system/` | ✅ no library (export ships no React source) |
 
-**Explicitly rejected** (foundation §7 #21): FluentValidation, AutoMapper — validation and mapping are manual.
+**Explicitly rejected**: FluentValidation, AutoMapper (foundation §7 #21 — validation and mapping are manual). React Router *framework mode* and any SSR meta-framework (§7 #5, #25). Any mock/MSW layer (§7 #28).
