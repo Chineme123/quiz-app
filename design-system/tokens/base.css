@@ -1,0 +1,76 @@
+/* ==========================================================================
+   Quiztin — Base / element defaults
+   A light, friendly reset. Sets the warm canvas, body type, link colours,
+   selection, and an always-visible focus ring. Consumers get sensible
+   defaults just by linking styles.css.
+   ========================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--text-body);
+  font: var(--type-body);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01" on; /* Nunito's friendlier alternates */
+}
+
+/* Headings default to the rounded display face */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-family: var(--font-display);
+  color: var(--text-strong);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-snug);
+  text-wrap: balance;
+}
+
+p { margin: 0; text-wrap: pretty; }
+
+/* Links */
+a {
+  color: var(--text-link);
+  text-decoration-color: color-mix(in srgb, var(--text-link) 35%, transparent);
+  text-underline-offset: 2px;
+  transition: var(--transition-colors);
+}
+a:hover { color: var(--text-link-hover); text-decoration-color: currentColor; }
+
+/* Media */
+img, svg, video { max-width: 100%; display: block; }
+
+/* Form controls inherit the friendly type */
+button, input, select, textarea { font: inherit; color: inherit; }
+
+/* Selection — soft blueberry wash */
+::selection { background: var(--blueberry-200); color: var(--sand-900); }
+
+/* Always-visible, high-contrast focus ring (keyboard users) */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-shadow);
+  border-radius: var(--radius-sm);
+}
+
+/* Reduced motion: honour the user's preference everywhere */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Utility: visually-hidden but available to screen readers */
+.qz-sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}

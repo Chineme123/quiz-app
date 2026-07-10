@@ -1,0 +1,25 @@
+/* ==========================================================================
+   Quiztin — Motion tokens
+   Motion is gentle and reassuring: quick ease-out for most things, a soft
+   spring for celebratory/encouraging moments (never a big bouncy overshoot).
+   Press = a small, calm shrink. Everything respects reduced-motion.
+   ========================================================================== */
+:root {
+  --duration-instant: 80ms;  /* @kind other */
+  --duration-fast:    140ms; /* @kind other */
+  --duration-base:    220ms; /* @kind other */
+  --duration-slow:    340ms; /* @kind other */
+  --duration-slower:  520ms; /* @kind other */
+
+  --ease-out:    cubic-bezier(0.22, 0.75, 0.28, 1);  /* @kind other */ /* default UI easing */
+  --ease-in-out: cubic-bezier(0.62, 0, 0.34, 1);     /* @kind other */
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.5, 1);    /* @kind other */ /* soft encouraging */
+
+  --press-scale: 0.97;   /* @kind other */ /* buttons/tiles shrink when pressed */
+  --lift-y:      -2px;    /* @kind other */ /* subtle hover lift */
+
+  --transition-colors: color var(--duration-fast) var(--ease-out),
+                       background-color var(--duration-fast) var(--ease-out),
+                       border-color var(--duration-fast) var(--ease-out);
+  --transition-base: all var(--duration-base) var(--ease-out);
+}

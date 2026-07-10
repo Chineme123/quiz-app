@@ -1,7 +1,34 @@
 # Quiztin — UI Registry
 
-> ⏳ **PENDING.** Generated **from** the Claude Design export once it exists (see `claude-design-handoff.md`).
+> The component registry. **Check this before building any component.** Generated 2026-07-09 from the Claude Design export (`design-system/`). Tokens: `ui-tokens.md`; composition rules: `ui-rules.md`.
 
-When generated, this file will be the **component registry** — a status legend (⬜ planned · 🟡 in progress · ✅ built) and per-component rows: name, status, **built path** (`—` until ported into `frontend/`), variants, purpose. It carries the rule: **check this registry before building any component** — reuse if built, port from the export if planned; if it's not in the export, it hasn't been designed.
+**Status legend:** ⬜ planned (in the export, not yet in `frontend/`) · 🟡 in progress · ✅ built (lives in `frontend/`).
 
-Anticipated components (from the UC UI/UX briefs, to confirm against the export): classroom card, quiz card with status badge, quiz-setup form, question editor (per type), question-composition control, take-quiz shell (timer + progress + nav), question renderers (MC/TF/Short), submission-confirm modal, results summary, per-question review with an AI-feedback panel, profile form. **None are built** (no frontend exists yet).
+**About the export:** `design-system/` ships the **token layer + component specs/docs + a bundled `_ds_bundle.js`**. Individual component **source** (`.jsx`) is *not* in the export zip — so "port" means **build it in `frontend/` per the export's `readme.md` + component specs**, matching the tokens and rules. **Nothing is built yet** (`frontend/` doesn't exist).
+
+| Component | Group | Status | Built path | Purpose |
+|---|---|---|---|---|
+| `Icon` | foundation | ⬜ | — | Phosphor wrapper — consistent sizing + a11y (decorative by default, `label` when meaningful) |
+| `Button` | actions | ⬜ | — | primary / secondary / ghost actions |
+| `IconButton` | actions | ⬜ | — | icon-only action |
+| `TextField` | forms | ⬜ | — | text input |
+| `Select` | forms | ⬜ | — | dropdown |
+| `Checkbox` | forms | ⬜ | — | multi-select |
+| `Radio` | forms | ⬜ | — | single choice |
+| `Switch` | forms | ⬜ | — | toggle |
+| `Badge` | feedback | ⬜ | — | status badge (quiz states: available/scheduled/completed/closed) |
+| `ProgressBar` | feedback | ⬜ | — | **core** — calm, ever-present take-quiz progress |
+| `Toast` | feedback | ⬜ | — | transient confirmation (e.g. "Quiz published") |
+| `Tooltip` | feedback | ⬜ | — | hint on hover/focus |
+| `Card` | surfaces | ⬜ | — | **the primary surface** (§6 of `ui-rules.md`) |
+| `Dialog` | surfaces | ⬜ | — | modal — publish-confirm, submit-confirm (warm blurred scrim) |
+| `Tabs` | navigation | ⬜ | — | section switching |
+| `AnswerChoice` | quiz | ⬜ | — | **domain core** — selectable answer tile carrying both *answering* (idle/selected) and *reviewing* (correct/incorrect/missed) |
+| `AIFeedbackCard` | quiz | ⬜ | — | **domain core** — the distinct, supportive AI companion voice (a helpful voice, not a grade stamp) |
+| `ResultSummary` | quiz | ⬜ | — | **domain core** — encouraging post-submit score card (headline + calm ring + counts as "to review") |
+
+**Export-marked starting points:** `Button`, `Card`, `ProgressBar`, `AnswerChoice`, `AIFeedbackCard`, `ResultSummary`.
+
+**Reference UI kits (flows in the export docs):** teacher (Dashboard → Quiz editor → Class results, with publish-confirm Dialog + success Toast); student (Home → calm Take-quiz flow → Results review with AI feedback). These map onto UC6/UC8/UC9/UC10.
+
+**The rule:** before building any component, check this registry — **reuse** if built (✅), **port from `design-system/`** if planned (⬜). If it's **not in the export, it hasn't been designed** — design it (or request it from Claude Design) first; don't improvise off-system.

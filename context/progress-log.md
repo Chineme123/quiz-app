@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [feat] UI trio generated from the Claude Design export
+- **Date:** 2026-07-09
+- **Area:** context / design
+- **What:** Committed the Claude Design export at `design-system/` (tokens, `styles.css`, brand docs, `_ds_bundle.js`) and generated the UI trio from its real values — `context/ui-tokens.md` (layered token architecture + semantic contract + binding), `ui-rules.md` (§0 prime directive + voice + per-surface + interaction states), `ui-registry.md` (18-component inventory, all ⬜ planned). Dropped the PENDING markers in `README.md`.
+- **Notes:** Realizes the "friendly & approachable" direction — Sand/Blueberry/Coral, Fredoka/Nunito, generous spacing, soft radii, quiz-answer-state + AI-companion tokens, AA. Export flags proposals to **confirm**: fonts (Google CDN → self-host licensed woff2), logo/mascot (none — typographic + coral "Q" avatar placeholder), Phosphor icons, and **no dark mode** (light-only). Component `.jsx` source isn't in the export (tokens+docs+bundle only) — porting = building in `frontend/` per the specs. `frontend/` not scaffolded yet.
+
 ### [chore] Live Postgres up (Homebrew) + migrations applied end-to-end
 - **Date:** 2026-07-09
 - **Area:** db / infra
