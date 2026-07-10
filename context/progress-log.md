@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [decision] Context system stays canonical; skills invoked on demand, not bridged
+- **Date:** 2026-07-10
+- **Area:** context / docs
+- **What:** Weighed combining the home-grown context system with the Claude skills toolchain (`/develop`, `/check`, `/sync`, `/scope` — which key off `AGENTS.md` + `docs/scope/` + `docs/reviews/`). Chose **context-first, skills on demand**: `context/` (with `foundation.md` as source of truth) + `CLAUDE.md` + `progress-log.md` remain the single canonical system. The skills' file convention is **not** adopted — no `AGENTS.md`, `docs/scope/`, or `docs/reviews/` will be created. Skills are invoked à la carte and fed the `context/` files; `/architect` (which already writes `docs/specs/`, cited by `foundation.md`) is the one existing touchpoint. Recorded the convention in `CLAUDE.md` ("Tooling — context-first, skills on demand").
+- **Notes:** Rationale — two overlapping conventions for the same job; `AGENTS.md` would duplicate `context/architecture.md` + `code-standards.md`. Behavioural commitment: route each task through the relevant `context/` files and **cite them** as work proceeds, so use of the system is visible rather than implicit. On-disk confirmation: no `AGENTS.md`, no `docs/scope/`, no `docs/reviews/` exist — deliberately.
+
 ### [docs] Reconcile `ui-registry.md` with the built foundation primitives
 - **Date:** 2026-07-10
 - **Area:** context / docs
