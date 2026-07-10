@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [docs] Reconcile `ui-registry.md` with the built foundation primitives
+- **Date:** 2026-07-10
+- **Area:** context / docs
+- **What:** Cleared the drift flagged in the tasks 6-8 feature entry. Spec 0001 (tasks 3-5) built six registry components, but the registry still showed all 18 `⬜ planned` / "Nothing is built yet". Flipped `Icon`, `Button`, `TextField`, `Select`, `Card`, `Toast` to `✅` with their real `frontend/src/components/ui/*.tsx` paths (verified against the actual files + `index.ts` exports), and rewrote the "About the export" note to record that the foundation primitives now exist on a shared `Field` chrome (which backs `TextField`/`Select` and is *not* a registry row). The other 11 (`IconButton`, `Checkbox`, `Radio`, `Switch`, `Badge`, `ProgressBar`, `Tooltip`, `Dialog`, `Tabs`, `AnswerChoice`, `AIFeedbackCard`, `ResultSummary`) stay `⬜ planned`.
+- **Notes:** Docs-only reconciliation — no component code touched. `Field` and `useToast` are intentionally absent as registry rows (shared chrome / hook, not standalone components).
+
 ### [feature] Frontend screens — Sign in, Register, Manage Profile + test suite (spec 0001, tasks 6-8)
 - **Date:** 2026-07-10
 - **Area:** apps/frontend
