@@ -219,6 +219,34 @@ proves the same behaviour directly.
 - **AC-14** the 401 → single refresh → retry-once client is built; exercised end-to-end in task 6/7.
 - **AC-15** 44px targets and the axe smoke test; full primitive a11y coverage is task 8.
 
+## Frontend screens, tasks 6 to 8 (2026-07-10, all passing)
+
+Run from `frontend/`. The automated floor:
+
+```bash
+cd frontend
+npm run build     # tsc --noEmit then vite build; 0 errors     -> AC-6
+npm run lint      # eslint, type-aware + jsx-a11y; 0 errors     -> AC-6
+npm test          # vitest; 30 tests across 6 files, all green
+```
+
+The suite covers, by acceptance criterion:
+
+- **AC-6 / AC-15** — `TextField` and `Select` axe assertions plus label / `aria-invalid` / `aria-describedby` / `aria-required` wiring, alongside the existing `Button` smoke test.
+- **AC-9** — `RequireAuth.test.tsx`: anonymous → `/sign-in`, loading → waits, authenticated → renders the outlet.
+- **AC-11** — `ManageProfilePage.test.tsx`: clearing Display Name keeps every other field, moves focus to the error, and never calls the server.
+- **AC-12** — the `mapProfileErrors` unit test (each server message → its field; unknowns → form) plus an end-to-end test that a `ValidationError` lands beneath the role field.
+- **AC-10 / AC-13** — role decides the conditional field (never both), a 404 is a blank form not an error, and a successful save confirms quietly without redirecting.
+
+Driven live (dev server, backend down): sign-in and register render on the tokens; an empty submit shows inline rose errors and focuses the first field; a visit to `/profile` while anonymous redirects to `/sign-in`. The full signed-in round-trip (Manage Profile against a real 404 / save / server error) still runs against the live stack per "Bring the stack up"; the integration tests stand in for it in CI-less runs.
+
+### Acceptance-criteria coverage, screens
+
+- **AC-8** sign in + register, all field states, sentence case, no emoji — built and driven live.
+- **AC-10**, **AC-13** role-aware fields, 404-as-empty, quiet save — integration tests.
+- **AC-11**, **AC-12** field preservation + focus, server-error mapping — unit + integration tests.
+- **AC-6**, **AC-15** tokens-only, focus, 44px, axe — build checks + primitive tests.
+
 ## What this does not cover
 
 CI does not run any of the frontend checks. Until the Node job in Follow-up exists, a green CI badge means the .NET solution built and its tests passed, and says nothing at all about `frontend/`.
