@@ -1,3 +1,5 @@
+using System;
+
 namespace QuizService.Domain.Entities
 {
     public class ShortAnswerQuestion : Question
@@ -12,5 +14,12 @@ namespace QuizService.Domain.Entities
         }
         
         protected ShortAnswerQuestion() {}
+
+        // Case-insensitive, trimmed exact match. (Fuzzier matching / AI grading is a later enhancement.)
+        public override bool IsCorrect(string providedAnswer)
+        {
+            return !string.IsNullOrWhiteSpace(providedAnswer)
+                && string.Equals(providedAnswer.Trim(), CorrectAnswerText?.Trim(), StringComparison.OrdinalIgnoreCase);
+        }
     }
 }
