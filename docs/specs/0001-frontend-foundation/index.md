@@ -1,7 +1,7 @@
 # 0001. Frontend foundation, and the auth session it depends on
 
 **Date**: 2026-07-10
-**Status**: Proposed
+**Status**: Accepted
 
 ## Summary
 
@@ -135,7 +135,7 @@ The threat this design answers: a script injected into the page can read anythin
 
 The project build approach is breadth first, foundation §0, which is why the primitives and the client infrastructure are built out as layers before any screen is assembled, rather than dragging one thin thread through every layer. The one hard ordering constraint is that the app boots by calling `/api/auth/refresh`, so that endpoint must exist before the app has an auth layer at all.
 
-1. AuthService refresh and logout: the `RefreshToken` entity, the `AddRefreshTokens` migration, the token service and repository, configuration for lifetimes and cookie flags, and the two controller endpoints. Move the hardcoded `AddHours(8)` in `JwtTokenService` to configuration. Verified with curl before any frontend exists. Satisfies **AC-1**, **AC-2**, **AC-3**, **AC-4**, **AC-5**.
+1. ✅ **Done** (2026-07-10). AuthService refresh and logout: the `RefreshToken` entity, the `AddRefreshTokens` migration, the token service and repository, configuration for lifetimes and cookie flags, and the two controller endpoints. Move the hardcoded `AddHours(8)` in `JwtTokenService` to configuration. Verified with curl before any frontend exists. Satisfies **AC-1**, **AC-2**, **AC-3**, **AC-4**, **AC-5**. ⚠️ **AC-3's wording is unbuildable as written and needs `/architect` to correct it** (see `progress-log.md`, 2026-07-10). Code in `src/Services/AuthService/`, tests in `src/Services/AuthService/AuthService.Tests/`.
 2. Scaffold `frontend/`: Vite, TypeScript, the proxy route map, the Tailwind entry that binds to the tokens, ESLint with the accessibility plugin, Vitest, and Node entries in `.gitignore`. Satisfies **AC-6**.
 3. The seven primitives this spec needs, ported from `design-system/HANDOFF.md` with `_ds_bundle.js` as the reference for markup and class names: Icon, Button, Field, TextField, Select, Card, Toast. Each carries all of its required states. Satisfies **AC-6**, **AC-15**.
 4. The API client: the typed fetch wrapper, the in memory token store, the single flight refresh with cross tab coordination, the TanStack Query client, and Zod validation at the boundary. Satisfies **AC-7**, **AC-14**.

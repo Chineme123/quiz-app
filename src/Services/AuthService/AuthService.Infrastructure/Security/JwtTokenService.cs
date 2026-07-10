@@ -2,6 +2,7 @@ using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using AuthService.Application.Configuration;
 using AuthService.Application.Interfaces;
 using AuthService.Domain.Entities;
 using Microsoft.Extensions.Configuration;
@@ -17,8 +18,13 @@ namespace AuthService.Infrastructure.Security
     public class JwtTokenService : ITokenService
     {
         private readonly IConfiguration _config;
+        private readonly AuthTokenOptions _tokens;
 
-        public JwtTokenService(IConfiguration config) => _config = config;
+        public JwtTokenService(IConfiguration config, AuthTokenOptions tokens)
+        {
+            _config = config;
+            _tokens = tokens;
+        }
 
         public string GenerateToken(AuthUser user)
         {
@@ -41,7 +47,7 @@ namespace AuthService.Infrastructure.Security
                 issuer: jwt["Issuer"],
                 audience: jwt["Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(8),
+                expires: DateTime.UtcNow.Add(_tokens.AccessTokenLifetime),
                 signingCredentials: credentials);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
