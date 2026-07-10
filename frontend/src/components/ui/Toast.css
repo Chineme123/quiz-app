@@ -1,0 +1,83 @@
+/* Toast live region — fixed, stacked, out of the way. */
+.qz-toast-region {
+  position: fixed;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: min(24rem, calc(100vw - 2 * var(--space-6)));
+}
+
+.qz-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-card);
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  animation: qz-toast-in var(--duration-base) var(--ease-spring);
+}
+@keyframes qz-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-3));
+  }
+}
+
+.qz-toast__icon {
+  display: inline-flex;
+  font-size: var(--text-xl);
+  line-height: 1;
+  margin-top: 0.05em;
+}
+.qz-toast__body {
+  flex: 1;
+  min-width: 0;
+}
+.qz-toast__title {
+  font: var(--type-body-strong);
+  color: var(--text-strong);
+}
+.qz-toast__msg {
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
+.qz-toast__close {
+  margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) 0 0;
+  flex-shrink: 0;
+}
+
+/* Tone accents — a coloured icon + a soft top border. */
+.qz-toast--info .qz-toast__icon {
+  color: var(--primary);
+}
+.qz-toast--success {
+  border-color: var(--success-border);
+}
+.qz-toast--success .qz-toast__icon {
+  color: var(--success);
+}
+.qz-toast--danger {
+  border-color: var(--danger-border);
+}
+.qz-toast--danger .qz-toast__icon {
+  color: var(--danger);
+}
+.qz-toast--warning {
+  border-color: var(--warning-border);
+}
+.qz-toast--warning .qz-toast__icon {
+  color: var(--warning);
+}
+/* AI — the warm apricot Quiztin voice. */
+.qz-toast--ai {
+  background: var(--ai-surface);
+  border-color: var(--ai-border);
+}
+.qz-toast--ai .qz-toast__icon {
+  color: var(--ai-accent);
+}

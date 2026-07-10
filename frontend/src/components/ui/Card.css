@@ -1,0 +1,54 @@
+/* Card surface. A card pairs a hairline border WITH a soft shadow. */
+.qz-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  color: var(--text-body);
+}
+
+.qz-card--raised {
+  box-shadow: var(--shadow-md);
+}
+.qz-card--flat {
+  box-shadow: none;
+}
+.qz-card--sunken {
+  background: var(--surface-sunken);
+  box-shadow: var(--shadow-inset);
+}
+
+.qz-card--pad-none {
+  padding: 0;
+}
+.qz-card--pad-sm {
+  padding: var(--space-4);
+}
+.qz-card--pad-md {
+  padding: var(--space-6);
+}
+.qz-card--pad-lg {
+  padding: var(--space-7);
+}
+
+/* Interactive: lifts on hover, presses down, shows the focus ring. */
+.qz-card--interactive {
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition:
+    transform var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+.qz-card--interactive:hover {
+  transform: translateY(var(--lift-y));
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-strong);
+}
+.qz-card--interactive:active {
+  transform: scale(var(--press-scale));
+}
+.qz-card--interactive:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-shadow);
+}
