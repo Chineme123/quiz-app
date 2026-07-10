@@ -4,23 +4,23 @@
 
 **Status legend:** ⬜ planned (in the export, not yet in `frontend/`) · 🟡 in progress · ✅ built (lives in `frontend/`).
 
-**About the export:** `design-system/` ships the **token layer + component specs/docs + a bundled `_ds_bundle.js`**. Individual component **source** (`.jsx`) is *not* in the export zip — so "port" means **build it in `frontend/` per the export's `readme.md` + component specs**, matching the tokens and rules. **Nothing is built yet** (`frontend/` doesn't exist).
+**About the export:** `design-system/` ships the **token layer + component specs/docs + a bundled `_ds_bundle.js`**. Individual component **source** (`.jsx`) is *not* in the export zip — so "port" means **build it in `frontend/` per the export's `readme.md` + component specs**, matching the tokens and rules. **The foundation primitives now exist:** spec 0001 (tasks 3-5) built the first six registry components — `Icon`, `Button`, `TextField`, `Select`, `Card`, `Toast` (with `ToastProvider` + `useToast`) — under `frontend/src/components/ui/`, on a shared `Field` chrome that backs `TextField`/`Select` (and is *not* itself a registry row). The other 11 components below remain `⬜ planned`.
 
 | Component | Group | Status | Built path | Purpose |
 |---|---|---|---|---|
-| `Icon` | foundation | ⬜ | — | Phosphor wrapper — consistent sizing + a11y (decorative by default, `label` when meaningful) |
-| `Button` | actions | ⬜ | — | primary / secondary / ghost actions |
+| `Icon` | foundation | ✅ | `frontend/src/components/ui/Icon.tsx` | Phosphor wrapper — consistent sizing + a11y (decorative by default, `label` when meaningful) |
+| `Button` | actions | ✅ | `frontend/src/components/ui/Button.tsx` | primary / secondary / ghost actions |
 | `IconButton` | actions | ⬜ | — | icon-only action |
-| `TextField` | forms | ⬜ | — | text input |
-| `Select` | forms | ⬜ | — | dropdown |
+| `TextField` | forms | ✅ | `frontend/src/components/ui/TextField.tsx` | text input |
+| `Select` | forms | ✅ | `frontend/src/components/ui/Select.tsx` | dropdown |
 | `Checkbox` | forms | ⬜ | — | multi-select |
 | `Radio` | forms | ⬜ | — | single choice |
 | `Switch` | forms | ⬜ | — | toggle |
 | `Badge` | feedback | ⬜ | — | status badge (quiz states: available/scheduled/completed/closed) |
 | `ProgressBar` | feedback | ⬜ | — | **core** — calm, ever-present take-quiz progress |
-| `Toast` | feedback | ⬜ | — | transient confirmation (e.g. "Quiz published") |
+| `Toast` | feedback | ✅ | `frontend/src/components/ui/Toast.tsx` | transient confirmation (e.g. "Quiz published") |
 | `Tooltip` | feedback | ⬜ | — | hint on hover/focus |
-| `Card` | surfaces | ⬜ | — | **the primary surface** (§6 of `ui-rules.md`) |
+| `Card` | surfaces | ✅ | `frontend/src/components/ui/Card.tsx` | **the primary surface** (§6 of `ui-rules.md`) |
 | `Dialog` | surfaces | ⬜ | — | modal — publish-confirm, submit-confirm (warm blurred scrim) |
 | `Tabs` | navigation | ⬜ | — | section switching |
 | `AnswerChoice` | quiz | ⬜ | — | **domain core** — selectable answer tile carrying both *answering* (idle/selected) and *reviewing* (correct/incorrect/missed) |
