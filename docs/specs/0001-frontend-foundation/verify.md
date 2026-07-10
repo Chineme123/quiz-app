@@ -178,6 +178,47 @@ dotnet test src/Services/AuthService/AuthService.Tests   # 27 tests
 - **AC-4** covered by the logout sequence, including the idempotent second call.
 - **AC-5** covered by decoding `exp` from the access token.
 
+## Frontend foundation, tasks 2 to 5 (2026-07-10, all passing)
+
+Run from `frontend/`. These prove the foundation stands, not the screens (those are tasks 6 and 7).
+
+```bash
+cd frontend
+npm install
+npm run build     # tsc --noEmit then vite build; expect 0 errors  -> AC-6
+npm run lint      # eslint, type-aware + jsx-a11y; expect 0 errors  -> AC-6
+npm test          # vitest; expect the Button axe smoke test green  -> AC-6, AC-15
+```
+
+Same-origin proxy and the token binding:
+
+```bash
+# Dev server serves the app and forwards the API same-origin.
+npm run dev &                                             # http://localhost:5173
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:5173/            # 200 (app)  -> AC-6
+curl -s -o /dev/null -w "%{http_code}\n" -X POST http://localhost:5173/api/auth/refresh
+#   With the backend down, expect 502 (Bad Gateway to port 5005), NOT 404.
+#   A 502 proves the proxy forwards to the Auth origin. Start AuthService and it becomes 401.  -> AC-7
+
+# The @theme inline binding: a utility must resolve to a token var, not a copied hex.
+grep -o '\.text-text-strong{[^}]*}' dist/assets/*.css      # color:var(--text-strong)  -> AC-6
+grep -o 'border-style:solid' dist/assets/*.css             # the Preflight-off fix     -> AC-6
+```
+
+Full same-origin auth round-trip (proxy + cookie rewrite): run the services on their http
+profiles (per "Bring the stack up"), `npm run dev`, then register through the browser and confirm
+the `quiztin_rt` cookie is set on `localhost` with no token in storage, and a reload stays signed
+in. This is best driven once the sign-in form lands (task 6); until then the backend script above
+proves the same behaviour directly.
+
+### Acceptance-criteria coverage, foundation
+
+- **AC-6** covered by build + lint + the compiled-CSS checks (token binding live, Preflight off).
+- **AC-7** the in-memory token store + boot-via-refresh are built; the proxy forwards same-origin (502 to the right port). Full reload-survival verifies with the task 6 sign-in form.
+- **AC-9** the `RequireAuth` guard redirects anonymous → `/sign-in`; the return trip completes in task 6.
+- **AC-14** the 401 → single refresh → retry-once client is built; exercised end-to-end in task 6/7.
+- **AC-15** 44px targets and the axe smoke test; full primitive a11y coverage is task 8.
+
 ## What this does not cover
 
 CI does not run any of the frontend checks. Until the Node job in Follow-up exists, a green CI badge means the .NET solution built and its tests passed, and says nothing at all about `frontend/`.
