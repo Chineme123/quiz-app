@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using AuthService.Domain.Entities;
 using AuthService.Domain.Interfaces;
@@ -13,6 +14,9 @@ namespace AuthService.Infrastructure.Persistence
 
         public Task<AuthUser?> GetByEmailAsync(string email) =>
             _db.AuthUsers.FirstOrDefaultAsync(u => u.Email == email);
+
+        public Task<AuthUser?> GetByIdAsync(Guid id) =>
+            _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == id);
 
         public async Task AddAsync(AuthUser user)
         {

@@ -1,4 +1,5 @@
 using System;
+using AuthService.Application.Configuration;
 using AuthService.Application.Interfaces;
 using AuthService.Application.Services;
 using AuthService.Domain.Interfaces;
@@ -20,10 +21,18 @@ builder.Services.AddDbContext<AuthDbContext>(options =>
             maxRetryDelay: TimeSpan.FromSeconds(30),
             errorCodesToAdd: null)));
 
+// Token lifetimes + refresh cookie flags. Cookie:Secure is false only for local http.
+var authTokenOptions = builder.Configuration.GetSection("AuthTokens").Get<AuthTokenOptions>() ?? new AuthTokenOptions();
+builder.Services.AddSingleton(authTokenOptions);
+builder.Services.AddSingleton(TimeProvider.System);
+
 // Auth wiring
 builder.Services.AddScoped<IAuthUserRepository, AuthUserRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
+builder.Services.AddScoped<IRefreshTokenGenerator, RefreshTokenGenerator>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
+builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 builder.Services.AddScoped<IAuthService, AuthAppService>();
 
 var app = builder.Build();
