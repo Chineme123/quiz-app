@@ -28,7 +28,7 @@
 ### System.IdentityModel.Tokens.Jwt — ✅
 - **Why:** AuthService mints the tokens (`JwtTokenService`); this is the writing side of the JwtBearer pair.
 - **How used:** `JwtSecurityTokenHandler` builds the HS256 token; claims are `NameIdentifier` (the canonical `Guid`, foundation §7 #14), `Email`, `Role`.
-- **Gotchas:** the expiry is moving from a hardcoded `AddHours(8)` to configuration (spec 0001). The frontend never decodes this token — `/api/auth/refresh` returns `userId` and `role` in the body precisely so the SPA takes no JWT-parsing dependency.
+- **Gotchas:** the expiry now comes from `AuthTokens:AccessTokenMinutes` (default 15), not the old hardcoded `AddHours(8)` (built PR #23). The frontend never decodes this token — `/api/auth/refresh` returns `userId` and `role` in the body precisely so the SPA takes no JWT-parsing dependency.
 
 ### YARP (`Yarp.ReverseProxy`) — ✅ (new)
 - **Why:** foundation §7 #16 — single frontend origin, centralizes routing + CORS + (optionally) JWT validation.

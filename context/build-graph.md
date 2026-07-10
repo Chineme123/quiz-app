@@ -28,7 +28,7 @@ The **create→take→results→feedback loop**. It's unblocked in this order: *
 - **UC9 View My Results** — hard: **ResultService** + graded-event projection + attempts existing (UC8).
 - **UC10 Classroom Results** — hard: UC9 read-side, classroom ownership (UC2). soft: UC9 first.
 - **UC14 Profile** *(built)* — hard: identity; must-fix: provision the `Users` row (FK gap), partial-update, add resiliency.
-- **Frontend screens** — hard: gateway + the relevant service API; soft: the UI trio (design tokens — ⏳ pending export).
+- **Frontend screens** — hard: the relevant service API + the design tokens *(export landed, `ui-*.md` generated)*. soft: the YARP gateway. Same-origin in **dev** comes from the **Vite proxy**, not the gateway (foundation §7 #27, spec 0001), so the gateway is a production concern and does **not** block SPA development. The auth screens + Manage Profile also need AuthService `refresh`/`logout` *(built, PR #23)*.
 
 ## Buildable from a cold start (no prerequisites)
 `global.json`; the `docker-compose` Postgres service; the Claude client wrapper **+ its deterministic fallback** (behind the strategy interface — can be built and tested before the real API key); the YARP gateway skeleton; HTTP DTO contracts; test fixtures for the state machine and scoring.

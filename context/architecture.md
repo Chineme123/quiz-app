@@ -42,7 +42,7 @@ The SPA talks only to the gateway. Grading happens in QuizService at submission;
 | Language / runtime | C# / **.NET 10** | §7 #13; pinned via `global.json` |
 | ORM | EF Core 10 + **Npgsql** | §7 #18; TPH, `jsonb`, `xmin` concurrency, retry-on-failure |
 | Database | **PostgreSQL** | §7 #10; database-per-service, one instance |
-| Auth | JWT (HS256), self-issued | §7 #15; AuthService mints, all services validate, shared issuer/audience |
+| Auth | JWT (HS256), self-issued + rotating refresh cookie | §7 #15/#26; AuthService mints, all validate (issuer/audience `quiztin`); in-memory access token + `HttpOnly` refresh cookie (built PR #23) |
 | AI | Anthropic Claude API | §7 #6; generation + feedback, with deterministic fallback |
 | Validation / mapping | Manual (no FluentValidation/AutoMapper) | §7 #21 |
 | Hosting | Docker → Railway (+ managed Postgres) | §7 #22 |
@@ -59,7 +59,7 @@ quiz-app/                       repo root (product: Quiztin)
 ├── src/
 │   ├── Gateway/                YARP API gateway (⬜, new)
 │   └── Services/
-│       ├── AuthService/        4 projects: API/Application/Domain/Infrastructure
+│       ├── AuthService/        API/Application/Domain/Infrastructure + Tests (register/login/refresh/logout built)
 │       ├── UserService/        (UC14 built)
 │       ├── QuizService/        (UC6 + UC8 built; grading authority)
 │       ├── ResultService/      (rebuild for v1: UC9/UC10 read side)
@@ -76,7 +76,7 @@ quiz-app/                       repo root (product: Quiztin)
 Per service, dependencies point inward (§4 principle 3): **Domain** (entities, state machine, interfaces, domain events — zero deps) ← **Application** (facades, DTOs, orchestration, validation) ← **Infrastructure** (EF/Npgsql persistence, external strategies incl. the Claude client, event dispatch) ← **API** (controllers, DI, gateway-facing endpoints).
 
 Service responsibilities:
-- **AuthService** — mints HS256 JWTs; the one identity source. (Rebuild from scaffold.)
+- **AuthService** — mints HS256 JWTs; the one identity source. ✅ Built (PR #19): `AuthUser`, PBKDF2 hashing, register/login. ✅ Sessions (PR #23): `RefreshToken` (rotating, hashed, `SessionId` families, reuse detection), `refresh`/`logout`. Wires no JWT middleware or CORS by design (§ security §4). `AuthService.Tests` covers the rotation rules.
 - **UserService** — user profiles (UC14), role-aware.
 - **QuizService** — classrooms, enrolment, quizzes, questions, the **QuizAttempt lifecycle, and grading**. The heaviest service; the grading authority.
 - **ResultService** — **read/reporting only** (UC9/UC10). Consumes `QuizAttemptGradedEvent` into a read model; never grades. (Rebuild from scaffold.)
