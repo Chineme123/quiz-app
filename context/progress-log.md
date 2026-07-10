@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [docs] Reconcile the context system with the code (drift the refresh-token build left behind)
+- **Date:** 2026-07-10
+- **Area:** context / docs
+- **What:** Caught (on the developer's prompt) that the refresh-token build updated `foundation.md` + `library-docs.md` but not the other authority files — a golden-rule miss. Audited `security.md`, `build-graph.md`, `architecture.md` against HEAD and fixed the confirmed drift: (1) **`security.md` §4** — cleared two stale ⚠️ (issuer/audience "disagree", hardcoded `teacher-1` IDs; both resolved in PR #19) and **added the whole session model** it is the authority for: in-memory access token + rotating `HttpOnly` refresh cookie, SHA-256-at-rest, reuse detection + grace window, and the deliberate no-middleware/no-CORS stance. (2) **`build-graph.md`** — "Frontend screens — hard: gateway" contradicted foundation §7 #27; corrected to Vite-proxy-in-dev (gateway is a soft/production dep, does not block SPA work). (3) **`architecture.md`** — AuthService was still "(Rebuild from scaffold.)"; marked built (PR #19 + #23), added `RefreshToken` to the Auth stack row and the service note. (4) **`library-docs.md`** — access-token expiry "is moving to config" → built.
+- **Notes:** Verified every change against live code/git before writing (issuer/audience both `quiztin`; no `teacher-1` in `src/`; QuizService controllers `[Authorize]` + read `NameIdentifier`). **Left one ⚠️ standing because it is still true:** `security.md` §6 / `code-standards.md` §8 — `UserProfileController` (line ~91) catches `Exception` and returns 500 with a `// Log error` comment that logs nothing. Real gap, not drift; fix when UserService is next touched. Process lesson: `CLAUDE.md` mandates reading `build-graph.md`/`architecture.md`/`security.md` before coding; this session read only the files it needed to *edit*, not the ones it needed to *consult* — the drift is the direct cost. A full-context-system drift audit was attempted via a Workflow but 45/54 subagents hit the session limit, so it was finished by hand from evidence.
+
 ### [feature] AuthService refresh + logout — rotating refresh tokens (spec 0001, build-plan task 1)
 - **Date:** 2026-07-10
 - **Area:** backend (AuthService) / db / security
