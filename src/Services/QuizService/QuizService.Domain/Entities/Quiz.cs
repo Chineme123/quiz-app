@@ -9,14 +9,14 @@ namespace QuizService.Domain.Entities
         public Guid ClassroomId { get; set; }
         public string Title { get; set; }
         public int DurationMinutes { get; set; }
-        public string CreatedByTeacherId { get; set; }
+        public Guid CreatedByTeacherId { get; set; }
         public bool IsPublished { get; set; }
         public DateTime? AvailableFrom { get; set; }
         public DateTime? AvailableTo { get; set; }
         public int MaxAttempts { get; set; } = 1;
         public ICollection<Question> Questions { get; set; } = new List<Question>();
 
-        public Quiz(Guid classroomId, string title, int durationMinutes, string teacherId)
+        public Quiz(Guid classroomId, string title, int durationMinutes, Guid teacherId)
         {
             Id = Guid.NewGuid();
             ClassroomId = classroomId;
