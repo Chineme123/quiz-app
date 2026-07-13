@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [docs] Production platform Phase 1 — reconcile stale env/arch docs + add a run-doc
+- **Date:** 2026-07-13
+- **Area:** context / docs
+- **What:** Reworded the living stale platform claims to current and gave the repo a real entry point. `README.md`: new **Getting started** section (Docker Desktop + .NET 10 SDK + Node 20 → `cp .env.example .env` → `docker compose up` → `npm run dev`, citing spec 0002) and a corrected **Status** (Layer-0 done, frontend built per spec 0001, production platform in progress per 0002). `foundation.md`: §8 v1-scope marks fixed (AuthService ✅, SPA ✅ spec 0001, gateway 🟡 spec 0002) + a "Layer-0 complete" banner + the migrate-to-Postgres bullet flipped to done; §10 provider-migration cost → paid; §11 bus-factor note → repo is public + pushed with CI + branch protection. `library-docs.md`: dropped the `net8.0`/`UseSqlServer`/regenerate-migrations/Codespace gotchas (all done); noted spec 0002's env-gated migrate-on-startup. `build-graph.md`: Layer-0 marked complete, the `mssql`→`postgres` swap done, gateway + Railway pointed at spec 0002. Archival banners on `scaffold.sh`, `add_docker.sh`, and `docs/project-environment-and-architecture.md` (SQL Server + Codespaces, historical).
+- **Notes:** Phase 1 of spec 0002. Scope kept to the platform/env drift (SQL Server / Codespaces / local-Docker / gateway-pending / not-pushed) per **AC-13**; deliberately *not* a full UC-by-UC build-status audit. The README Getting started describes the target `docker compose` + gateway flow, which lands in Phases 2–3 of this same effort.
+
 ### [docs] Spec 0002 — production platform (gateway, Docker local dev, CI/CD, Railway) authored via /architect
 - **Date:** 2026-07-13
 - **Area:** context / docs

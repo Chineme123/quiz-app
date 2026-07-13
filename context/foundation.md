@@ -144,12 +144,13 @@ The heart of the file. Numbered so other files cite `foundation.md §7 #N`. Rows
 - **UC9** View My Results & Progress (student) — ResultService read. ⬜
 - **UC10** View Classroom Results (teacher) — ResultService read. ⬜
 - **UC14** Create/Update User Profile — role-aware. ✅ built (needs `Users`-row + partial-update fixes, §10).
-- **Minimal AuthService** issuing JWTs; end-to-end auth + `[Authorize]` enforcement. ⬜
-- **API gateway (YARP)** + CORS. ⬜
-- **React + Vite SPA** covering the loop screens. ⬜
+- **Minimal AuthService** issuing JWTs; end-to-end auth + `[Authorize]` enforcement. ✅ built (Layer-0).
+- **API gateway (YARP)** as the single origin. 🟡 in progress (spec 0002); CORS is deliberately absent (§7 #27, same-origin).
+- **React + Vite SPA** covering the loop screens. ✅ built — spec 0001 (auth + Manage Profile; dashboard slice next).
 
 ### Must-fix before/inside v1 (repairs the loop depends on — not new features; these are Layer 0)
-- ⚠️ **Migrate to Postgres + regenerate the EF migration** — drop the SQL Server migration, add Npgsql, generate a fresh `InitialCreate` against Postgres including *all* current entities (QuizAttempt/QuizAnswer/Enrollment/ProcessedCommand were missing). One action covers the provider switch and the stale-migration bug. **Step one.**
+> ✅ **All Layer-0 must-fixes are complete** (framework pin, PostgreSQL migration, real scoring, identity/auth) — see `progress-log.md` (2026-07-10). The bullets below are kept as the historical record of what Layer-0 covered.
+- ✅ **Migrated to Postgres + regenerated the EF migration** — dropped the SQL Server migration, added Npgsql, generated a fresh `InitialCreate` against Postgres including *all* current entities (QuizAttempt/QuizAnswer/Enrollment/ProcessedCommand, previously missing). One action covered the provider switch and the stale-migration bug.
 - ⚠️ **Redesign the scoring contract** so a strategy can see the correct answers (current `IScoringStrategy.Score(QuizAttempt)` structurally can't grade).
 - ⚠️ **Pin the framework** (`global.json`) and reconcile every `.csproj` to .NET 10 (§7 #13).
 - ⚠️ **Fix identity + auth** to §7 #14/#15 (remove hardcoded IDs, unify JWT audience, uncomment `[Authorize]`).
@@ -186,7 +187,7 @@ Honest "not scaling yet, and here's what replaces it":
 
 - **AI is stubbed today** — `StubLLMQuestionGenerationStrategy` returns canned placeholders; v1 replaces it with a real Claude call behind the existing strategy seams, **with a deterministic fallback** (§7 #6) so an outage degrades gracefully.
 - **Scoring is fake** — flat 10 pts for any non-empty answer, can't see correct answers; replaced by the redesigned scoring contract (§8 must-fix).
-- **Provider migration cost** — moving SQL Server → Postgres touches the migration (regenerated fresh), the `Options` mapping (`nvarchar`+JSON → `jsonb`), the concurrency token (`rowversion` → `xmin`), connection strings, and `docker-compose` (swap the `mssql` image for `postgres`). One-time v1 cost.
+- **Provider migration** ✅ done — the SQL Server → Postgres move touched the migration (regenerated fresh), the `Options` mapping (`nvarchar`+JSON → `jsonb`), the concurrency token (`rowversion` → `xmin`), connection strings, and `docker-compose` (`mssql` → `postgres`). One-time cost, paid.
 - **Graded-event dispatch is post-commit, no outbox** — can silently drop events on failure; acceptable for v1, replaced by an outbox when reliability matters.
 - **Committed secrets** — plaintext DB password + JWT signing key committed in code/appsettings → all move to secrets (§7 #15/#17, `security.md`).
 - **UserService FK gap** — Profile insert needs a `Users` row UserService never creates; first-time profile creation throws until a user is provisioned. Fix in v1.
@@ -197,7 +198,7 @@ Honest "not scaling yet, and here's what replaces it":
 
 ## §11 The deepest risk
 
-**The design-first brain lives on one machine — bus factor of one.** As of 2026-07-09 the design corpus has been **converted to markdown and consolidated in `docs/`** (originals archived in `quiz-trash/`), and this context system is in `context/` — so the AUM rationale, pattern choices, FR mappings, and UC catalog are now readable and in the repo tree rather than trapped in binary Word files. But the working tree is still **local-only and not pushed to any remote**, by the developer's deliberate choice — so the bus-factor risk (lose the machine, lose the project) is an **accepted tradeoff**, not an oversight. Re-evaluate if/when that changes.
+**The design-first brain lives in the repo — bus factor now low.** As of 2026-07-09 the design corpus was **converted to markdown and consolidated in `docs/`** (originals archived in `quiz-trash/`), and this context system is in `context/` — so the AUM rationale, pattern choices, FR mappings, and UC catalog are readable and in the repo tree rather than trapped in binary Word files. The working tree is now **pushed to a public GitHub remote with CI + branch protection** (§7 #32), so losing the machine no longer loses the project — the earlier local-only bus-factor risk is resolved. Only the `.env` secrets stay local (gitignored, by design).
 
 **Runner-up (now mitigated by design):** the product's wedge is AI, and AI is 100% stubbed. v1 makes it real (§7 #6) — and because a **deterministic fallback** is locked, a Claude outage degrades the experience instead of breaking the loop. The "AI" promise never blocks a working demo.
 
