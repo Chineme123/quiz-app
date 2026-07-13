@@ -20,6 +20,13 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [feat] Production platform Phase 4 — service /health endpoints (AC-4 complete)
+- **Date:** 2026-07-13
+- **Area:** backend
+- **What:** Added a `/health` liveness endpoint (`Results.Ok({ status = "healthy" })`) to `AuthService`, `UserService`, `QuizService`, and `ResultService` `Program.cs`, matching the gateway's. Completes **AC-4** (the gateway and every service answer `/health`) — for docker-compose / YARP health checks and Railway. Phase 4's other planned deliverable (the gateway Dockerfile that bakes the SPA) already landed in Phase 3, and the service Dockerfiles were verified building in Phase 2, so no Dockerfile changes here.
+- **Result:** `dotnet build QuizApp.sln` green. The endpoint is identical to the gateway's, which was verified returning 200 in Phase 3.
+- **Notes:** `add_docker.sh` stays archival (Phase 1 banner); no `docker-compose.prod.yml` (Railway builds from the per-service + gateway Dockerfiles directly, Phase 6).
+
 ### [feat] Production platform Phase 3 — YARP gateway (the single origin)
 - **Date:** 2026-07-13
 - **Area:** backend (gateway) / infra / apps/frontend
