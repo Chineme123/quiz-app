@@ -21,7 +21,7 @@ jobs:
       matrix:
         language: [csharp, javascript-typescript]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup .NET 10
         if: matrix.language == 'csharp'
         uses: actions/setup-dotnet@v4

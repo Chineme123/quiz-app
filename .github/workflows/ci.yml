@@ -33,7 +33,7 @@ jobs:
       ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres"
       JwtSettings__Secret: "ci-design-time-only-not-a-real-secret-0123456789abcdef"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
         with:
@@ -71,7 +71,7 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup Node 20
         uses: actions/setup-node@v4
         with:
@@ -92,7 +92,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Conventional Commits (mirrors .githooks/commit-msg)
