@@ -1,0 +1,43 @@
+name: Deploy
+
+# Deploys to Railway on a push to main. main is only ever reached through a PR that
+# passed the required CI checks (branch protection), so a push here is already
+# CI-verified. Inert until the RAILWAY_TOKEN secret is set.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'frontend/**'
+      - 'design-system/**'
+      - '**/Dockerfile'
+      - '.dockerignore'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "RAILWAY_TOKEN not set — skipping deploy."
+            echo "Create a Railway project token (Project → Settings → Tokens) and add it"
+            echo "as the repo secret RAILWAY_TOKEN to enable continuous deployment."
+            exit 0
+          fi
+          npm i -g @railway/cli
+          # Backend services first, then the gateway LAST — the gateway resolves the
+          # services' private DNS at startup, so it must come up after they exist.
+          for svc in authservice userservice quizservice; do
+            echo "::group::deploy $svc"
+            railway up --service "$svc" --ci
+            echo "::endgroup::"
+          done
+          echo "::group::deploy gateway"
+          railway up --service gateway --ci
+          echo "::endgroup::"
