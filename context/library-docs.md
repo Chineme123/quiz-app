@@ -30,10 +30,10 @@
 - **How used:** `JwtSecurityTokenHandler` builds the HS256 token; claims are `NameIdentifier` (the canonical `Guid`, foundation §7 #14), `Email`, `Role`.
 - **Gotchas:** the expiry now comes from `AuthTokens:AccessTokenMinutes` (default 15), not the old hardcoded `AddHours(8)` (built PR #23). The frontend never decodes this token — `/api/auth/refresh` returns `userId` and `role` in the body precisely so the SPA takes no JWT-parsing dependency.
 
-### YARP (`Yarp.ReverseProxy`) — ✅ (new)
-- **Why:** foundation §7 #16 — single frontend origin, centralizes routing + CORS + (optionally) JWT validation.
-- **How used:** a new `src/Gateway/` .NET app routes `/api/{service}/…` to each service; CORS is configured here for the SPA origin.
-- **Gotchas:** decide whether the gateway validates the JWT and forwards claims, or services re-validate (or both — recommended: both). Keep route config in `appsettings`, not hardcoded.
+### YARP (`Yarp.ReverseProxy` 2.3.0) — ✅ built + deployed (spec 0002)
+- **Why:** foundation §7 #16 — the single origin. Routes `/api/*` to the services and serves the SPA same-origin, which the in-memory-token + `HttpOnly` refresh-cookie design (§7 #26) requires.
+- **How used:** `src/Gateway/` (net10.0) loads routes/clusters from `appsettings.json` (`AddReverseProxy().LoadFromConfig`), serves `wwwroot` with an `index.html` fallback, and answers `/health`. Production overrides the cluster addresses via env (`ReverseProxy__Clusters__<id>__Destinations__primary__Address` → Railway private domains). **No CORS anywhere** (§7 #27).
+- **Gotchas:** the gateway **forwards** credentials; each service stays JWT-authoritative (§7 #30), so no auth logic lives in the gateway. Deploy the gateway **last** — deploying it before the services are up leaves its process caching failed private-DNS lookups (502) until a redeploy.
 
 ### Anthropic Claude client — 🕗 (mechanism to confirm)
 - **Why:** foundation §7 #6 — question generation + per-question feedback, each with a deterministic fallback.
