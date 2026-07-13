@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [docs] Spec 0002 — production platform (gateway, Docker local dev, CI/CD, Railway) authored via /architect
+- **Date:** 2026-07-13
+- **Area:** context / docs
+- **What:** Ran `/architect` (ENHANCEMENT, documentation path — the decisions were locked in an approved plan). Wrote `docs/specs/0002-production-platform/{index.md, rationale.md, verify.md}` (status **Proposed**): 13 acceptance criteria, an 8-phase build plan, a strangler `## Migration plan`, and phase-by-phase verification. Added `foundation.md` §7 **#29–#32** — docker-compose is the canonical local run; the YARP gateway (#16) serves the SPA same-origin and forwards `/api` with services staying JWT-authoritative (resolves the `architecture.md:107` open Q); CD via GitHub Actions gated on CI + migrate-on-startup + one Railway Postgres with 4 DBs (resolves `:108`); governance-as-code — and reconciled the §0 dev-environment bullet (Docker is now the local path, as of 2026-07-13).
+- **Notes:** This is **Phase 0** of the production-platform effort; Phases 1–8 follow (docs reconcile → local Docker → gateway → images → CI → CD → governance → context sync). No `docs/scope/` created (context-first convention). Locked defaults recorded in the spec: the gateway bakes + serves the SPA (single origin is **required** by the in-memory-token + `HttpOnly`-cookie session design, spec 0001); Railway **prod-only first** (deploy parameterized for a later staging tier); v1 deploys gateway + Auth + User + Quiz (Result later, Notification deferred). Scope corrections baked in (not re-done as work): service Dockerfiles already .NET 10; SQL→Npgsql + .NET 10 pin complete; branch protection already exists on `main` (Phase 7 is refinement).
+
 ### [chore] Remove the devcontainer / Codespaces path (local-only dev)
 - **Date:** 2026-07-10
 - **Area:** infra / context
