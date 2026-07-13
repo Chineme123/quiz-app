@@ -109,4 +109,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// Liveness for docker-compose, YARP health checks, and Railway (spec 0002).
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+
 app.Run();
