@@ -7,8 +7,31 @@ on:
     branches: [main]
 
 jobs:
+  # NOTE: keep this job named `build-and-test` — branch protection requires that
+  # exact check. New job names (frontend, commitlint, codeql) are added to the
+  # required set in a follow-up, after they have reported once.
   build-and-test:
+    name: build-and-test
     runs-on: ubuntu-latest
+    services:
+      # Available for integration tests. The current suite is unit tests (xUnit/Moq)
+      # and does not use it yet; integration tests against real Postgres are a follow-up.
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 15
+    env:
+      # Design-time config for the EF drift check's host build (no real connection is made).
+      ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres"
+      JwtSettings__Secret: "ci-design-time-only-not-a-real-secret-0123456789abcdef"
     steps:
       - uses: actions/checkout@v4
       - name: Setup .NET 10
@@ -19,5 +42,71 @@ jobs:
         run: dotnet restore QuizApp.sln
       - name: Build
         run: dotnet build QuizApp.sln --no-restore -c Release
+      - name: Test (with coverage)
+        run: dotnet test QuizApp.sln --no-build -c Release --collect:"XPlat Code Coverage" --results-directory ./coverage
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: ./coverage/**/coverage.cobertura.xml
+          if-no-files-found: warn
+      - name: Restore EF tool
+        run: dotnet tool restore
+      # AC-6: fails if any EF model has changes not captured in a migration. Runs LAST
+      # and with --no-build — EF's design-time host can write a stray bin\Debug dir that
+      # poisons MSBuild globbing, so we keep it after the real build and skip a rebuild.
+      - name: Migration drift check
+        run: |
+          set -e
+          ef() { dotnet tool run dotnet-ef migrations has-pending-model-changes --no-build --configuration Release "$@"; }
+          ef --project src/Services/AuthService/AuthService.Infrastructure --startup-project src/Services/AuthService/AuthService.API --context AuthDbContext
+          ef --project src/Services/UserService/UserService.Infrastructure --startup-project src/Services/UserService/UserService.API --context UserDbContext
+          ef --project src/Services/QuizService/QuizService.Infrastructure --startup-project src/Services/QuizService/QuizService.API --context QuizDbContext
+
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Lint
+        run: npm run lint
       - name: Test
-        run: dotnet test QuizApp.sln --no-build -c Release
+        run: npm run test
+      - name: Build (tsc + vite)
+        run: npm run build
+
+  commitlint:
+    name: commitlint
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Conventional Commits (mirrors .githooks/commit-msg)
+        run: |
+          pattern='^(feat|fix|refactor|chore|docs|test|build|perf|ci|style|revert)(\([a-z0-9./_-]+\))?!?: .+'
+          fail=0
+          for sha in $(git rev-list ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}); do
+            subject=$(git log -1 --format=%s "$sha")
+            case "$subject" in
+              "Merge "*|"Revert "*|"fixup! "*|"squash! "*) continue ;;
+            esac
+            if ! printf '%s' "$subject" | grep -Eq "$pattern"; then
+              echo "::error::Non-conventional commit message: $subject"
+              fail=1
+            fi
+          done
+          exit $fail

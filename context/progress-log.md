@@ -20,6 +20,13 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [ci] Production platform Phase 5 — expand CI (frontend, Postgres, drift, coverage, CodeQL, commitlint)
+- **Date:** 2026-07-13
+- **Area:** infra / ci
+- **What:** Widened CI from a single .NET build+test to cover the whole product. `ci.yml`: **build-and-test** (kept the name so branch protection isn't broken) now runs with a **Postgres 17 service**, collects **coverage** (`--collect:"XPlat Code Coverage"`, uploaded as an artifact), restores the EF tool, and runs a **migration-drift check** (`dotnet ef migrations has-pending-model-changes --no-build` for Auth/User/Quiz — **AC-6**) as the last step, so the EF design-time host's stray `bin\Debug` can't poison the build. New **frontend** job (Node 20: `npm ci` → lint → vitest → build). New **commitlint** job (Conventional Commits over the PR commit range, mirroring `.githooks/commit-msg`). New `codeql.yml`: **CodeQL** for `csharp` + `javascript-typescript` (also weekly on cron). Satisfies **AC-5**, **AC-6**.
+- **Result:** both workflows parse; the drift check verified locally clean for all 3 contexts (`AuthDbContext`/`UserDbContext`/`QuizDbContext` in sync). The full check set (build-and-test + frontend + codeql + commitlint) is verified by this PR's own CI run.
+- **Notes:** The Postgres service is ready for integration tests; the current suite is unit tests (integration tests are a follow-up). Root-caused the `--no-build` need: `dotnet ef`'s Roslyn BuildHost writes a stray `bin\Debug` (backslash) on non-Windows that breaks MSBuild globbing; `--no-build` + running the check last sidesteps it. Job names are now final, so **Phase 7** can add `frontend`/`codeql`/`commitlint` to the required status checks (only after they have each reported once).
+
 ### [feat] Production platform Phase 4 — service /health endpoints (AC-4 complete)
 - **Date:** 2026-07-13
 - **Area:** backend
