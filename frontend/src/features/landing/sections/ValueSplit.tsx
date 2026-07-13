@@ -4,6 +4,7 @@ import { Icon } from '@/components/ui/Icon';
 import { VALUE } from '../content';
 import type { ValueId } from '../content';
 import { Bubble } from '../decoration/Decoration';
+import { Reveal } from '../motion/motion';
 import professorOffice from '../assets/personas/professor-office.jpg';
 import studentsTutoring from '../assets/personas/students-tutoring.jpg';
 
@@ -26,7 +27,7 @@ export function ValueSplit() {
             aria-labelledby={`${block.id}-title`}
           >
             <div className="qz-container qz-value__grid">
-              <div className="qz-value__text">
+              <Reveal className="qz-value__text">
                 <span className="qz-eyebrow">{block.eyebrow}</span>
                 <h2 id={`${block.id}-title`} className="qz-section__title">
                   {block.title}
@@ -45,9 +46,9 @@ export function ValueSplit() {
                 <Link to={block.cta.to} className="qz-btn qz-btn--accent qz-btn--lg">
                   {block.cta.label}
                 </Link>
-              </div>
+              </Reveal>
 
-              <div className="qz-value__media">
+              <Reveal className="qz-value__media" delay={0.1}>
                 <div className="qz-photo-frame">
                   <img
                     className="qz-photo"
@@ -64,7 +65,7 @@ export function ValueSplit() {
                   className="qz-deco"
                   style={{ bottom: '-1.2rem', [imageFirst ? 'right' : 'left']: '-1rem', zIndex: 2 }}
                 />
-              </div>
+              </Reveal>
             </div>
           </section>
         );

@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [feat] Landing page — motion layer (spec 0003, AC-10, WIP on `feat/landing-page`)
+- **Date:** 2026-07-13
+- **Area:** apps/frontend
+- **What:** Added the motion layer with **framer-motion** (12.x), all of it landing only. New kit under `features/landing/motion/`: `useMotionReady.ts` (combines framer-motion `useReducedMotion` with a mount gate, so the resting state is always the fully visible one and the prerender and reduced motion paths render plain content) and `motion.tsx` (`Reveal`, a scroll reveal that fades and lifts content the first time it enters view; `AmbientFloat`, the slow drift on the decorative bubbles). Wired into the hero (a crossfade of copy and persona on toggle, plus a polite `aria-live` line announcing the content change for **AC-2**), the `Highlight` (the coral fill now sweeps in, the highlighter draw on), and every content section (`HowItWorks`, `ValueSplit`, `AISpotlight`, `Faq`, `CtaBand`) via `Reveal`, with staggered reveals on the step and FAQ lists. Recorded framer-motion in `library-docs.md` (the frontend section plus the approved list). Satisfies **AC-10** (and completes the content change announcement for **AC-2**).
+- **Notes:** The resting state is the visible state by construction, so a reduced motion visitor, the pre hydration paint, and the coming prerender all show fully visible content with no hidden or shifted state to recover from. Verified live at localhost:5173: the toggle crossfade, the section reveals settling to full opacity, and no layout break from the `.qz-mark` restructure. Reliability follow through: the hero toggle keydown moved onto the tabs (the roving focus pattern) so the tablist is not an interactive element (lint clean). framer-motion is still in the main bundle for now; the next slice (**AC-13**) code splits the landing route so it never reaches the authenticated app. Reduced motion is asserted rigorously in the coming test suite (mocked matchMedia).
+
 ### [feat] Landing page — content build done (spec 0003, WIP on `feat/landing-page`)
 - **Date:** 2026-07-13
 - **Area:** apps/frontend

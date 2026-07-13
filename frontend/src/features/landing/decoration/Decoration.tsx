@@ -1,5 +1,7 @@
+import { motion } from 'framer-motion';
 import { useId } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
+import { useMotionReady } from '../motion/useMotionReady';
 
 /**
  * The Quiztin decoration kit: soft, on brand SVG shapes that give every landing
@@ -129,7 +131,29 @@ export function WaveDivider({
   );
 }
 
-/** A coral highlighter swipe behind a word, the "fun academic" note from the inspo. */
+/**
+ * A coral highlighter swipe behind a word, the "fun academic" note from the inspo.
+ * The colour lives in a fill layer behind the text. When motion is allowed the fill
+ * sweeps in from the left the first time it scrolls into view (the highlighter draw
+ * on, AC-10); at rest the fill is simply full, so the word is always highlighted.
+ */
 export function Highlight({ children, className }: { children: ReactNode; className?: string }) {
-  return <mark className={`qz-mark ${className ?? ''}`.trim()}>{children}</mark>;
+  const on = useMotionReady();
+  return (
+    <mark className={`qz-mark ${className ?? ''}`.trim()}>
+      {on ? (
+        <motion.span
+          className="qz-mark__fill"
+          aria-hidden="true"
+          initial={{ scaleX: 0 }}
+          whileInView={{ scaleX: 1 }}
+          viewport={{ once: true, amount: 0.6 }}
+          transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+        />
+      ) : (
+        <span className="qz-mark__fill" aria-hidden="true" />
+      )}
+      <span className="qz-mark__text">{children}</span>
+    </mark>
+  );
 }

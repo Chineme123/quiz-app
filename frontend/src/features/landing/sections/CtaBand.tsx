@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { CTA_BAND } from '../content';
 import { Blob } from '../decoration/Decoration';
+import { Reveal } from '../motion/motion';
 
 /** The closing call to action, with the free for classrooms line (AC-3). */
 export function CtaBand() {
@@ -8,7 +9,7 @@ export function CtaBand() {
   return (
     <section className="qz-section qz-cta" aria-labelledby="cta-title">
       <div className="qz-container">
-        <div className="qz-cta__panel">
+        <Reveal className="qz-cta__panel">
           <Blob tone="coral" variant={0} className="qz-deco" style={{ width: '18rem', top: '-5rem', right: '-4rem' }} />
           <Blob tone="blueberry" variant={2} className="qz-deco" style={{ width: '15rem', bottom: '-6rem', left: '-4rem' }} />
           <span className="qz-cta__free">{freeLine}</span>
@@ -24,7 +25,7 @@ export function CtaBand() {
               {secondary.label}
             </Link>
           </div>
-        </div>
+        </Reveal>
       </div>
     </section>
   );

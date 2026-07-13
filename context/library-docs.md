@@ -77,6 +77,11 @@
 ### Vitest + Testing Library + vitest-axe — ✅ (new, test)
 - **How used:** component tests and an automated accessibility floor on the primitives.
 
+### framer-motion — ✅ (new, spec 0003)
+- **Why:** foundation §7 #21 gates new dependencies. The landing page (spec 0003, AC-10) needs real motion with a genuine reduced motion path, and framer-motion ships `useReducedMotion` plus declarative enter and scroll animation. Chosen over hand rolled CSS so the reduced motion branch is one hook, not media queries scattered across the stylesheet.
+- **How used:** landing page only, inside `features/landing/`. A small kit (`features/landing/motion/`) wraps it: `useMotionReady` (in `useMotionReady.ts`) combines framer-motion's `useReducedMotion` with a mount gate, so the resting state is always the fully visible one; `Reveal` fades and lifts content the first time it scrolls into view; `AmbientFloat` drifts the decorative bubbles; the hero crossfades its copy and persona on toggle; the `Highlight` fill sweeps in. Every animation checks `useMotionReady` first.
+- **Gotchas:** keep it out of the authenticated app bundle. The landing route is lazy loaded (AC-13) so framer-motion lands in its own chunk; never import it from a shared component. During the build time prerender (AC-11) `useMotionReady` is false (no window, not mounted), so the static markup carries no hidden or shifted state and a no JavaScript reader still sees every word.
+
 ## Approved dependencies
 
 Do not install anything outside this list without adding it here first (with a why + how-used).
@@ -99,6 +104,7 @@ Do not install anything outside this list without adding it here first (with a w
 | @tanstack/react-query 5 | Server state | ✅ (spec 0001) |
 | react-hook-form + @hookform/resolvers + zod 4 | Forms and boundary validation | ✅ (spec 0001) |
 | @phosphor-icons/react 2 | Icons | ✅ (spec 0001) |
+| framer-motion 12 | Landing page motion, reduced motion aware (landing only, code split) | ✅ (spec 0003) |
 | vitest, @testing-library/react, vitest-axe | Frontend tests + a11y floor | ✅ (spec 0001) |
 | eslint + typescript-eslint + eslint-plugin-jsx-a11y + prettier | Lint (a11y rules enforced) | ✅ (spec 0001) |
 | UI components | Authored in-repo from `design-system/` | ✅ no library (export ships no React source) |

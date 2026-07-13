@@ -66,14 +66,27 @@
   color: var(--text-muted);
 }
 
-/* A coral highlighter swipe behind a word. */
+/* A coral highlighter swipe behind a word. The colour is a fill layer behind the
+   text so it can sweep in (the draw on); at rest the fill is full. */
 .qz-mark {
-  background: var(--accent-soft);
+  position: relative;
+  display: inline-block;
+  background: transparent; /* neutralise the browser's default mark styling */
   color: inherit;
   padding: 0 0.14em;
+  white-space: nowrap; /* keep the marked word on one line so the single fill covers it */
+}
+.qz-mark__fill {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--accent-soft);
   border-radius: 0.24em;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
+  transform-origin: left center;
+}
+.qz-mark__text {
+  position: relative;
+  z-index: 1;
 }
 
 /* ---- Navigation --------------------------------------------------------- */
