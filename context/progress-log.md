@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [docs] Production platform Phase 8 — reconcile the context system (spec 0002 complete)
+- **Date:** 2026-07-13
+- **Area:** context / docs
+- **What:** Final reconciliation for spec 0002. `architecture.md`: resolved the two open build-time questions — gateway auth depth (services stay JWT-authoritative, the gateway forwards; §7 #30) and DB topology (one Railway Postgres, four databases; §7 #31); marked the gateway + frontend built in the source tree; corrected the gateway stack row (serves the SPA + routes `/api`, **no CORS**, not "owns CORS") and the hosting row (**live** on Railway). `library-docs.md`: rewrote the YARP entry to the built-and-deployed reality (2.3.0, `LoadFromConfig`, serves `wwwroot`, prod env overrides, the deploy-gateway-last gotcha). `README.md`: Status now reports the platform deployed live at the gateway URL.
+- **Notes:** **Completes spec 0002 — all 8 phases built, merged, and the platform verified live on Railway.** Per-phase progress-log entries were added as each phase merged; this closes the loop. Out of scope (deliberately not done): a full UC-by-UC build-status audit of `build-graph.md` — spec 0002 was the platform, not the app features.
+
 ### [feat] Production platform Phase 6 (part 2) — deployed to Railway + CI-gated CD
 - **Date:** 2026-07-13
 - **Area:** infra / ci

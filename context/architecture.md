@@ -37,7 +37,7 @@ The SPA talks only to the gateway. Grading happens in QuizService at submission;
 | Layer | Choice | Notes |
 |---|---|---|
 | Frontend | React + Vite (SPA) | §7 #5; own toolchain, not in `QuizApp.sln` |
-| Gateway | YARP reverse proxy (.NET) | §7 #16; single frontend origin, owns CORS |
+| Gateway | YARP reverse proxy (.NET), serves the SPA + routes `/api` | §7 #16/#30; single origin, **no CORS** (§7 #27); services stay JWT-authoritative |
 | Backend | ASP.NET Core Web API × 5 | Clean Architecture per service |
 | Language / runtime | C# / **.NET 10** | §7 #13; pinned via `global.json` |
 | ORM | EF Core 10 + **Npgsql** | §7 #18; TPH, `jsonb`, `xmin` concurrency, retry-on-failure |
@@ -45,7 +45,7 @@ The SPA talks only to the gateway. Grading happens in QuizService at submission;
 | Auth | JWT (HS256), self-issued + rotating refresh cookie | §7 #15/#26; AuthService mints, all validate (issuer/audience `quiztin`); in-memory access token + `HttpOnly` refresh cookie (built PR #23) |
 | AI | Anthropic Claude API | §7 #6; generation + feedback, with deterministic fallback |
 | Validation / mapping | Manual (no FluentValidation/AutoMapper) | §7 #21 |
-| Hosting | Docker → Railway (+ managed Postgres) | §7 #22 |
+| Hosting | Docker → Railway (+ managed Postgres) | §7 #22; **live** (spec 0002): gateway public, 3 services private, 4 DBs on one Postgres |
 
 ## Repo layout
 
@@ -55,9 +55,9 @@ quiz-app/                       repo root (product: Quiztin)
 ├── CLAUDE.md                   mandatory per-session rules (⬜)
 ├── context/                    the context system (this folder)
 ├── docs/                       the AUM design corpus, converted to markdown (✅, was "Quiz Application/")
-├── frontend/                   React + Vite SPA (⬜, new)
+├── frontend/                   React + Vite SPA (✅ built — spec 0001)
 ├── src/
-│   ├── Gateway/                YARP API gateway (⬜, new)
+│   ├── Gateway/                YARP gateway, serves the SPA + routes /api (✅ built + deployed — spec 0002)
 │   └── Services/
 │       ├── AuthService/        API/Application/Domain/Infrastructure + Tests (register/login/refresh/logout built)
 │       ├── UserService/        (UC14 built)
@@ -104,8 +104,8 @@ The **create→take→results→feedback loop** is the keystone. It's blocked to
 *(record each in `progress-log.md` as a `decision` when made)*
 - Exact ResultService read-model shape (denormalized projection tables vs. read-through to QuizService for v1).
 - Whether the Claude client is a shared internal library or duplicated per service (QuizService generation + feedback both need it).
-- Gateway auth depth: validate JWT at the gateway and forward claims, vs. validate at each service (or both).
-- Multiple databases on one Railway Postgres instance (separate DBs vs. schema-per-service).
+- **Resolved (spec 0002 §7 #30):** gateway auth depth — services stay JWT-authoritative and the gateway forwards credentials; gateway-level validation is a later "both" hardening.
+- **Resolved (spec 0002 §7 #31):** databases on one Railway Postgres — one managed instance with four separate databases (authdb/userdb/quizdb/resultdb).
 
 ## Open architectural questions
 - None blocking. The event-delivery reliability gap (no outbox) is a known, accepted v1 seam (§10), to revisit if results-drift shows up.
