@@ -1,0 +1,20 @@
+# Keep the Docker build context small. Every service Dockerfile does `COPY . .`
+# from the repo root, so without this it would drag in build output, the SPA's
+# node_modules, git history, and local secrets.
+#
+# NOTE: frontend/ and design-system/ are intentionally NOT excluded — the gateway
+# image builds the SPA (npm run build), which imports the design tokens from
+# design-system/.
+**/bin
+**/obj
+**/node_modules
+frontend/dist
+.git
+.github
+.vs
+**/.vs
+**/*.user
+.env
+quiz-trash
+docs
+context

@@ -20,6 +20,13 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [feat] Production platform Phase 2 — local dev on Docker (compose fixed, .dockerignore)
+- **Date:** 2026-07-13
+- **Area:** infra
+- **What:** `docker compose up` is now the one-command local stack. Added `/.dockerignore` (excludes `bin`/`obj`/`node_modules`/`.git`/`.env`/`docs`/`context` so the `COPY . .` build context stays small; deliberately keeps `frontend/` + `design-system/` for the gateway's SPA build in Phase 4). Rewrote `docker-compose.yml`: dropped the obsolete `version:` key; a non-colliding host-port block (auth `15001`, user `15002`, quiz `15224`, result `15004`) that never clashes with the `dotnet run` launchSettings ports; every app service now gates on `depends_on: postgres: {condition: service_healthy}`; unified the DB password + JWT secret wiring (result/notification previously hardcoded the password); consistent `ASPNETCORE_ENVIRONMENT=Development`; **NotificationService dropped** (deferred stub; its DB is still created by `postgres-init.sql`).
+- **Result:** verified end-to-end — `docker compose up -d --build` builds all 4 service images, Postgres comes up healthy, the services start only after (health-gated), no port collision; `GET :15002/api/profile` → 401 and `POST :15001/api/auth/login {}` → 400 prove they serve and reach their pipeline. Satisfies **AC-1** (the SPA-proxies-to-gateway half lands with the gateway in Phase 3).
+- **Notes:** **Root-caused a real build blocker.** Stray `bin\Debug` directories (a literal backslash in the name) in the three built API projects — MSBuild BuildHost artifacts from a Windows-style output path written on macOS (a C# IDE / Roslyn tool). The backslash breaks MSBuild's Unix wildcard globbing (`**/*.resx`, `**/*.cs` …), so every clean `dotnet build -o` and Docker image build failed with **MSB3552**, while warm-`obj` local builds and fresh-checkout CI stayed green. Deleted them (untracked; a fresh checkout never has them). If a local build suddenly fails with a `**/*.resx` glob error, delete any recreated `bin\Debug` dirs. The in-container `UseHttpsRedirection()` logs a harmless "Failed to determine https port" warning (TLS terminates at the gateway edge; Phase 3/6 addresses it).
+
 ### [docs] Production platform Phase 1 — reconcile stale env/arch docs + add a run-doc
 - **Date:** 2026-07-13
 - **Area:** context / docs

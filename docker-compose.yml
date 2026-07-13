@@ -1,4 +1,10 @@
-version: '3.4'
+# Local dev stack (spec 0002). `docker compose up` brings up Postgres + the built
+# services. The gateway service is added in Phase 3; the SPA runs on the host Vite
+# server (hot reload) proxying to the gateway. NotificationService is deferred (stub)
+# and omitted; its database is still created by docker/postgres-init.sql for later.
+#
+# Host ports use a non-colliding 150xx block so they never clash with the `dotnet run`
+# launchSettings ports (Auth 5005, User 5079, Quiz 5224). Containers all listen on 8080.
 
 services:
   postgres:
@@ -25,12 +31,14 @@ services:
       context: .
       dockerfile: src/Services/AuthService/AuthService.API/Dockerfile
     ports:
-      - "5001:8080"
+      - "15001:8080"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
+      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=authdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
-      - JwtSettings__Secret=${JWT_SECRET}
+      - JwtSettings__Secret=${JWT_SECRET:-local-dev-only-insecure-secret-change-me}
 
   userservice:
     image: ${DOCKER_REGISTRY-}userservice
@@ -38,12 +46,14 @@ services:
       context: .
       dockerfile: src/Services/UserService/UserService.API/Dockerfile
     ports:
-      - "5002:8080"
+      - "15002:8080"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
+      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=userdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
-      - JwtSettings__Secret=${JWT_SECRET}
+      - JwtSettings__Secret=${JWT_SECRET:-local-dev-only-insecure-secret-change-me}
 
   quizservice:
     image: ${DOCKER_REGISTRY-}quizservice
@@ -51,13 +61,14 @@ services:
       context: .
       dockerfile: src/Services/QuizService/QuizService.API/Dockerfile
     ports:
-      - "5224:8080"
+      - "15224:8080"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=quizdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
-      - JwtSettings__Secret=${JWT_SECRET}
       - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=quizdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
+      - JwtSettings__Secret=${JWT_SECRET:-local-dev-only-insecure-secret-change-me}
 
   resultservice:
     image: ${DOCKER_REGISTRY-}resultservice
@@ -65,23 +76,14 @@ services:
       context: .
       dockerfile: src/Services/ResultService/ResultService.API/Dockerfile
     ports:
-      - "5004:8080"
+      - "15004:8080"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=resultdb;Username=postgres;Password=postgres
-
-  notificationservice:
-    image: ${DOCKER_REGISTRY-}notificationservice
-    build:
-      context: .
-      dockerfile: src/Services/NotificationService/NotificationService.API/Dockerfile
-    ports:
-      - "5005:8080"
-    depends_on:
-      - postgres
-    environment:
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=notificationdb;Username=postgres;Password=postgres
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=resultdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
+      - JwtSettings__Secret=${JWT_SECRET:-local-dev-only-insecure-secret-change-me}
 
 volumes:
   pgdata:
