@@ -20,6 +20,13 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [feat] Production platform Phase 6 (part 2) — deployed to Railway + CI-gated CD
+- **Date:** 2026-07-13
+- **Area:** infra / ci
+- **What:** **Deployed the platform to Railway** (CLI, on the developer's session) and wired the ongoing CD. Created 4 services (gateway + Auth/User/Quiz), each building from its Dockerfile via `RAILWAY_DOCKERFILE_PATH`, with prod env: per-service connection strings referencing the managed Postgres (`${{Postgres.RAILWAY_PRIVATE_DOMAIN}}` + creds, one DB each), a shared `JwtSettings__Secret` (generated, set via stdin), `ASPNETCORE_ENVIRONMENT=Production`, `RUN_MIGRATIONS_ON_STARTUP=true`, `AuthTokens__Cookie__Secure=true` (auth), and the gateway's YARP cluster addresses referencing the services' private domains. **Only the gateway is public** (`https://gateway-production-02f8.up.railway.app`); the 3 services stay on private networking. Added `.github/workflows/deploy.yml` — on push to `main` (deployable paths), gated on `RAILWAY_TOKEN`, deploys backend-then-gateway.
+- **Result:** **verified live end-to-end** through the public gateway URL — `/health` 200, the SPA served at `/`, and a full **register → refresh** round-trip returns 200 with a `Secure; HttpOnly; Path=/api/auth` cookie; `/api/profile`→401 (User), `/api/quizzes`→404 (Quiz), all routed. Each service migrated its own DB on startup (logs confirm `InitialCreate` etc. applied). Satisfies **AC-7, AC-8, AC-9, AC-10**. **Spec 0002 is fully built.**
+- **Notes:** **Deploy the gateway LAST** — deploying it in parallel with the services left its process caching failed private-DNS lookups (502 on user/quiz) until a redeploy; `deploy.yml` enforces the order. `RAILWAY_TOKEN` (a Railway *project* token) is the one remaining step to activate CD: create it in the Railway dashboard (Project → Settings → Tokens) and add it as the repo secret; until then `deploy.yml` is a no-op. Smoke-test users (`prod-smoke@…`, `prod-flow@…`) exist in the prod DBs. The `libgssapi_krb5` log line is a benign Kerberos-probe warning (password auth is used).
+
 ### [feat] Production platform Phase 6 (part 1) — migrate-on-startup + Railway project provisioned
 - **Date:** 2026-07-13
 - **Area:** backend / infra
