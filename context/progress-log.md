@@ -20,6 +20,13 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [feat] Production platform Phase 6 (part 1) — migrate-on-startup + Railway project provisioned
+- **Date:** 2026-07-13
+- **Area:** backend / infra
+- **What:** Added an env-gated **migrate-on-startup** hook to AuthService, UserService, and QuizService (`if RUN_MIGRATIONS_ON_STARTUP: db.Database.Migrate()` right after `builder.Build()`), and set `RUN_MIGRATIONS_ON_STARTUP=true` on those three services in `docker-compose.yml`. This is what makes the services create their tables on Railway (the databases are otherwise empty — the init script only creates the DBs), and it also fixes local dev (the compose DBs were empty too). The QuizService Development seeder still handles demo data separately. **Provisioned the Railway side** (CLI, on the developer's authenticated session): project `quiztin`, a managed **PostgreSQL**, and the four databases `authdb`/`userdb`/`quizdb`/`resultdb`. Satisfies **AC-8** (and the DB half of **AC-9**).
+- **Result:** verified end-to-end locally — `docker compose up --build`, then `POST /api/auth/register` **through the gateway** returns **200** with `{token, userId, role}` and the refresh cookie, and `authdb` now has its tables. First full proof of gateway → service → self-migrated DB → auth.
+- **Notes:** ResultService is a stub with no DbContext, so it gets no hook. Remaining Phase 6: create the 4 Railway services (gateway + Auth/User/Quiz) with their Dockerfile paths + prod env vars, deploy, wire the gateway's public domain, and add `RAILWAY_TOKEN` + `deploy.yml` for CI-gated CD.
+
 ### [ci] Production platform Phase 7 — GitHub governance as code
 - **Date:** 2026-07-13
 - **Area:** infra / ci
