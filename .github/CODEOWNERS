@@ -1,0 +1,7 @@
+# Code owners. Solo project, so one owner for everything. The explicit lines for
+# the source-of-truth docs are documentational (they mark the load-bearing areas).
+* @Chineme123
+
+/context/ @Chineme123
+/docs/specs/ @Chineme123
+/.github/ @Chineme123
