@@ -37,6 +37,14 @@ builder.Services.AddScoped<IAuthService, AuthAppService>();
 
 var app = builder.Build();
 
+// Apply EF migrations at startup when enabled (spec 0002). On in production (Railway)
+// and in docker-compose so the databases have their tables; off by default otherwise.
+if (app.Configuration.GetValue<bool>("RUN_MIGRATIONS_ON_STARTUP"))
+{
+    using var migrationScope = app.Services.CreateScope();
+    migrationScope.ServiceProvider.GetRequiredService<AuthDbContext>().Database.Migrate();
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

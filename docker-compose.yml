@@ -37,6 +37,7 @@ services:
         condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - RUN_MIGRATIONS_ON_STARTUP=true
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=authdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
       - JwtSettings__Secret=${JWT_SECRET:-local-dev-only-insecure-secret-change-me}
 
@@ -52,6 +53,7 @@ services:
         condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - RUN_MIGRATIONS_ON_STARTUP=true
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=userdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
       - JwtSettings__Secret=${JWT_SECRET:-local-dev-only-insecure-secret-change-me}
 
@@ -67,6 +69,7 @@ services:
         condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - RUN_MIGRATIONS_ON_STARTUP=true
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=quizdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
       - JwtSettings__Secret=${JWT_SECRET:-local-dev-only-insecure-secret-change-me}
 

@@ -92,6 +92,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var app = builder.Build();
 
+// Apply EF migrations at startup when enabled (spec 0002). On in production (Railway)
+// and in docker-compose so the databases have their tables; off by default otherwise.
+// The Development seeder below still handles demo data.
+if (app.Configuration.GetValue<bool>("RUN_MIGRATIONS_ON_STARTUP"))
+{
+    using var migrationScope = app.Services.CreateScope();
+    migrationScope.ServiceProvider.GetRequiredService<QuizDbContext>().Database.Migrate();
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
