@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [ci] Production platform Phase 7 — GitHub governance as code
+- **Date:** 2026-07-13
+- **Area:** infra / ci
+- **What:** Added the repo-hygiene files — `.github/dependabot.yml` (weekly updates: nuget at `/`, npm at `/frontend`, github-actions), `.github/CODEOWNERS` (`* @Chineme123` + the source-of-truth areas), `.github/pull_request_template.md` (summary, linked spec, verification, the CLAUDE.md definition-of-done checklist) — and refined branch protection on `main` via `gh api`: required status checks are now `build-and-test`, `frontend`, `commitlint`, `codeql (csharp)`, `codeql (javascript-typescript)`; a PR is required (0 approvals — a solo dev can't self-approve, so 1 would deadlock merges); `enforce_admins` on; force-pushes/deletions off; strict (up-to-date-before-merge) kept. Satisfies **AC-11**, **AC-12**.
+- **Notes:** Done ahead of Phase 6 (CD) since it needs no Railway. The required-check names were pinned only after the Phase 5 jobs each reported once (PR #35), so no merge deadlocks on a check that never posts. CodeQL now adds ~3–4 min to every PR merge — the cost of the required security gate.
+
 ### [ci] Production platform Phase 5 — expand CI (frontend, Postgres, drift, coverage, CodeQL, commitlint)
 - **Date:** 2026-07-13
 - **Area:** infra / ci
