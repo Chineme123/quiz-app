@@ -85,5 +85,21 @@ services:
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=resultdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
       - JwtSettings__Secret=${JWT_SECRET:-local-dev-only-insecure-secret-change-me}
 
+  # The single origin: forwards /api/* to the services and (in the image) serves the
+  # SPA. In local dev the SPA runs on the host Vite server and proxies /api here.
+  gateway:
+    image: ${DOCKER_REGISTRY-}gateway
+    build:
+      context: .
+      dockerfile: src/Gateway/Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - authservice
+      - userservice
+      - quizservice
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+
 volumes:
   pgdata:

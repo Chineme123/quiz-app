@@ -20,6 +20,13 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [feat] Production platform Phase 3 — YARP gateway (the single origin)
+- **Date:** 2026-07-13
+- **Area:** backend (gateway) / infra / apps/frontend
+- **What:** Built `src/Gateway/` — a `net10.0` YARP reverse proxy that is the single origin. Config-driven routes (specific prefixes, never an `/api` catch-all): `/api/auth`→Auth, `/api/profile`→User, `/api/classrooms|quizzes|attempts`→Quiz; cluster addresses default to the compose service names, overridable by env for Railway. Serves the SPA from `wwwroot` with an `index.html` fallback (client routing), so the in-memory access token + `HttpOnly` refresh cookie work same-origin; the gateway forwards credentials and each service stays JWT-authoritative (foundation §7 #30). A `/health` endpoint. Multi-stage `Dockerfile` bakes the SPA (node build → dotnet publish → copy `dist` into `wwwroot`). Registered in `QuizApp.sln` + `docker-compose.yml` (host `8080`). Flipped the Vite dev proxy to one `GATEWAY_ORIGIN` (default `http://localhost:8080`).
+- **Result:** verified end-to-end — the gateway image builds (SPA + gateway), the full stack comes up (gateway starts after the services), and routing works through `localhost:8080`: `/health`→200, `POST /api/auth/login {}`→400 (Auth), `GET /api/profile`→401 (User), `GET /api/quizzes`→404 (Quiz's own routing — a non-gateway response proves the forward), `POST /api/auth/refresh`→401 (Auth, cookie path intact); `/`→200 SPA index and the `/profile` deep link→200 `text/html` (index fallback). Satisfies **AC-2**, **AC-3**, and the gateway half of **AC-4**. YARP `2.3.0`.
+- **Notes:** Production overrides the cluster addresses via `ReverseProxy__Clusters__<id>__Destinations__primary__Address` env vars (Railway private hostnames) in Phase 6. Per-service `/health` endpoints (the other half of **AC-4**) land in Phase 4. In-container `UseHttpsRedirection()` still logs a harmless warning (TLS terminates at the gateway edge).
+
 ### [feat] Production platform Phase 2 — local dev on Docker (compose fixed, .dockerignore)
 - **Date:** 2026-07-13
 - **Area:** infra
