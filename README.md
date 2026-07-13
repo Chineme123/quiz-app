@@ -6,6 +6,25 @@ A classroom quiz web app — teachers author and publish quizzes inside classroo
 
 ---
 
+## Getting started
+
+**Prerequisites:** Docker Desktop, the **.NET 10 SDK** (for host-run migrations and `dotnet test`), and **Node 20** (for the web app).
+
+```bash
+# 1. Secrets: copy the template, then set a JWT signing key + a Postgres password
+cp .env.example .env
+
+# 2. Bring up Postgres + the backend services (one command)
+docker compose up
+
+# 3. Run the web app with hot reload (proxies /api to the gateway)
+cd frontend && npm ci && npm run dev
+```
+
+The **YARP gateway** is the single origin: it serves the web app and forwards `/api/*` to the right service, so the in-memory access token + `HttpOnly` refresh cookie work same-origin. The containerised local flow and the gateway are settled by [`docs/specs/0002-production-platform/`](docs/specs/0002-production-platform/index.md); its [`verify.md`](docs/specs/0002-production-platform/verify.md) carries the migration and test commands. Backend build/test from the repo root: `dotnet build QuizApp.sln` and `dotnet test`.
+
+---
+
 ## The context system (read this before writing any code)
 
 This repo is driven by a **context system**: a set of source-of-truth markdown files an AI coding agent (and you) read before touching code, so decisions stay consistent across sessions and don't drift. **`context/foundation.md` is the source of truth**; every other file references it and none restate it.
@@ -54,4 +73,4 @@ When a decision changes, update `foundation.md` **first**, then ripple the chang
 - **The AI loop must degrade, not break.** Every Claude call has a deterministic fallback.
 
 ## Status
-Foundation converged (v3); the full context system is written, and the **UI trio is generated** from the Claude Design export (`design-system/`) — nothing PENDING. Repo is **public** with CI + PR/auto-merge. Layer-0 backend is underway (framework pin, live Postgres migration, and secrets rotation done; identity/auth + scoring redesign remain). The frontend (`frontend/`) isn't scaffolded yet. See `context/progress-log.md` for the running state.
+Foundation converged (v3); the context system is written, and the **UI trio is generated** from the Claude Design export (`design-system/`). Repo is **public** with CI + branch protection + auto-merge. **Layer-0 is complete** (framework pin, PostgreSQL migration, real scoring, identity/auth). The **frontend is built** — spec 0001 (auth + Manage Profile screens, 30 tests). Now in progress: the **production platform** — spec 0002 (YARP gateway, containerised local dev, expanded CI, deploy to Railway). See `context/progress-log.md` for the running state.

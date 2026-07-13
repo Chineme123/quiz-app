@@ -9,16 +9,16 @@
 ### .NET 10 SDK — ✅
 - **Why:** foundation §7 #13 (finish the started upgrade; tooling already on 10). Pinned by a root `global.json`.
 - **How used:** every service + the gateway target `net10.0`, `Nullable` + `ImplicitUsings` enabled.
-- **Gotchas:** ⚠️ service `.csproj` files currently say `net8.0` and reference EF/JwtBearer `8.0.0`; bump all to 10.x. ⚠️ `QuizService.API.csproj` has duplicated `<Project>`/`<PropertyGroup>` headers — fix while bumping. Add `global.json` so the Codespace and any machine resolve the same SDK.
+- **Gotchas:** ✅ done — all `.csproj` target `net10.0` with EF/JwtBearer `10.x`, the duplicated `QuizService.API.csproj` headers are fixed, and a root `global.json` pins the SDK (`10.0.301`) so every machine resolves the same toolchain.
 
 ### EF Core 10 + Npgsql (`Npgsql.EntityFrameworkCore.PostgreSQL`) — ✅
 - **Why:** foundation §7 #10/#18 — PostgreSQL is Railway-native; Npgsql is the EF provider.
 - **How used:** database-per-service; `DbContext` per service (`QuizDbContext` is the model). TPH question inheritance via `HasDiscriminator` (`nameof` values); `MultipleChoiceQuestion.Options` stored as **`jsonb`** with an explicit `ValueComparer` for list change-tracking; optimistic concurrency via the Postgres **`xmin`** system column (`entity.UseXminAsConcurrencyToken()`); `EnableRetryOnFailure` in **every** service's `AddDbContext`.
-- **Gotchas:** ⚠️ current code uses `UseSqlServer`, `IsRowVersion()` (SQL Server `rowversion`), and `JsonSerializer`-to-`nvarchar` for Options — all change under Npgsql: `UseNpgsql`, drop `IsRowVersion` for `xmin`, and let Npgsql map the list to `jsonb`. ⚠️ **Regenerate migrations from scratch against Postgres** — the existing SQL Server migration is stale (missing the attempt-side tables) *and* provider-specific. This is the Layer-0 step-one (foundation §8). ⚠️ UserService currently has no `EnableRetryOnFailure` — add it. Keep the idempotency transaction inside the execution strategy (foundation §7 #19).
+- **Gotchas:** ✅ done — every service is on `UseNpgsql` with `xmin` concurrency and `jsonb` `Options`; the Postgres `InitialCreate` migrations were regenerated (attempt-side tables included) and applied; UserService gained `EnableRetryOnFailure`. Keep the idempotency transaction inside the execution strategy (foundation §7 #19).
 
 ### ASP.NET Core Web API — ✅
 - **How used:** five services + the gateway; thin controllers, Application services own logic (`code-standards.md` §4). Swagger per service in Development only.
-- **Gotchas:** the dev-time seeder runs from `Program.cs` in Development (`DataSeeder`) and calls `MigrateAsync()` — it will throw until the Postgres migration is regenerated.
+- **Gotchas:** the dev-time seeder (`DataSeeder`) runs from `Program.cs` in Development and calls `MigrateAsync()`; the Postgres migrations exist now, so it runs cleanly. ⚠️ spec 0002 pulls `MigrateAsync` out of the Development-only seeder into an env-gated startup hook (`RUN_MIGRATIONS_ON_STARTUP`), so production applies migrations without seeding demo data.
 
 ### Microsoft.AspNetCore.Authentication.JwtBearer — ✅
 - **Why:** foundation §7 #15 — HS256 JWTs, AuthService issues, all services validate.

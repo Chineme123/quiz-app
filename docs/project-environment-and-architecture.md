@@ -1,6 +1,8 @@
 # Project Environment & Architecture
 
 > Converted from the original Word design doc (AUM corpus). Faithful extraction; original preserved in `quiz-trash/`.
+>
+> ⚠️ **ARCHIVAL — historical, do not follow for setup.** This describes the *original* environment (SQL Server 2022 + GitHub Codespaces), both since replaced (PostgreSQL; local Docker on macOS, no Codespaces). For how to run the project today, see the root `README.md` → **Getting started** and `docs/specs/0002-production-platform/`.
 
 ### 🛠 Project Environment & Architecture
 

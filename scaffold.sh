@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+# ⚠️ ARCHIVAL — superseded one-shot scaffolder. It generated the solution + service projects
+# at net8.0 with the EF SqlServer provider, both since replaced. The canonical state is the
+# committed .csproj files (net10.0 + Npgsql). Do NOT re-run this; kept for history.
+
 # Project list
 SERVICES=("Auth" "User" "Quiz" "Result" "Notification")
 

@@ -6,13 +6,14 @@
 This is a map of *what-requires-what* — **NOT a timeline, a build plan, or a prescribed order**. The developer builds breadth-first with Claude (foundation §0), picking their own path; this file just says what a node genuinely needs before it can work. **Hard requirement** = cannot build/run without it. **Soft benefit** = easier or nicer with it, possible without.
 
 ## Layer 0 — foundational prerequisites (nearly everything needs these)
-These are the must-fixes from `foundation.md` §8. Until they're in, features built on top are building on sand.
-- **`global.json` + framework pin** to .NET 10; reconcile every `.csproj` (fix the duplicated-header one).
-- **PostgreSQL up** via `docker-compose` (swap the `mssql` image for `postgres`), connection strings in config/secrets.
-- **Regenerated EF migration** against Postgres, including the attempt-side tables (QuizAttempt/QuizAnswer/Enrollment/ProcessedCommand). *Nothing that touches the DB runs without this — step one.*
-- **Canonical identity plumbing**: `Guid UserId` from the JWT `NameIdentifier` claim, everywhere; remove hardcoded IDs.
-- **Minimal AuthService** issuing HS256 JWTs; shared issuer/audience/key from secrets.
-- **API gateway (YARP) + CORS** as the single frontend origin.
+> ✅ **Layer-0 is complete** (see `progress-log.md`, 2026-07-10) — the items below are built. Kept as the dependency map: features still *require* these, they are just no longer pending.
+These were the must-fixes from `foundation.md` §8.
+- ✅ **`global.json` + framework pin** to .NET 10; every `.csproj` reconciled (duplicated-header one fixed).
+- ✅ **PostgreSQL up** via `docker compose` (runs `postgres:17`; the `mssql`→`postgres` swap is done), connection strings in config/secrets.
+- ✅ **Regenerated EF migration** against Postgres, including the attempt-side tables (QuizAttempt/QuizAnswer/Enrollment/ProcessedCommand).
+- ✅ **Canonical identity plumbing**: `Guid UserId` from the JWT `NameIdentifier` claim, everywhere; hardcoded IDs removed.
+- ✅ **Minimal AuthService** issuing HS256 JWTs; shared issuer/audience/key from secrets.
+- 🟡 **API gateway (YARP)** as the single frontend origin (no CORS — same-origin, §7 #27). Spec 0002; a production concern, so the Vite proxy is the dev single-origin today.
 
 ## The keystone unlock
 The **create→take→results→feedback loop**. It's unblocked in this order: **(1)** the Postgres migration → **(2)** the redesigned scoring contract (a strategy that can see correct answers) → **(3)** ResultService's graded-event projection. Once those three exist, the loop closes and everything else is elaboration.
@@ -35,7 +36,7 @@ The **create→take→results→feedback loop**. It's unblocked in this order: *
 
 ## External dependencies with lead time ⏳
 - **Claude API key** — provision before the AI paths can run live (the fallback lets you build without it).
-- **Railway project + managed Postgres** — provision before deploy; local Docker Postgres unblocks all dev.
+- **Railway project + managed Postgres** — provision before deploy (spec 0002 Phase 6). Docker Hub is reachable again, so local `docker compose` Postgres unblocks all dev.
 - **Claude Design export** — ⏳ **blocks the UI trio** (`ui-tokens`/`ui-rules`/`ui-registry`) and therefore the SPA's final styling. Start it early; the SPA's *logic* can be built against placeholder styling.
 
 ## The one genuine tension

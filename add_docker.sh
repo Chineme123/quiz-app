@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+# ⚠️ ARCHIVAL — superseded one-shot generator. It emitted .NET 8 Dockerfiles; the committed
+# service Dockerfiles are already multi-stage .NET 10, and the gateway image is added in spec 0002.
+# Do NOT re-run this; the canonical Dockerfiles live beside each *.API. Kept for history.
+
 SERVICES=("Auth" "User" "Quiz" "Result" "Notification")
 
 for SERVICE in "${SERVICES[@]}"; do
