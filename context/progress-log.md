@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [feat] Landing page — code split the landing route (spec 0003, AC-13, WIP on `feat/landing-page`)
+- **Date:** 2026-07-13
+- **Area:** apps/frontend
+- **What:** Made the landing page its own chunk so the authenticated app never downloads it. Moved every non landing route into `routes.tsx` (which no longer imports the landing), and build the router in `main.tsx`: on the prerendered `/` it loads the landing chunk with a dynamic import, then hydrates with an eager element (so the tree matches the prerender and hydration stays clean); on any other route the landing is a lazy route, so its chunk loads only if the user goes to `/`. `prerender.tsx` keeps the landing eager (Node). Removed the now unused `router.tsx`. Because the landing CSS is now a separate chunk, the prerender script reads the Vite build manifest and links the landing CSS (and modulepreloads its JS) in the prerendered document, so `/` still paints fully styled. Satisfies **AC-13**.
+- **Notes:** Verified over a real gateway run: the main entry chunk dropped from ~188 KB to ~141 KB gzip (framer-motion and the landing left it), the landing is a separate ~48 KB gzip chunk plus its own CSS. On `/` the landing chunk loads (needed to hydrate) and the page is styled with no flash; on `/register` the Performance API shows only the main entry chunk, no landing chunk, no framer-motion, no persona images. Enabled `build.manifest` in `vite.config.ts` for the asset lookup. Remaining: the test suite (AC-2, AC-5, AC-10, AC-11, AC-14, AC-12), then the context reconcile.
+
 ### [feat] Landing page — prerender, SEO, and the gateway serving fix (spec 0003, AC-11 + AC-14, WIP on `feat/landing-page`)
 - **Date:** 2026-07-13
 - **Area:** apps/frontend / gateway

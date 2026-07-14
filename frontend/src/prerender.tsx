@@ -1,7 +1,8 @@
 import { renderToString } from 'react-dom/server';
 import { createMemoryRouter } from 'react-router';
 import { AppRoot } from './AppRoot';
-import { routes } from './routes';
+import { otherRoutes } from './routes';
+import { LandingPage } from './features/landing/LandingPage';
 import { buildHeadTags } from './features/landing/seo';
 
 /**
@@ -12,7 +13,11 @@ import { buildHeadTags } from './features/landing/seo';
  * (scripts/prerender.mjs) injects both into the built index.html template.
  */
 export function render(siteUrl: string): { html: string; head: string } {
-  const router = createMemoryRouter(routes, { initialEntries: ['/'] });
+  // The landing is eager here (Node, bundle size does not matter), so renderToString
+  // resolves it synchronously and the emitted tree matches what the client hydrates.
+  const router = createMemoryRouter([{ path: '/', element: <LandingPage /> }, ...otherRoutes], {
+    initialEntries: ['/'],
+  });
   const html = renderToString(<AppRoot router={router} />);
   return { html, head: buildHeadTags(siteUrl) };
 }

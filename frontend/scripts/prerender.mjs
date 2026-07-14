@@ -16,6 +16,21 @@ const siteUrl = process.env.SITE_URL ?? 'https://quiztin.up.railway.app';
 const { render } = await import(path.join(root, 'dist-ssr', 'prerender.js'));
 const { html, head } = render(siteUrl);
 
+// The landing is its own chunk (AC-13), so its CSS is not in the main stylesheet the
+// template already links. Link it here, up front, or the prerendered page paints
+// unstyled until the chunk loads. Modulepreload the JS too, so it loads in parallel
+// with the entry and hydration is quick.
+const manifest = JSON.parse(readFileSync(path.join(dist, '.vite', 'manifest.json'), 'utf8'));
+const landing = manifest['src/features/landing/LandingPage.tsx'];
+const assetLinks = [];
+for (const css of landing?.css ?? []) {
+  assetLinks.push(`<link rel="stylesheet" href="/${css}" />`);
+}
+if (landing?.file) {
+  assetLinks.push(`<link rel="modulepreload" href="/${landing.file}" />`);
+}
+const headBlock = assetLinks.length > 0 ? `${head}\n    ${assetLinks.join('\n    ')}` : head;
+
 const template = readFileSync(path.join(dist, 'index.html'), 'utf8');
 
 if (!template.includes('<div id="root"></div>')) {
@@ -30,7 +45,7 @@ if (!template.includes('<title>Quiztin</title>')) {
 // JSON-LD). The neutral index.html keeps its generic title, so no other route
 // inherits this metadata.
 let out = template.replace('<div id="root"></div>', `<div id="root">${html}</div>`);
-out = out.replace('<title>Quiztin</title>', head);
+out = out.replace('<title>Quiztin</title>', headBlock);
 
 writeFileSync(path.join(dist, 'index.prerender.html'), out);
 console.log(`prerender: wrote dist/index.prerender.html (${out.length} bytes, body ${html.length} bytes)`);
