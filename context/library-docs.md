@@ -59,9 +59,9 @@
 - **How used:** `@theme inline { --color-primary: var(--primary); … }` over the semantic aliases only. Import `tailwindcss/theme.css` + `tailwindcss/utilities.css`; **never bare `tailwindcss`**, which would pull in Preflight and fight `design-system/tokens/base.css`.
 - **Gotchas:** ⚠️ Preflight is also what sets `border-style: solid` globally. Without it every Tailwind `border` utility renders **invisible**. Restore it with a three-line `@layer base` rule. Declare `@layer theme, base, components, utilities;` first, or the design system reset outranks the utilities.
 
-### React Router v7 — ✅ (new)
-- **How used:** `createBrowserRouter` for routing only (nested routes, `errorElement`, lazy routes). **Loaders and actions stay unused** — TanStack Query owns server state (§7 #25).
-- **Gotchas:** do not adopt *framework mode*; its Vite plugin and server rendering are what #5 rejected with Next.js.
+### React Router v8 — ✅ (new)
+- **How used:** `createBrowserRouter` for routing only (nested routes, `errorElement`, lazy routes). **Loaders and actions stay unused** — TanStack Query owns server state (§7 #25). The landing prerender (spec 0003) uses `createMemoryRouter` for the same route table in Node.
+- **Gotchas:** the installed major is **8.2.x**; earlier docs said v7, a drift now reconciled (spec 0003) after the prerender was wired and verified against 8.2.x (`createBrowserRouter`, `createMemoryRouter`, `RouterProvider`, `renderToString`). Do not adopt *framework mode*; its Vite plugin and server rendering are what #5 rejected with Next.js.
 
 ### TanStack Query v5 — ✅ (new)
 - **How used:** all server state. Query keys centralized; never retry a 4xx.
@@ -76,6 +76,16 @@
 
 ### Vitest + Testing Library + vitest-axe — ✅ (new, test)
 - **How used:** component tests and an automated accessibility floor on the primitives.
+
+### framer-motion — ✅ (new, spec 0003)
+- **Why:** foundation §7 #21 gates new dependencies. The landing page (spec 0003, AC-10) needs real motion with a genuine reduced motion path, and framer-motion ships `useReducedMotion` plus declarative enter and scroll animation. Chosen over hand rolled CSS so the reduced motion branch is one hook, not media queries scattered across the stylesheet.
+- **How used:** landing page only, inside `features/landing/`. A small kit (`features/landing/motion/`) wraps it: `useMotionReady` (in `useMotionReady.ts`) combines framer-motion's `useReducedMotion` with a mount gate, so the resting state is always the fully visible one; `Reveal` fades and lifts content the first time it scrolls into view; `AmbientFloat` drifts the decorative bubbles; the hero crossfades its copy and persona on toggle; the `Highlight` fill sweeps in. Every animation checks `useMotionReady` first.
+- **Gotchas:** keep it out of the authenticated app bundle. The landing route is lazy loaded (AC-13) so framer-motion lands in its own chunk; never import it from a shared component. During the build time prerender (AC-11) `useMotionReady` is false (no window, not mounted), so the static markup carries no hidden or shifted state and a no JavaScript reader still sees every word.
+
+### Landing prerender (react-dom/server, no new package) — ✅ (spec 0003)
+- **Why:** the landing page needs real HTML for search engines and social cards (spec 0003, AC-11), but the app is a client rendered SPA with no SSR (foundation §7 #5/#25). Prerendering only the `/` route at build time gives that HTML without adopting an SSR framework.
+- **How used:** `renderToString` from `react-dom/server` (already present through react-dom, so no new package) renders the same app tree the client hydrates, with a memory router pinned to `/` (`src/prerender.tsx`, built by `vite build --ssr`). A postbuild script (`scripts/prerender.mjs`) injects that markup plus the SEO head (`features/landing/seo.ts`) into the built `index.html` and writes a separate `index.prerender.html`. The neutral `index.html` stays the SPA fallback. The gateway serves `index.prerender.html` only at exact `/` and the neutral bootstrap everywhere else (AC-14). `main.tsx` hydrates when `#root` has prerendered markup, else mounts fresh.
+- **Gotchas:** the route table lives in `routes.tsx` (no `createBrowserRouter`), so the prerender can import it in Node without touching the History API. Keep every provider above the routes identical between `main.tsx` and `prerender.tsx` or `useId` and hydration drift. `vite-react-ssg` is not used; if this script path is ever abandoned, add it here first.
 
 ## Approved dependencies
 
@@ -95,10 +105,11 @@ Do not install anything outside this list without adding it here first (with a w
 | xUnit, Moq, coverlet | Testing | ✅ |
 | React 19, Vite 8, TypeScript | Frontend SPA | ✅ (spec 0001) |
 | tailwindcss 4 + @tailwindcss/vite | Styling, bound to design tokens | ✅ (spec 0001) |
-| react-router 7 | Routing (data router, no loaders) | ✅ (spec 0001) |
+| react-router 8 | Routing (data router, no loaders); memory router for the spec 0003 prerender | ✅ (spec 0001, 8.2.x) |
 | @tanstack/react-query 5 | Server state | ✅ (spec 0001) |
 | react-hook-form + @hookform/resolvers + zod 4 | Forms and boundary validation | ✅ (spec 0001) |
 | @phosphor-icons/react 2 | Icons | ✅ (spec 0001) |
+| framer-motion 12 | Landing page motion, reduced motion aware (landing only, code split) | ✅ (spec 0003) |
 | vitest, @testing-library/react, vitest-axe | Frontend tests + a11y floor | ✅ (spec 0001) |
 | eslint + typescript-eslint + eslint-plugin-jsx-a11y + prettier | Lint (a11y rules enforced) | ✅ (spec 0001) |
 | UI components | Authored in-repo from `design-system/` | ✅ no library (export ships no React source) |
