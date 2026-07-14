@@ -11,6 +11,33 @@
   overflow-x: clip; /* keep the decoration from widening the page */
 }
 
+/* ---- Scroll ------------------------------------------------------------- */
+/* Smooth in page scrolling for the nav anchors, scoped to while the landing page is
+   mounted so it never changes how the rest of the app scrolls. */
+:root:has(.qz-landing) {
+  scroll-behavior: smooth;
+}
+/* Anchors land below the sticky nav instead of under it. */
+#main-content,
+#how-it-works,
+#for-teachers,
+#for-students,
+#faq {
+  scroll-margin-top: 6rem;
+}
+
+/* The scroll progress bar: fills across the very top as the page moves. Decorative,
+   so it is aria-hidden, and it is not rendered at all under reduced motion. */
+.qz-scroll-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 3px;
+  z-index: 60; /* above the sticky nav */
+  background: var(--primary);
+  transform-origin: 0 50%;
+  will-change: transform;
+}
+
 /* Skip link: hidden until focused, then a real visible control. */
 .qz-skip {
   position: absolute;
@@ -630,6 +657,11 @@
 .qz-faq__item[open] .qz-faq__chevron {
   transform: rotate(180deg);
 }
+/* The animated panel. It is clipped so the height animation reads as a collapse.
+   With motion off this element is not rendered and the native details does the work. */
+.qz-faq__panel {
+  overflow: hidden;
+}
 .qz-faq__a {
   margin: 0;
   padding-bottom: var(--space-5);
@@ -686,6 +718,10 @@
 
 /* ---- Reduced motion ----------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
+  /* Jump to anchors instead of gliding to them. */
+  :root:has(.qz-landing) {
+    scroll-behavior: auto;
+  }
   .qz-landing *,
   .qz-landing *::before,
   .qz-landing *::after {

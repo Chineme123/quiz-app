@@ -20,6 +20,16 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [feat] Landing page — scroll motion and an animated FAQ accordion (spec 0003, AC-10)
+- **Date:** 2026-07-14
+- **Area:** apps/frontend
+- **What:** Added scroll motion and animated the FAQ, both still inside AC-10's reduced motion contract.
+  - **Scroll:** smooth in page scrolling for the nav anchors (CSS `scroll-behavior`, scoped with `:root:has(.qz-landing)` so it never changes how the rest of the app scrolls, plus `scroll-margin-top: 6rem` so a section lands below the sticky nav rather than under it); a **scroll progress bar** across the top of the viewport (`ScrollProgress` in the motion kit); and **parallax** drift on the hero's two background blobs (`Parallax`), which move in opposite directions for depth.
+  - **FAQ:** the accordion now glides open and closed with a rotating chevron. It stays a native `<details>`, so with no JavaScript the browser still opens it and every answer remains in the prerendered markup (AC-11). When motion is allowed React drives the open state so the panel can animate, holding the `open` attribute through the collapse so the browser does not hide the panel mid animation.
+  - Under reduced motion: anchors jump instead of gliding, the progress bar is not rendered at all, the blobs sit still, and the FAQ is the plain native element.
+  - 9 new tests (suite now 66).
+- **Notes:** Two real findings. **framer-motion's window level `useScroll()` sits at zero here**: it measures the scrollable range once, and the landing arrives as its own lazy chunk (AC-13) so the page is still growing when it measures. The progress bar therefore tracks scroll itself (a `MotionValue` fed by a scroll listener, re measured on resize and by a `ResizeObserver`), which is proven in `ScrollProgress.test.tsx` (scaleX 0 → 0.5 → 0.75 → full). Second, **framer-motion's `useReducedMotion` caches the media query answer once per module**, so a single test file cannot exercise both motion modes; the motion allowed tests live in their own files (`ScrollProgress.test.tsx`, `Faq.motion.test.tsx`). Tooling note: the embedded browser pane reported `visibilityState: hidden` with a zero height viewport, which pauses `requestAnimationFrame`, so scroll driven motion could not be filmed there; it was verified by test instead, and the smooth scroll CSS and the parallax transform were confirmed live before the pane degraded.
+
 ### [docs] Reconcile react-router version drift; advance spec 0003 status
 - **Date:** 2026-07-13
 - **Area:** context / docs

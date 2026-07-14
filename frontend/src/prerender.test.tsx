@@ -21,6 +21,13 @@ describe('landing prerender (AC-11)', () => {
     expect(html.length).toBeGreaterThan(5000);
   });
 
+  it('keeps the FAQ answers in the markup, closed but readable by a crawler', () => {
+    // The accordion animates when motion is on, but it stays a native <details>, so
+    // every answer is still prerendered rather than hidden behind JavaScript.
+    expect(html).toContain('Quiztin is free for classrooms');
+    expect(html).toContain('A teacher shares a short class code');
+  });
+
   it('carries the SEO head tags', () => {
     expect(head).toContain('<title>');
     expect(head).toContain('property="og:title"');

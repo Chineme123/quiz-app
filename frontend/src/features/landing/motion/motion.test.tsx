@@ -1,11 +1,15 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { Reveal, AmbientFloat } from './motion';
+import { Reveal, AmbientFloat, ScrollProgress } from './motion';
 import { setReducedMotion } from '@/test/matchMedia';
 
 // AC-10: when the visitor asks for reduced motion, nothing animates and all content
 // is fully visible and usable. Reveal and AmbientFloat must render their children in
 // a plain, visible resting state, with no hidden (opacity 0) or shifted start state.
+//
+// This file covers the reduced motion path only. framer-motion's useReducedMotion
+// caches the media query answer the first time it runs, so a single file cannot test
+// both paths; the motion allowed path lives in ScrollProgress.test.tsx.
 describe('motion kit under reduced motion (AC-10)', () => {
   beforeEach(() => {
     setReducedMotion(true);
@@ -45,5 +49,10 @@ describe('motion kit under reduced motion (AC-10)', () => {
     const bubble = screen.getByTestId('bubble');
     expect(bubble).toBeInTheDocument();
     expect((bubble.parentElement as HTMLElement).style.transform).toBe('');
+  });
+
+  it('the scroll progress bar is not rendered at all', () => {
+    const { container } = render(<ScrollProgress />);
+    expect(container.querySelector('.qz-scroll-progress')).toBeNull();
   });
 });

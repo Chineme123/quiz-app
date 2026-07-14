@@ -1,4 +1,5 @@
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useScroll, useTransform } from 'framer-motion';
+import { useEffect, useRef } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { useMotionReady } from './useMotionReady';
 
@@ -101,5 +102,99 @@ export function AmbientFloat({ children, className, style, range = 10, duration 
     >
       {children}
     </motion.div>
+  );
+}
+
+/**
+ * A thin bar across the top of the viewport that fills as the visitor scrolls the
+ * page. Decorative progress feedback, so it is aria-hidden and simply absent when
+ * the visitor asked for reduced motion.
+ */
+export function ScrollProgress() {
+  const on = useMotionReady();
+  if (!on) return null;
+  return <ScrollProgressBar />;
+}
+
+// Split out so the scroll hooks only ever run when motion is on (hooks cannot be
+// called conditionally, but a component can be rendered conditionally).
+function ScrollProgressBar() {
+  const progress = useMotionValue(0);
+
+  // The page's scrollable height is not settled when this mounts: the landing arrives
+  // as its own chunk and images and fonts land after. framer-motion's window level
+  // useScroll measures the range once and would sit at zero, so track it ourselves and
+  // re measure whenever the document actually changes size.
+  useEffect(() => {
+    const doc = document.documentElement;
+    let range = 0;
+
+    const update = () => {
+      progress.set(range > 0 ? Math.min(1, Math.max(0, doc.scrollTop / range)) : 0);
+    };
+    const measure = () => {
+      range = doc.scrollHeight - doc.clientHeight;
+      update();
+    };
+
+    measure();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', measure);
+    const observer = new ResizeObserver(measure);
+    observer.observe(document.body);
+
+    return () => {
+      window.removeEventListener('scroll', update);
+      window.removeEventListener('resize', measure);
+      observer.disconnect();
+    };
+  }, [progress]);
+
+  return <motion.div className="qz-scroll-progress" style={{ scaleX: progress }} aria-hidden="true" />;
+}
+
+interface ParallaxProps {
+  children: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+  /** How far the layer drifts against the scroll, in px. Larger reads as further back. */
+  distance?: number;
+}
+
+/**
+ * Drifts a decorative layer against the page scroll, so the page gains depth as it
+ * moves. Decorative only (aria-hidden). With motion off it renders a still wrapper in
+ * exactly the same place, so nothing shifts for a reduced motion visitor.
+ */
+export function Parallax({ children, className, style, distance = 60 }: ParallaxProps) {
+  const on = useMotionReady();
+
+  if (!on) {
+    return (
+      <div className={className} style={style} aria-hidden="true">
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <ParallaxLayer className={className} style={style} distance={distance}>
+      {children}
+    </ParallaxLayer>
+  );
+}
+
+function ParallaxLayer({ children, className, style, distance = 60 }: ParallaxProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  // Progress from the layer entering the viewport to it leaving the top.
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
+  const y = useTransform(scrollYProgress, [0, 1], [distance, -distance]);
+
+  // The ref sits on the untransformed wrapper so the scroll measurement is not
+  // affected by the drift it drives.
+  return (
+    <div ref={ref} className={className} style={style} aria-hidden="true">
+      <motion.div style={{ y }}>{children}</motion.div>
+    </div>
   );
 }

@@ -37,6 +37,15 @@ if (typeof globalThis.IntersectionObserver === 'undefined') {
   };
 }
 
+// The scroll progress bar watches the document for growth with a ResizeObserver.
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
 afterEach(() => {
   cleanup();
 });

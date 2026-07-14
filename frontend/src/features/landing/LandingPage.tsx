@@ -6,6 +6,7 @@ import { AISpotlight } from './sections/AISpotlight';
 import { Faq } from './sections/Faq';
 import { CtaBand } from './sections/CtaBand';
 import { LandingFooter } from './sections/LandingFooter';
+import { ScrollProgress } from './motion/motion';
 import './landing.css';
 
 /**
@@ -16,6 +17,7 @@ import './landing.css';
 export function LandingPage() {
   return (
     <div className="qz-landing">
+      <ScrollProgress />
       <a href="#main-content" className="qz-skip">
         Skip to content
       </a>

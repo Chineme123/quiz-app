@@ -5,7 +5,7 @@ import { Link } from 'react-router';
 import { HERO } from '../content';
 import type { Audience } from '../content';
 import { Blob, Bubble, Dots, Highlight } from '../decoration/Decoration';
-import { AmbientFloat } from '../motion/motion';
+import { AmbientFloat, Parallax } from '../motion/motion';
 import { useMotionReady } from '../motion/useMotionReady';
 import studentFemale from '../assets/personas/student-female.jpg';
 import professor from '../assets/personas/professor.jpg';
@@ -147,8 +147,14 @@ export function Hero() {
       {/* Announce the hero content change to assistive tech (AC-2), beyond the tab's own state. */}
       <p className="qz-sr-only" aria-live="polite">{`Showing Quiztin for ${audience}.`}</p>
 
-      <Blob tone="coral" variant={1} className="qz-deco" style={{ width: '26rem', top: '-7rem', right: '-9rem' }} />
-      <Blob tone="blueberry" variant={2} className="qz-deco" style={{ width: '22rem', bottom: '-11rem', left: '-9rem' }} />
+      {/* The two big background blobs drift against the scroll, in opposite directions,
+          so the hero gains depth as the page moves. */}
+      <Parallax className="qz-deco" style={{ width: '26rem', top: '-7rem', right: '-9rem' }} distance={80}>
+        <Blob tone="coral" variant={1} />
+      </Parallax>
+      <Parallax className="qz-deco" style={{ width: '22rem', bottom: '-11rem', left: '-9rem' }} distance={-60}>
+        <Blob tone="blueberry" variant={2} />
+      </Parallax>
     </section>
   );
 }
