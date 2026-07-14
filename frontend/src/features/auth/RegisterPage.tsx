@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, Navigate, useLocation } from 'react-router';
+import { Link, Navigate, useLocation, useSearchParams } from 'react-router';
 import { EnvelopeSimple, Lock } from '@phosphor-icons/react';
 import { Button, Select, TextField } from '@/components/ui';
 import { useAuth } from '@/lib/auth/useAuth';
@@ -16,8 +16,12 @@ const ROLE_OPTIONS = roleSchema.options.map((role) => ({ value: role, label: rol
 export function RegisterPage() {
   const { status, register: registerAccount } = useAuth();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const from = (location.state as { from?: string } | null)?.from ?? '/profile';
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // A landing page CTA may hint the role via ?role=Student|Teacher; preselect it when valid.
+  const roleHint = roleSchema.safeParse(searchParams.get('role'));
 
   const {
     register,
@@ -25,7 +29,7 @@ export function RegisterPage() {
     formState: { errors, isSubmitting },
   } = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: '', password: '', ...(roleHint.success ? { role: roleHint.data } : {}) },
   });
 
   if (status === 'authenticated') return <Navigate to={from} replace />;

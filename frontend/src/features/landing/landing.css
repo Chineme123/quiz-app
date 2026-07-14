@@ -1,0 +1,732 @@
+/* ==========================================================================
+   Quiztin marketing landing page (spec 0003).
+   Built on the design tokens only, no raw hex. Warm, calm, a little louder than
+   the in app surfaces. The one blueberry gradient the system allows lives in the
+   hero (ui-rules.md §5). All motion yields to prefers-reduced-motion.
+   ========================================================================== */
+
+.qz-landing {
+  background: var(--color-bg);
+  color: var(--text-body);
+  overflow-x: clip; /* keep the decoration from widening the page */
+}
+
+/* ---- Scroll ------------------------------------------------------------- */
+/* Smooth in page scrolling for the nav anchors, scoped to while the landing page is
+   mounted so it never changes how the rest of the app scrolls. */
+:root:has(.qz-landing) {
+  scroll-behavior: smooth;
+}
+/* Anchors land below the sticky nav instead of under it. */
+#main-content,
+#how-it-works,
+#for-teachers,
+#for-students,
+#faq {
+  scroll-margin-top: 6rem;
+}
+
+/* The scroll progress bar: fills across the very top as the page moves. Decorative,
+   so it is aria-hidden, and it is not rendered at all under reduced motion. */
+.qz-scroll-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 3px;
+  z-index: 60; /* above the sticky nav */
+  background: var(--primary);
+  transform-origin: 0 50%;
+  will-change: transform;
+}
+
+/* Skip link: hidden until focused, then a real visible control. */
+.qz-skip {
+  position: absolute;
+  left: var(--space-3);
+  top: var(--space-3);
+  z-index: 100;
+  transform: translateY(-150%);
+  background: var(--surface-card);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-button);
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-body);
+  font-weight: var(--weight-bold);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+.qz-skip:focus-visible {
+  transform: translateY(0);
+  outline: none;
+  box-shadow: var(--focus-ring-shadow);
+}
+
+/* ---- Shared section chrome ---------------------------------------------- */
+.qz-section {
+  position: relative;
+  padding-block: clamp(var(--space-9), 8vw, var(--space-12));
+}
+.qz-container {
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding-inline: var(--space-6);
+}
+.qz-eyebrow {
+  font-family: var(--font-body);
+  font-weight: var(--weight-extrabold, 800);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: var(--text-xs);
+  color: var(--accent-text);
+}
+.qz-section__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.8rem, 3.6vw, 2.6rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--text-strong);
+}
+.qz-section__lead {
+  margin-top: var(--space-3);
+  max-width: var(--reading-max);
+  font-size: var(--text-lg);
+  color: var(--text-muted);
+}
+
+/* A coral highlighter swipe behind a word. The colour is a fill layer behind the
+   text so it can sweep in (the draw on); at rest the fill is full. */
+.qz-mark {
+  position: relative;
+  display: inline-block;
+  background: transparent; /* neutralise the browser's default mark styling */
+  color: inherit;
+  padding: 0 0.14em;
+  white-space: nowrap; /* keep the marked word on one line so the single fill covers it */
+}
+.qz-mark__fill {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--accent-soft);
+  border-radius: 0.24em;
+  transform-origin: left center;
+}
+.qz-mark__text {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- Navigation --------------------------------------------------------- */
+.qz-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--border);
+}
+.qz-nav__inner {
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding: var(--space-3) var(--space-6);
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+.qz-wordmark {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-xl);
+  color: var(--text-strong);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.qz-wordmark__dot {
+  color: var(--brand-mark);
+}
+.qz-nav__links {
+  display: none;
+  gap: var(--space-5);
+  margin-inline-start: var(--space-4);
+}
+.qz-nav__link {
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold, 600);
+  color: var(--text-muted);
+  text-decoration: none;
+  border-radius: var(--radius-chip);
+  padding: var(--space-1) var(--space-2);
+  transition: color var(--duration-fast) var(--ease-out);
+}
+.qz-nav__link:hover {
+  color: var(--text-strong);
+}
+.qz-nav__link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-shadow);
+}
+.qz-nav__actions {
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+@media (min-width: 860px) {
+  .qz-nav__links {
+    display: flex;
+  }
+}
+
+/* ---- Hero --------------------------------------------------------------- */
+.qz-hero {
+  position: relative;
+  padding-block: clamp(var(--space-8), 7vw, var(--space-11));
+  isolation: isolate;
+}
+.qz-hero__grid {
+  display: grid;
+  gap: clamp(var(--space-7), 5vw, var(--space-10));
+  align-items: center;
+  grid-template-columns: 1fr;
+}
+.qz-hero__eyebrow {
+  display: inline-block;
+  margin-bottom: var(--space-3);
+}
+.qz-hero__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.3rem, 5.4vw, 3.7rem);
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+  color: var(--text-strong);
+  text-wrap: balance;
+}
+.qz-hero__sub {
+  margin-top: var(--space-5);
+  max-width: 34rem;
+  font-size: var(--text-lg);
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+.qz-hero__ctas {
+  margin-top: var(--space-7);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Audience toggle: a soft segmented control (ARIA tabs). */
+.qz-toggle {
+  display: inline-flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  margin-bottom: var(--space-6);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+}
+.qz-toggle__btn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  border-radius: var(--radius-pill);
+  padding: var(--space-2) var(--space-4);
+  min-height: 2.5rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+.qz-toggle__btn:hover {
+  color: var(--text-strong);
+}
+.qz-toggle__btn[aria-selected='true'] {
+  background: var(--surface-card);
+  color: var(--text-strong);
+  box-shadow: var(--shadow-sm);
+}
+.qz-toggle__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-shadow);
+}
+
+/* Hero visual: the one blueberry gradient glow behind a blob framed persona. */
+.qz-hero__visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 20rem;
+}
+.qz-hero__glow {
+  position: absolute;
+  inset: 4% 6%;
+  z-index: -1;
+  border-radius: 46% 54% 52% 48% / 55% 45% 55% 45%;
+  background: linear-gradient(155deg, var(--primary), var(--primary-press));
+  box-shadow: var(--shadow-primary);
+}
+.qz-persona-frame {
+  position: relative;
+  width: min(100%, 26rem);
+  aspect-ratio: 4 / 5;
+  border-radius: 47% 53% 44% 56% / 58% 44% 56% 42%;
+  overflow: hidden;
+  border: 6px solid var(--surface-card);
+  box-shadow: var(--shadow-lg);
+  background: var(--surface-sunken);
+}
+.qz-persona {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(0.96) contrast(1.02);
+}
+/* The coral and sand duotone wash that pulls the photo into the brand. */
+.qz-persona-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(165deg, transparent 52%, var(--accent-soft));
+  mix-blend-mode: multiply;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* Decoration layer: soft shapes behind the content, never in front of text. */
+.qz-deco {
+  position: absolute;
+  z-index: -2;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+@media (min-width: 900px) {
+  .qz-hero__grid {
+    grid-template-columns: 1.05fr 0.95fr;
+  }
+}
+
+/* ---- Footer ------------------------------------------------------------- */
+.qz-footer {
+  position: relative;
+  background: var(--color-bg-subtle);
+  border-top: 1px solid var(--border);
+  padding-block: clamp(var(--space-8), 6vw, var(--space-10));
+}
+.qz-footer__grid {
+  display: grid;
+  gap: var(--space-8);
+  grid-template-columns: 1fr;
+}
+.qz-footer__brand-mark {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-xl);
+  color: var(--text-strong);
+  text-decoration: none;
+}
+.qz-footer__tagline {
+  margin-top: var(--space-2);
+  max-width: 22rem;
+  color: var(--text-muted);
+}
+.qz-footer__cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-6);
+}
+.qz-footer__col-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--text-strong);
+  margin-bottom: var(--space-3);
+}
+.qz-footer__link {
+  display: block;
+  padding-block: var(--space-1);
+  color: var(--text-muted);
+  text-decoration: none;
+  border-radius: var(--radius-chip);
+}
+.qz-footer__link:hover {
+  color: var(--text-strong);
+}
+.qz-footer__link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-shadow);
+}
+.qz-footer__fine {
+  margin-top: var(--space-8);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border);
+  font-size: var(--text-sm);
+  color: var(--text-subtle);
+  display: grid;
+  gap: var(--space-2);
+}
+@media (min-width: 760px) {
+  .qz-footer__grid {
+    grid-template-columns: 1.4fr 1fr;
+    align-items: start;
+  }
+}
+
+/* ---- Section head ------------------------------------------------------- */
+.qz-section__head {
+  max-width: 46rem;
+  margin-bottom: clamp(var(--space-7), 4vw, var(--space-9));
+}
+.qz-section__head .qz-eyebrow {
+  display: inline-block;
+  margin-bottom: var(--space-2);
+}
+
+/* ---- How it works ------------------------------------------------------- */
+.qz-how {
+  background: var(--color-bg-subtle);
+  border-block: 1px solid var(--border);
+}
+.qz-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-6);
+  grid-template-columns: 1fr;
+}
+.qz-step {
+  position: relative;
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-7);
+}
+.qz-step__n {
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-6);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-2xl);
+  color: var(--primary-soft);
+}
+.qz-step__badge {
+  display: inline-grid;
+  place-items: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: var(--radius-tile);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  margin-bottom: var(--space-4);
+}
+.qz-step__badge svg {
+  width: 1.6rem;
+  height: 1.6rem;
+}
+.qz-step__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-xl);
+  color: var(--text-strong);
+  margin-bottom: var(--space-2);
+}
+.qz-step__body {
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+@media (min-width: 820px) {
+  .qz-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ---- Value split -------------------------------------------------------- */
+.qz-value__grid {
+  display: grid;
+  gap: clamp(var(--space-7), 5vw, var(--space-10));
+  align-items: center;
+  grid-template-columns: 1fr;
+}
+.qz-value__points {
+  list-style: none;
+  margin: var(--space-6) 0 var(--space-7);
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+.qz-value__point {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  color: var(--text-body);
+  line-height: 1.55;
+}
+.qz-value__check {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-top: 0.15rem;
+  border-radius: var(--radius-pill);
+  background: var(--success-soft);
+  color: var(--success-text);
+}
+.qz-value__check svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+.qz-value__media {
+  position: relative;
+}
+.qz-photo-frame {
+  position: relative;
+  border-radius: 42% 58% 54% 46% / 55% 48% 52% 45%;
+  overflow: hidden;
+  border: 6px solid var(--surface-card);
+  box-shadow: var(--shadow-lg);
+  aspect-ratio: 4 / 3;
+}
+.qz-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.qz-photo-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, transparent 55%, var(--accent-soft));
+  mix-blend-mode: multiply;
+  opacity: 0.4;
+  pointer-events: none;
+}
+@media (min-width: 880px) {
+  .qz-value__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .qz-value--image-first .qz-value__text {
+    order: 2;
+  }
+  .qz-value--image-first .qz-value__media {
+    order: 1;
+  }
+}
+
+/* ---- AI feedback spotlight ---------------------------------------------- */
+.qz-ai__grid {
+  display: grid;
+  gap: clamp(var(--space-7), 5vw, var(--space-10));
+  align-items: center;
+  grid-template-columns: 1fr;
+}
+.qz-ai__demo {
+  position: relative;
+}
+.qz-fb {
+  position: relative;
+  margin: 0;
+  background: var(--ai-surface);
+  border: 1px solid var(--ai-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-6);
+}
+.qz-fb__tag {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ai-accent);
+  margin-bottom: var(--space-3);
+}
+.qz-fb__q {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-lg);
+  color: var(--text-strong);
+  margin-bottom: var(--space-4);
+}
+.qz-fb__their {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-bottom: var(--space-4);
+}
+.qz-fb__badge {
+  flex: none;
+  background: var(--answer-incorrect-bg);
+  color: var(--danger-text);
+  border: 1px solid var(--answer-incorrect-border);
+  border-radius: var(--radius-pill);
+  padding: 0.1rem var(--space-2);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-2xs);
+}
+.qz-fb__msg {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  background: var(--surface-card);
+  border-radius: var(--radius-tile);
+  padding: var(--space-4);
+}
+.qz-fb__avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+.qz-fb__text {
+  margin: 0;
+  color: var(--ai-text);
+  line-height: 1.55;
+  font-size: var(--text-sm);
+}
+@media (min-width: 880px) {
+  .qz-ai__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ---- FAQ ---------------------------------------------------------------- */
+.qz-faq__inner {
+  max-width: 48rem;
+}
+.qz-faq__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+.qz-faq__item {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-tile);
+  padding: 0 var(--space-6);
+}
+.qz-faq__q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  cursor: pointer;
+  list-style: none;
+  padding: var(--space-5) 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-lg);
+  color: var(--text-strong);
+}
+.qz-faq__q::-webkit-details-marker {
+  display: none;
+}
+.qz-faq__q:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-shadow);
+  border-radius: var(--radius-chip);
+}
+.qz-faq__chevron {
+  flex: none;
+  display: inline-flex;
+  color: var(--text-muted);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+.qz-faq__item[open] .qz-faq__chevron {
+  transform: rotate(180deg);
+}
+/* The animated panel. It is clipped so the height animation reads as a collapse.
+   With motion off this element is not rendered and the native details does the work. */
+.qz-faq__panel {
+  overflow: hidden;
+}
+.qz-faq__a {
+  margin: 0;
+  padding-bottom: var(--space-5);
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: var(--reading-max);
+}
+
+/* ---- Closing CTA -------------------------------------------------------- */
+.qz-cta__panel {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  text-align: center;
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  padding: clamp(var(--space-8), 6vw, var(--space-11)) var(--space-6);
+}
+.qz-cta__free {
+  display: inline-block;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  border-radius: var(--radius-pill);
+  padding: var(--space-1) var(--space-4);
+  font-family: var(--font-body);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-5);
+}
+.qz-cta__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.9rem, 4vw, 2.8rem);
+  line-height: 1.08;
+  color: var(--text-strong);
+  max-width: 20ch;
+  margin-inline: auto;
+}
+.qz-cta__body {
+  margin: var(--space-4) auto 0;
+  max-width: 40rem;
+  font-size: var(--text-lg);
+  color: var(--text-muted);
+}
+.qz-cta__actions {
+  margin-top: var(--space-7);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: center;
+}
+
+/* ---- Reduced motion ----------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  /* Jump to anchors instead of gliding to them. */
+  :root:has(.qz-landing) {
+    scroll-behavior: auto;
+  }
+  .qz-landing *,
+  .qz-landing *::before,
+  .qz-landing *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

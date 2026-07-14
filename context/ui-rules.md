@@ -30,7 +30,7 @@ Fredoka (`--font-display`) for headings and brand moments; Nunito (`--font-body`
 
 ## §5 Per-surface rules
 - **Take-quiz:** flat, calm, low-anxiety. No gradients. Calm ever-present `ProgressBar`. No countdown-timer language.
-- **Teacher dashboard:** the **one** place a blueberry gradient hero is allowed.
+- **Teacher dashboard** and the **marketing landing hero** (spec 0003): the two places a blueberry gradient hero is allowed. Nowhere else.
 - **Results:** encouraging headline + calm score ring + counts framed as "to review" (`ResultSummary`).
 - **AI feedback:** the coral/apricot `AIFeedbackCard` — visually distinct and supportive, a helpful voice, **not a grade stamp**.
 

@@ -18,6 +18,11 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: { '@': path.resolve(__dirname, 'src') },
     },
+    // Emit a build manifest so the prerender script can find the landing chunk's
+    // CSS and JS and link them from the prerendered "/" document (spec 0003, AC-13):
+    // the landing is a separate chunk, so its styles must be linked up front or the
+    // prerendered page paints unstyled until the chunk loads.
+    build: { manifest: true },
     server: {
       // design-system/ is a sibling of frontend/, imported by src/styles/tailwind.css.
       fs: { allow: ['..'] },
