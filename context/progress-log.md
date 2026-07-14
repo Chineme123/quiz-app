@@ -20,6 +20,15 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [feat] Landing page — prerender, SEO, and the gateway serving fix (spec 0003, AC-11 + AC-14, WIP on `feat/landing-page`)
+- **Date:** 2026-07-13
+- **Area:** apps/frontend / gateway
+- **What:** Prerendered the `/` route to static HTML at build time and taught the gateway to serve it only at exact `/`.
+  - **Frontend:** split the route table into `routes.tsx` (no `createBrowserRouter`, safe to import in Node) and a shared `AppRoot.tsx` (the one app tree, used by both the client and the prerender). `prerender.tsx` renders that tree with a memory router pinned to `/` via `renderToString` (react-dom/server, no new package); `features/landing/seo.ts` builds the head (title, meta description, Open Graph, Twitter, canonical, product JSON-LD); `scripts/prerender.mjs` injects both into the built `index.html` and writes a separate `index.prerender.html`. `main.tsx` now hydrates when `#root` has prerendered markup and mounts fresh otherwise. Build wires it in: `vite build` then `npm run prerender` (`vite build --ssr` then the script).
+  - **Gateway:** `src/Gateway/Program.cs` serves `index.prerender.html` only at exact `/` (an explicit endpoint that outranks the SPA fallback), keeps the neutral `index.html` as the catch all, and dropped `UseDefaultFiles` so `/` is not rewritten to the neutral doc.
+  - Satisfies **AC-11** and **AC-14**.
+- **Notes:** Verified against a real gateway run over the built output: `GET /` returns the landing markup plus the SEO tags, `GET /register` and `GET /profile` return the neutral bootstrap with zero landing content, assets still serve. The prerendered page hydrates with no console errors and is interactive. Fixed a UX regression found during that check: the hero toggle used `AnimatePresence mode="wait"`, which serialized exit then enter and felt stuck for over a second; switched to a keyed fade (the block remounts and fades in), now snappy. Also simplified so a reduced motion or pre hydration render has no initial state (never hidden). Recorded the prerender approach in `library-docs.md`. Open follow ups: add the real Open Graph share image (the tag points at `/og-image.png`) and confirm the canonical base URL (currently `SITE_URL` env with a Railway default).
+
 ### [feat] Landing page — motion layer (spec 0003, AC-10, WIP on `feat/landing-page`)
 - **Date:** 2026-07-13
 - **Area:** apps/frontend

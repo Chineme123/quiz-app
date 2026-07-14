@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import type { Transition } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Link } from 'react-router';
 import { HERO } from '../content';
 import type { Audience } from '../content';
@@ -43,8 +42,10 @@ export function Hero() {
   }
 
   const content = HERO[audience];
-  // A quick crossfade when motion is on, an instant swap when it is off.
-  const fade: Transition = motionOn ? { duration: 0.28, ease: 'easeOut' } : { duration: 0 };
+  // Each audience block is keyed, so switching remounts it and it fades in. When
+  // motion is off (reduced motion, or the prerender and its hydration) there is no
+  // initial state and the swap is instant, so the content is never hidden.
+  const fadeDuration = motionOn ? 0.3 : 0;
 
   return (
     <section className="qz-hero" aria-labelledby="hero-title">
@@ -79,50 +80,44 @@ export function Hero() {
             tabIndex={0}
             className="qz-hero__content"
           >
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={audience}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={fade}
-              >
-                <span className="qz-eyebrow qz-hero__eyebrow">{content.eyebrow}</span>
-                <h1 id="hero-title" className="qz-hero__title">
-                  {content.headlineLead}
-                  <Highlight>{content.headlineMark}</Highlight>
-                  {content.headlineTail}
-                </h1>
-                <p className="qz-hero__sub">{content.subcopy}</p>
-                <div className="qz-hero__ctas">
-                  <Link to={content.primaryCta.to} className="qz-btn qz-btn--accent qz-btn--lg">
-                    {content.primaryCta.label}
-                  </Link>
-                  <a href={content.secondaryCta.to} className="qz-btn qz-btn--ghost qz-btn--lg">
-                    {content.secondaryCta.label}
-                  </a>
-                </div>
-              </motion.div>
-            </AnimatePresence>
+            <motion.div
+              key={audience}
+              initial={motionOn ? { opacity: 0, y: 8 } : false}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: fadeDuration, ease: 'easeOut' }}
+            >
+              <span className="qz-eyebrow qz-hero__eyebrow">{content.eyebrow}</span>
+              <h1 id="hero-title" className="qz-hero__title">
+                {content.headlineLead}
+                <Highlight>{content.headlineMark}</Highlight>
+                {content.headlineTail}
+              </h1>
+              <p className="qz-hero__sub">{content.subcopy}</p>
+              <div className="qz-hero__ctas">
+                <Link to={content.primaryCta.to} className="qz-btn qz-btn--accent qz-btn--lg">
+                  {content.primaryCta.label}
+                </Link>
+                <a href={content.secondaryCta.to} className="qz-btn qz-btn--ghost qz-btn--lg">
+                  {content.secondaryCta.label}
+                </a>
+              </div>
+            </motion.div>
           </div>
 
           <div className="qz-hero__visual">
             <div className="qz-hero__glow" aria-hidden="true" />
             <div className="qz-persona-frame">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.img
-                  key={audience}
-                  className="qz-persona"
-                  src={IMAGES[audience]}
-                  alt={content.imageAlt}
-                  width={800}
-                  height={1000}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={fade}
-                />
-              </AnimatePresence>
+              <motion.img
+                key={audience}
+                className="qz-persona"
+                src={IMAGES[audience]}
+                alt={content.imageAlt}
+                width={800}
+                height={1000}
+                initial={motionOn ? { opacity: 0 } : false}
+                animate={{ opacity: 1 }}
+                transition={{ duration: fadeDuration }}
+              />
             </div>
             <AmbientFloat className="qz-deco" style={{ top: '0%', left: '-4%', zIndex: 2 }} duration={7} range={12}>
               <Bubble tone="coral" size={66} />
