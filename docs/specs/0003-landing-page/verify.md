@@ -23,17 +23,17 @@ How to prove each acceptance criterion once the page is built. Run the app local
 - **AC-15**: A visible line of microcopy discloses that the persona photographs are illustrative and generated (for example near the images or in the footer). A visitor cannot mistake them for real named users.
 
 ## Motion
-- **AC-10**: With motion allowed, the ambient drift, scroll reveal, toggle crossfade, and highlighter draw on all play. Set the OS or dev tools to `prefers-reduced-motion: reduce` and reload. None of that motion runs, and every section is fully visible and usable.
+- **AC-10**: With motion allowed, the ambient drift, scroll reveal, toggle crossfade, and highlighter draw on all play. Set the OS or dev tools to `prefers-reduced-motion: reduce` and reload. None of that motion runs, and every section is fully visible and usable. The reduced motion path (content fully visible, no hidden or shifted start state) is also asserted in `src/features/landing/motion/motion.test.tsx`.
 
 ## SEO, prerender, and serving
-- **AC-11**: Build the frontend (`npm run build`). The emitted HTML for `/` contains the hero copy and section text with JavaScript disabled (open the built file, or curl the prerendered route). Confirm the `<title>`, meta description, Open Graph and Twitter tags, canonical link, and product JSON-LD are present in that HTML.
-- **AC-14**: In the build output, the prerendered landing markup lives at a target the gateway serves only for exact `/`, and the SPA fallback (`index.html`) is a neutral bootstrap, not the landing page. Curl the deployed `/register` (or open the built fallback) with JavaScript off: it returns the neutral bootstrap, not the landing HTML, title, or meta. Curl `/`: it returns the landing markup. No client route other than `/` shows landing content to a no JavaScript client.
+- **AC-11**: Build the frontend (`npm run build`). The prerendered file is `dist/index.prerender.html`; it contains the hero copy and section text with no JavaScript (open the file, or curl the served route). Confirm the `<title>`, meta description, Open Graph and Twitter tags, canonical link, and product JSON-LD are present in it. The prerender output is also asserted in `src/prerender.test.tsx` and the head builder in `src/features/landing/seo.test.ts`.
+- **AC-14**: The build emits two documents: `dist/index.prerender.html` (the landing, served only at exact `/`) and `dist/index.html` (the neutral bootstrap, the SPA catch all). The gateway (`src/Gateway/Program.cs`) serves the prerender through an explicit `MapGet("/")` endpoint and keeps `index.html` as `MapFallbackToFile`. Run the gateway over the built `wwwroot` and curl: `GET /` returns the landing markup plus the SEO tags; `GET /register` and `GET /profile` return the neutral bootstrap (generic title, no landing markup or Open Graph meta). No client route other than `/` shows landing content to a no JavaScript client. `src/prerender.test.tsx` asserts the neutral bootstrap stays landing free.
 
 ## Responsive and accessibility
 - **AC-12**: At a 360px width, the hero toggle and every section reflow cleanly, with no horizontal scroll. Tap targets are at least 44px. Tab through the whole page. Focus is visible on every control. Run axe (the project already uses vitest-axe). No violations.
 
 ## Performance
-- **AC-13**: Inspect the build output. The landing route and any motion library are in a separate chunk, not in the authenticated app's main entry chunk. Loading the app after sign in does not download the marketing only assets.
+- **AC-13**: Inspect the build output. The landing route and framer-motion are in their own chunk (`dist/assets/LandingPage-*.js`, plus `LandingPage-*.css`), not in the authenticated app's main entry chunk (`dist/assets/index-*.js`). Load a non `/` route (for example `/register`) and confirm, via the Network panel or `performance.getEntriesByType('resource')`, that only the main entry chunk loads: no `LandingPage` chunk, no framer-motion, no persona images.
 
 ## Regression
-- Build green (`npm run build`, `npm run lint`, `tsc --noEmit`), and the new component tests pass (`npm run test`). The backend is untouched.
+- Build green (`npm run build`, which also runs the prerender, `npm run lint`, `tsc --noEmit`), and the tests pass (`npm run test`, 57 including 27 for the landing). The only backend touch is the gateway serving endpoint (`src/Gateway/Program.cs`); the services are untouched, and `dotnet build` plus `dotnet test` stay green.

@@ -38,7 +38,7 @@ Quiztin is deployed and works, but it has no public front door: a visitor lands 
 
 Build one public marketing page at the app root, entirely inside the locked Quiztin design system (dialed up a little, not reskinned), served by the same SPA and gateway as the rest of the app, and prerendered to static HTML for search and social.
 
-The prerender uses a small postbuild script calling `react-dom/server` `renderToStaticMarkup` for the single `/` route. react-dom is already a dependency, so this adds no new prerender package; a dedicated tool (`vite-react-ssg`) is only a fallback if the script cannot meet the criteria, and either path is prototyped against the real entry first (see Feature design). Motion uses framer-motion, which the developer reaffirmed after the cross check surfaced a CSS only alternative; it brings first class reduced motion support (`useReducedMotion`).
+The prerender uses a small postbuild script calling `react-dom/server` for the single `/` route. react-dom is already a dependency, so this adds no new prerender package; the dedicated tool `vite-react-ssg` was not needed. As built, the script uses `renderToString` rather than `renderToStaticMarkup`, so the prerendered `/` hydrates its markup in place instead of repainting from empty (see Build status). Motion uses framer-motion, which the developer reaffirmed after the cross check surfaced a CSS only alternative; it brings first class reduced motion support (`useReducedMotion`).
 
 **Implementation skills**: `quiztin-design` (the Quiztin branded UI and asset skill, `.claude/skills/quiztin-design/`) governs the look, colour, type, and token use for every part of this page.
 
@@ -76,7 +76,7 @@ No new endpoints. The landing page issues no API calls of its own. Its calls to 
 A public, unauthenticated, read only marketing surface. It exposes no user data and adds no new authorization. It reads the existing session state only to swap the nav label, issuing no new tokens. Signed in visitors are allowed to view it (the chosen routing). The prerendered HTML is fully public content and must contain no secret or private data.
 
 **Configuration required**:
-No new runtime environment variables. The build gains framer-motion as a runtime dependency. The prerender uses `react-dom/server` `renderToStaticMarkup`, already present through react-dom, so it adds no new prerender package. A canonical base URL and an Open Graph image are build config, not secrets.
+No new runtime environment variables. The build gains framer-motion as a runtime dependency. The prerender uses `react-dom/server` `renderToString`, already present through react-dom, so it adds no new prerender package. A canonical base URL (the `SITE_URL` build env, defaulting to the Railway origin) and an Open Graph image are build config, not secrets.
 
 **Critical test scenarios**:
 - Happy path: a visitor loads `/`, toggles to "For teachers", clicks "Get started", and reaches `/register` with the instructor role hinted. Verifies AC-1, AC-2, AC-4.
@@ -98,10 +98,25 @@ No build approach is recorded in the context system for this feature, so this pl
 5. Human and illustration assets: add the persona photographs as static assets and build the blob cutout plus duotone treatment, with the visible microcopy disclosing they are illustrative; add unDraw illustrations recoloured to the palette into the process zones; keep the two people styles in separate blocks. Satisfies AC-8, AC-15.
 6. Product vignettes: compose on brand interface vignettes from the design tokens and primitives to stand in for the quiz taking, results, and AI feedback screens (not built yet); use real screenshots only for screens that exist. Satisfies AC-9.
 7. Motion: with framer-motion, add ambient bubble drift, scroll reveal, toggle crossfade, and the highlighter draw on, every one gated behind a reduced motion check (framer-motion `useReducedMotion`). Satisfies AC-10.
-8. SEO, prerender, and serving: prerender the `/` route to static HTML with a small postbuild script using `react-dom/server` `renderToStaticMarkup` (no new dependency; `vite-react-ssg` only as a fallback, prototyped against the real `createBrowserRouter` and `createRoot` entry first); emit it to a target the gateway serves for an exact `/` only while the neutral bootstrap `index.html` stays the catch all fallback; hydrate rather than repaint; and ship the title, meta description, Open Graph and Twitter tags, canonical URL, and product JSON-LD. Satisfies AC-11, AC-14.
+8. SEO, prerender, and serving: prerender the `/` route to static HTML with a small postbuild script using `react-dom/server` (no new dependency; `vite-react-ssg` not needed); emit it to a target the gateway serves for an exact `/` only while the neutral bootstrap `index.html` stays the catch all fallback; hydrate rather than repaint; and ship the title, meta description, Open Graph and Twitter tags, canonical URL, and product JSON-LD. Satisfies AC-11, AC-14.
 9. Responsive and accessibility pass: reflow from 360px, 44px targets, visible focus, and a clean axe run. Satisfies AC-12.
 10. Performance: code split the landing route and its marketing only dependencies so the authenticated app's first load stays lean. Satisfies AC-13.
 11. Tests: cover the toggle (state and content announcement), the auth adaptive nav, and call to action routing; a reduced motion test; an axe accessibility test; a serving test (a non `/` route does not get landing markup); and a prerender assertion on the built HTML. Satisfies AC-2, AC-5, AC-10, AC-11, AC-14, AC-12.
+
+## Build status
+
+Built on `feat/landing-page`. All 11 build tasks are done and all 15 acceptance criteria are implemented and checked (in the browser and by tests). Green on `npm run test` (57 tests, 27 for the landing), `npm run lint`, `tsc --noEmit`, and `npm run build`. Status is In Progress; it advances to Accepted after an independent `/check verify` pass. Per phase detail is in `context/progress-log.md`.
+
+**Key files as built**:
+- Motion kit: `frontend/src/features/landing/motion/useMotionReady.ts` (the reduced motion plus mount gate) and `motion.tsx` (`Reveal`, `AmbientFloat`); the highlighter draw on lives in `decoration/Decoration.tsx`.
+- Prerender: `frontend/src/routes.tsx` (the route table minus the landing, so Node can import it), `AppRoot.tsx` (the one app tree shared by the client and the prerender), `prerender.tsx` (renders `/` with a memory router), `features/landing/seo.ts` (the head builder), and `scripts/prerender.mjs` (the postbuild injector). `main.tsx` hydrates the prerendered `/` and mounts fresh elsewhere.
+- Serving: `src/Gateway/Program.cs` serves the prerender at exact `/` through an explicit endpoint and keeps the neutral `index.html` as the catch all.
+
+**Deviations from the plan** (all deliberate, all verified):
+- The prerender uses `renderToString`, not `renderToStaticMarkup`, so the prerendered `/` hydrates in place with no flash. The tree the prerender renders matches the tree the client hydrates (same providers, only the router differs: memory versus browser), which keeps `useId` and hydration aligned.
+- The gateway serves the prerender through an explicit `MapGet("/")` endpoint that outranks the SPA fallback, and `UseDefaultFiles` was removed so `/` is not rewritten to the neutral document. A path rewrite was tried first but the auto inserted routing selected the fallback endpoint before the rewrite could run.
+- Code splitting (AC-13) is a dynamic import of the landing in `main.tsx`: on the prerendered `/` it loads the landing chunk then hydrates with an eager element (so the tree still matches the prerender); on any other route the landing is a lazy route, so its chunk never loads there. Because the landing CSS is then its own chunk, the prerender script reads the Vite build manifest and links that CSS (and modulepreloads the JS) in the prerendered document, so `/` still paints fully styled. `build.manifest` is enabled in `vite.config.ts` for that lookup.
+- The hero audience swap is a keyed fade rather than `AnimatePresence` with `mode="wait"`, which serialized exit then enter and felt stuck for over a second.
 
 ## Consequences
 
@@ -118,7 +133,7 @@ No build approach is recorded in the context system for this feature, so this pl
 - The interface vignettes are not real screenshots, so they carry drift risk and must be swapped for real captures when the core loop screens ship.
 - Signed in visitors see the marketing page at `/` (a small friction the developer accepted, in exchange for a simpler routing rule).
 - More imagery means more page weight, offset by code splitting and lazy loading, not eliminated.
-- The context says react-router v7 but `frontend/package.json` pins `^8.2.0`; the prerender entry wiring depends on the real version, so this drift must be reconciled first.
+- The context said react-router v7 but `frontend/package.json` pins `^8.2.0`; the prerender entry wiring depended on the real version. Reconciled (foundation §7 #25 and `library-docs.md` now say v8), and the prerender is wired and verified against 8.2.x.
 
 **Neutral**:
 - Introduces a public layout separate from the authenticated app shell.
@@ -128,11 +143,11 @@ No build approach is recorded in the context system for this feature, so this pl
 
 ## Follow-up
 
-- [ ] Add framer-motion to `library-docs.md` approved dependencies with a why and how used (the list gates additions, foundation §7 #21). The prerender adds no new package (it reuses `react-dom/server` `renderToStaticMarkup`); record that approach in `library-docs.md`, and only add `vite-react-ssg` if the script path is abandoned.
-- [ ] Reconcile the React Router version drift: `frontend/package.json` pins react-router `^8.2.0`, but foundation §7 #25 and `library-docs.md` say v7. Update the context to match the installed major (or pin back) before the prerender entry is wired, since the entry contract differs by version.
-- [ ] Update `ui-rules.md` §5 to name the marketing landing hero as an allowed blueberry gradient surface alongside the teacher dashboard (a reconciliation AC-6 requires; do it before build, add a `progress-log.md` note).
+- [x] Add framer-motion to `library-docs.md` approved dependencies with a why and how used (the list gates additions, foundation §7 #21). Done, and the prerender approach (no new package, `react-dom/server` `renderToString`) is recorded there too; `vite-react-ssg` was not needed.
+- [x] Reconcile the React Router version drift: `frontend/package.json` pins react-router `^8.2.0`, but foundation §7 #25 and `library-docs.md` said v7. Done, the context now says v8 (8.2.x), reconciled after the prerender entry was wired and verified.
+- [x] Update `ui-rules.md` §5 to name the marketing landing hero as an allowed blueberry gradient surface alongside the teacher dashboard. Done during the content build.
 - [ ] Swap the interface vignettes for real screenshots once the quiz taking, results, and AI feedback screens are built.
-- [ ] Choose and add the Open Graph share image and a canonical base URL as build config.
+- [ ] Add the real Open Graph share image (the tag points at `/og-image.png`, which does not exist yet) and confirm the canonical base URL (the build reads `SITE_URL`, defaulting to the Railway origin; set it to the final public origin).
 - [ ] Consider self hosting the Fredoka and Nunito woff2 for the public page (the export flags CDN fonts; a public page benefits from self hosted fonts for speed and privacy).
 - [ ] If the personas must recur with identical faces across the tutoring and office scenes, consider training reusable persona characters, since plain generation does not guarantee an exact match.
 
