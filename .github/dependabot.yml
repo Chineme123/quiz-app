@@ -1,4 +1,9 @@
 version: 2
+
+# Grouping matters here: without it Dependabot opens one PR per package, which is how
+# 13 of them piled up. Patch and minor updates are now batched into a single PR per
+# ecosystem and auto-merge themselves (.github/workflows/dependabot-auto-merge.yml).
+# A major bump still gets its own PR and waits for a human.
 updates:
   # Backend NuGet packages (the solution at the repo root).
   - package-ecosystem: nuget
@@ -8,6 +13,10 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: chore
+    groups:
+      nuget-safe:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   # Frontend npm packages.
   - package-ecosystem: npm
@@ -17,6 +26,10 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: chore
+    groups:
+      npm-safe:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   # The GitHub Actions the workflows pin.
   - package-ecosystem: github-actions
@@ -25,3 +38,7 @@ updates:
       interval: weekly
     commit-message:
       prefix: ci
+    groups:
+      actions-safe:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
