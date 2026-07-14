@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [test] Landing page — test suite (spec 0003, AC-2/AC-5/AC-10/AC-11/AC-12/AC-14/AC-15)
+- **Date:** 2026-07-13
+- **Area:** apps/frontend
+- **What:** Added 27 tests across the landing feature (Vitest, Testing Library, vitest-axe), taking the frontend suite to 57. Coverage: the hero toggle (default audience, content swap, keyboard arrows, the `aria-live` content change announcement, tab and tabpanel roles, no auto rotate, and the call to action role hints, AC-2/AC-4); the auth adaptive nav (signed out vs signed in, AC-5); the reduced motion path (`Reveal` and `AmbientFloat` render fully visible with no hidden or shifted start state, AC-10); the SEO builder (title, description, Open Graph, Twitter, canonical, valid product JSON-LD with escaping, AC-11); the prerender output (hero copy plus every section plus the head tags) and the neutral bootstrap staying landing free (AC-11/AC-14); and the whole page (section order AC-3, the free line, the persona disclosure AC-15, and an axe pass AC-12). Added jsdom stubs for `matchMedia` and `IntersectionObserver` to `src/test/setup.ts` and a `setReducedMotion` helper (`src/test/matchMedia.ts`).
+- **Notes:** The landing tests run on the reduced motion path, which is deterministic and fully visible (jsdom has no IntersectionObserver driven reveal or rAF), so they assert the AC-10 guarantee directly; the animated path was verified in the browser. axe cannot check colour contrast in jsdom (no canvas), so contrast (AC-7) stays a browser check, done. All green: `npm run test` (57), `npm run lint`, `tsc --noEmit`, `npm run build`.
+
 ### [feat] Landing page — code split the landing route (spec 0003, AC-13, WIP on `feat/landing-page`)
 - **Date:** 2026-07-13
 - **Area:** apps/frontend
