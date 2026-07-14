@@ -20,6 +20,15 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [chore] Dependency-PR cleanup — cleared the open Dependabot backlog
+- **Date:** 2026-07-14
+- **Area:** infra / context
+- **What:** Cleared all five open PRs.
+  - **Merged** the three green ones (via auto-merge; `strict` protection serialises them one at a time): `#58` the grouped `nuget-safe` batch (13 minor/patch bumps), plus two **test-only** majors — `#59` Microsoft.NET.Test.Sdk 17→18 and `#61` xunit.runner.visualstudio 2→3.
+  - **Closed `#56`** (a hand-rolled batch of safe bumps + Actions updates) as superseded — Dependabot's grouped nuget PR and the `github-actions` group now cover that ground automatically.
+  - **Closed `#60`** (Swashbuckle.AspNetCore 6→10) without merging: it breaks the build — Swashbuckle 10 pulls Microsoft.OpenApi v2, which drops the `Microsoft.OpenApi.Models` namespace both API services use for JWT Swagger setup (CS0234). Added an `ignore` for Swashbuckle **major** bumps in `.github/dependabot.yml` so it isn't re-opened.
+- **Notes:** `main` is protected with `required_status_checks.strict: true` + `enforce_admins: true` (0 required reviews), so each merge re-bases the rest — the green PRs flush sequentially, not as a batch. **Follow-up task:** the Swashbuckle 6→10 / Microsoft.OpenApi v2 migration — update the `AddSwaggerGen` / `AddSecurityDefinition` wiring in `QuizService.API` and `UserService.API` `Program.cs` (`OpenApiInfo`/`OpenApiSecurityScheme`/`OpenApiReference` moved namespaces and changed shape), then it can take the major.
+
 ### [feat] Landing page — scroll motion and an animated FAQ accordion (spec 0003, AC-10)
 - **Date:** 2026-07-14
 - **Area:** apps/frontend
