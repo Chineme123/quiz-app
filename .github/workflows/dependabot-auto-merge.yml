@@ -1,0 +1,46 @@
+name: Dependabot auto-merge
+
+# "Allow auto-merge" is enabled on the repo and main requires status checks, but
+# nothing was ever turning auto-merge ON for a given PR, so Dependabot PRs just piled
+# up. This does that, for the safe updates only.
+#
+# Patch and minor merge themselves once every required check on main passes
+# (build-and-test, frontend, commitlint, codeql x2). A MAJOR bump is a deliberate
+# decision (a compiler, a linter, a runtime), so it stays open for a human to look at.
+
+on: pull_request_target
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      # pull_request_target runs against the base branch, and we never check out the
+      # PR's code, so an untrusted dependency update cannot run anything here.
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable auto-merge for patch and minor updates
+        if: |
+          steps.meta.outputs.update-type == 'version-update:semver-patch' ||
+          steps.meta.outputs.update-type == 'version-update:semver-minor'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Leave a major bump for a human
+        if: steps.meta.outputs.update-type == 'version-update:semver-major'
+        run: |
+          gh pr comment "$PR_URL" --body \
+            "Major version bump, so auto-merge is deliberately **not** enabled. Review and merge by hand."
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
