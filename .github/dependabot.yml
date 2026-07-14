@@ -17,6 +17,13 @@ updates:
       nuget-safe:
         patterns: ["*"]
         update-types: ["minor", "patch"]
+    ignore:
+      # Swashbuckle 7+ moves onto Microsoft.OpenApi v2, which drops the
+      # Microsoft.OpenApi.Models namespace the API services use for the JWT
+      # Swagger setup (build break, CS0234 — see closed #60). Defer the major
+      # migration to its own task; keep taking Swashbuckle minor/patch.
+      - dependency-name: "Swashbuckle.AspNetCore"
+        update-types: ["version-update:semver-major"]
 
   # Frontend npm packages.
   - package-ecosystem: npm
