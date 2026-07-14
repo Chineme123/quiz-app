@@ -1,7 +1,7 @@
 # 0003. Quiztin marketing landing page
 
 **Date**: 2026-07-13
-**Status**: Proposed
+**Status**: In Progress
 
 ## Summary
 

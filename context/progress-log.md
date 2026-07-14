@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [docs] Reconcile react-router version drift; advance spec 0003 status
+- **Date:** 2026-07-13
+- **Area:** context / docs
+- **What:** Reconciled the React Router version the context names with what is installed and now used. `package.json` pins `react-router ^8.2.0` and the whole app (including the new spec 0003 prerender) is wired and verified against 8.2.x, so updated **`foundation.md` §7 #25** (v7 to v8, noting the memory router used for the prerender) and **`library-docs.md`** (the React Router entry heading, the how used and gotcha lines, and the approved list row). Confirmed **`ui-rules.md` §5** already names the marketing landing hero as an allowed blueberry gradient surface (added during the content build). Advanced **spec 0003** status from Proposed to **In Progress**.
+- **Notes:** Closes the react-router follow up the spec cross check raised. The spec advances to Accepted after an independent `/check verify` pass. The whole landing feature (spec 0003) is now built: content, personas, motion (AC-10), prerender plus SEO (AC-11), the gateway serving split (AC-14), code splitting (AC-13), and a 27 test suite, all green on `npm run test`, `npm run lint`, `tsc --noEmit`, and `npm run build`.
+
 ### [test] Landing page — test suite (spec 0003, AC-2/AC-5/AC-10/AC-11/AC-12/AC-14/AC-15)
 - **Date:** 2026-07-13
 - **Area:** apps/frontend

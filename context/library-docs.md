@@ -59,9 +59,9 @@
 - **How used:** `@theme inline { --color-primary: var(--primary); … }` over the semantic aliases only. Import `tailwindcss/theme.css` + `tailwindcss/utilities.css`; **never bare `tailwindcss`**, which would pull in Preflight and fight `design-system/tokens/base.css`.
 - **Gotchas:** ⚠️ Preflight is also what sets `border-style: solid` globally. Without it every Tailwind `border` utility renders **invisible**. Restore it with a three-line `@layer base` rule. Declare `@layer theme, base, components, utilities;` first, or the design system reset outranks the utilities.
 
-### React Router v7 — ✅ (new)
-- **How used:** `createBrowserRouter` for routing only (nested routes, `errorElement`, lazy routes). **Loaders and actions stay unused** — TanStack Query owns server state (§7 #25).
-- **Gotchas:** do not adopt *framework mode*; its Vite plugin and server rendering are what #5 rejected with Next.js.
+### React Router v8 — ✅ (new)
+- **How used:** `createBrowserRouter` for routing only (nested routes, `errorElement`, lazy routes). **Loaders and actions stay unused** — TanStack Query owns server state (§7 #25). The landing prerender (spec 0003) uses `createMemoryRouter` for the same route table in Node.
+- **Gotchas:** the installed major is **8.2.x**; earlier docs said v7, a drift now reconciled (spec 0003) after the prerender was wired and verified against 8.2.x (`createBrowserRouter`, `createMemoryRouter`, `RouterProvider`, `renderToString`). Do not adopt *framework mode*; its Vite plugin and server rendering are what #5 rejected with Next.js.
 
 ### TanStack Query v5 — ✅ (new)
 - **How used:** all server state. Query keys centralized; never retry a 4xx.
@@ -105,7 +105,7 @@ Do not install anything outside this list without adding it here first (with a w
 | xUnit, Moq, coverlet | Testing | ✅ |
 | React 19, Vite 8, TypeScript | Frontend SPA | ✅ (spec 0001) |
 | tailwindcss 4 + @tailwindcss/vite | Styling, bound to design tokens | ✅ (spec 0001) |
-| react-router 7 | Routing (data router, no loaders) | ✅ (spec 0001) |
+| react-router 8 | Routing (data router, no loaders); memory router for the spec 0003 prerender | ✅ (spec 0001, 8.2.x) |
 | @tanstack/react-query 5 | Server state | ✅ (spec 0001) |
 | react-hook-form + @hookform/resolvers + zod 4 | Forms and boundary validation | ✅ (spec 0001) |
 | @phosphor-icons/react 2 | Icons | ✅ (spec 0001) |
