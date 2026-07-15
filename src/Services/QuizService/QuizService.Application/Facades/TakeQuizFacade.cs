@@ -65,18 +65,25 @@ namespace QuizService.Application.Facades
             return attempt.Id;
         }
 
-        public async Task<AttemptResultDto> SubmitQuizAsync(Guid attemptId, SubmitQuizDto submission)
+        public async Task<AttemptResultDto?> SubmitQuizAsync(Guid attemptId, Guid studentId, SubmitQuizDto submission)
         {
+            // Ownership scoping is a security boundary, not a nicety (code-standards §5,
+            // security.md §4/§7): load the attempt and reject it when it isn't the caller's.
+            // Return null so the controller answers 404 whether the attempt is missing OR
+            // someone else's — a non-owner never learns another student's attempt exists
+            // (mirrors GetResultAsync, spec 0005 AC-9). Identity is the caller's Guid from the
+            // token, never a client-supplied id. Checked before the idempotency guard below, so
+            // no path can act on — or reveal — an attempt the caller doesn't own.
+            var attempt = await _attemptRepository.GetByIdAsync(attemptId);
+            if (attempt == null || attempt.StudentId != studentId) return null;
+
             // 0. Idempotency — an EXACT CommandId replay already ran to completion. Return the
             // existing result rather than re-running the submit. (Guard unchanged; it now hands
             // back the same result a first call returns, so an exact retry is a clean success.)
             if (await _attemptRepository.HasCommandBeenProcessedAsync(submission.CommandId))
             {
-                return await LoadResultAsync(attemptId);
+                return await LoadResultAsync(attempt);
             }
-
-            var attempt = await _attemptRepository.GetByIdAsync(attemptId);
-            if (attempt == null) throw new Exception("Attempt not found");
 
             // Rehydrate state
             attempt.LoadState();
@@ -151,16 +158,14 @@ namespace QuizService.Application.Facades
         }
 
         /// <summary>
-        /// Loads an attempt with its quiz's questions and maps to the result DTO. The submit
-        /// idempotency paths use this to hand back the existing result without re-grading.
-        /// No ownership scoping here — submit already operates on the attempt by id, and the
-        /// caller-scoped read (with the 404-on-mismatch check) is <see cref="GetResultAsync"/>.
+        /// Maps an already-owner-checked attempt to the result DTO, loading its quiz's
+        /// questions for the per-question breakdown. The exact-CommandId idempotency replay
+        /// uses this to hand back the existing result without re-grading. Ownership was already
+        /// enforced by the caller (<see cref="SubmitQuizAsync"/>); the caller-scoped read path
+        /// is <see cref="GetResultAsync"/>.
         /// </summary>
-        private async Task<AttemptResultDto> LoadResultAsync(Guid attemptId)
+        private async Task<AttemptResultDto> LoadResultAsync(QuizAttempt attempt)
         {
-            var attempt = await _attemptRepository.GetByIdAsync(attemptId);
-            if (attempt == null) throw new InvalidOperationException("Attempt not found for a processed command.");
-
             var quiz = await _quizRepository.GetByIdAsync(attempt.QuizId);
             var questions = quiz?.Questions.ToList() ?? new List<Question>();
             return MapToResult(attempt, questions);
