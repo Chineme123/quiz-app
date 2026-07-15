@@ -20,6 +20,15 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [docs] Spec 0004 core loop (umbrella) + child 0005 AI feedback and student results
+- **Date:** 2026-07-14
+- **Area:** context / docs
+- **What:** Ran `/architect` on the core loop. Wrote `docs/specs/0004-core-loop/` as an umbrella (`index.md` + `rationale.md`) that slices the loop into five children and holds the three shared contracts (AI integration and data minimization, grading feeds results, tenancy scoping), plus the first child `0005-ai-feedback-and-results.md`, fully designed and ready to build.
+  - **0005 is the wedge as the thinnest end to end thread:** a seeded student takes a seeded quiz through the existing take API, the existing scoring grades it, and per question Claude feedback on the wrong answers is written in the background just after grading and shown on a student results screen (UC8 feedback + UC9 student read). AC-1 through AC-12.
+  - **Key calls:** provider is **Anthropic Claude** (the prompt said openAI, but foundation 7 #6 and 7 #17 lock Claude; confirmed, no override); UC9 served from **QuizService** for now (a tracked, temporary deviation from foundation 7 #8, ResultService takes the reads in a later child); async feedback via a **background queue + hosted service** so submit stays fast; the **Anthropic .NET SDK** as the client (the engineer's pick, against the few dependencies house style, 7 #21); model default `claude-haiku-4-5`; deterministic `StandardFeedbackStrategy` as the always finishes fallback.
+  - **Cross checked on Sonnet;** fixed four correctness gaps it found (background worker needs a per item DI scope and a crash boundary; the batched Claude call needs a correlation index with a whole attempt fallback on mismatch; a redelivered graded event must be a no op, not a throw; the migration must follow the model change, not precede it).
+- **Notes:** No `docs/scope/` in this repo by design, so this entry is the tracking record; the buildable tasks live in the spec's `## Build plan`. Reconciliations left as spec follow-ups for `/sync` or `/develop` time, not done here (architect does not edit foundation): foundation 10 and `build-graph.md` still call scoring fake, but it is already real (`IScoringStrategy.Score(attempt, questions)` + `PointsScoringStrategy`); record the Anthropic .NET SDK in `library-docs.md` with the 7 #21 exception; add a unique index on `ProcessedCommand.CommandId`; add a recovery path for feedback stuck `Pending`. Next: `/develop` the 0005 child.
+
 ### [chore] Swashbuckle 6→10 / Microsoft.OpenApi v2 migration — all five API services
 - **Date:** 2026-07-14
 - **Area:** backend
