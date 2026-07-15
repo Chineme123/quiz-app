@@ -20,6 +20,14 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [fix] AiFeedbackStrategy: pool the Anthropic HTTP client via IHttpClientFactory (spec 0005 review follow-up)
+- **Date:** 2026-07-15
+- **Area:** backend (QuizService) + context
+- **What:** Closed the deferred HttpClient-lifetime anti-pattern from the spec 0005 review (follow-up #2 in the entry below). `AiFeedbackStrategy` was constructing its own `new HttpClient` (hence a new `SocketsHttpHandler`/connection pool) + `AnthropicClient` in its constructor; being `AddScoped` and resolved in a fresh DI scope **per graded attempt** by `FeedbackGenerationService`, that meant a fresh HttpClient built and disposed for every AI-feedback attempt — new TCP+TLS handshake to api.anthropic.com each call, TIME_WAIT buildup under sustained load.
+  - **Fix:** register the client as a **typed client via `IHttpClientFactory`** — `AddHttpClient<AiFeedbackStrategy>((sp, c) => c.Timeout = …)` in `Program.cs`, with the per-call timeout (the AC-4 fallback trigger) set on the typed client's `HttpClient.Timeout` — behavior unchanged (the SDK's `GetClaudeMessageAsync` still takes no `CancellationToken`). Bridged `IFeedbackStrategy → AiFeedbackStrategy` with a scoped registration so the strategy's **other** collaborator (`StandardFeedbackStrategy`) stays resolved per-attempt inside each worker scope. `AiFeedbackStrategy` now takes an injected `HttpClient`, and drops `IDisposable` / the self-`new` / `Dispose` — the factory owns the (pooled, DNS-rotated, reused-across-attempts) handler lifetime. Length cap and every AC behavior untouched.
+  - **Context:** updated `library-docs.md` Anthropic.SDK gotcha to record the typed-client wiring (drift rule).
+- **Notes:** Off by default (`Feedback:AiEnabled=false`) + single-reader sequential worker → small blast radius today, but it was guaranteed per-call overhead on every AI call. Verified: build 0 errors / no new warnings; `dotnet test` **50/50 green** (Quiz 14, User 9, Auth 27). DI wiring proven with a throwaway probe mirroring the exact `Program.cs` registration under ASP.NET Core's Development validation (`ValidateOnBuild` + `ValidateScopes`): container builds with no captive-dependency error, `IFeedbackStrategy` resolves to `AiFeedbackStrategy`, one instance per scope / distinct across scopes, the configured timeout lands on the typed client, `IHttpClientFactory` present (pooled handler), strategy no longer `IDisposable`. Branch `fix/0005-httpclient-lifetime` off `feat/0005-ai-feedback`, merged back `--no-ff`. Still-open 0005 review follow-up: the submit retry-with-fresh-CommandId → 400 (latent until the take-quiz UI ships).
+
 ### [fix] Address the /check review of spec 0005: stop the polling leak, cover the pipeline with tests
 - **Date:** 2026-07-15
 - **Area:** apps/frontend + backend (QuizService)

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 using QuizService.Application.Interfaces;
 using QuizService.Application.Services;
@@ -83,7 +84,19 @@ var aiFeedbackEnabled = builder.Configuration.GetValue<bool>("Feedback:AiEnabled
 var anthropicKey = builder.Configuration.GetValue<string>("Anthropic:ApiKey");
 if (aiFeedbackEnabled && !string.IsNullOrWhiteSpace(anthropicKey))
 {
-    builder.Services.AddScoped<IFeedbackStrategy, AiFeedbackStrategy>();
+    // Pool the Anthropic HTTP client via IHttpClientFactory (code-standards §4: external
+    // calls behind an interface — the IFeedbackStrategy seam). A fresh HttpClient per graded
+    // attempt would open a new connection pool and TCP+TLS handshake to api.anthropic.com
+    // every call; the typed client reuses pooled, DNS-rotated connections instead. The
+    // per-call timeout lives here (not a CancellationToken) — see library-docs.md (Anthropic.SDK).
+    builder.Services.AddHttpClient<AiFeedbackStrategy>((sp, client) =>
+    {
+        var anthropicOptions = sp.GetRequiredService<IOptions<AnthropicOptions>>().Value;
+        client.Timeout = TimeSpan.FromSeconds(Math.Max(1, anthropicOptions.TimeoutSeconds));
+    });
+    // Bridge the interface to the typed client, keeping the strategy's other collaborators
+    // (StandardFeedbackStrategy) resolved per-attempt within each worker scope.
+    builder.Services.AddScoped<IFeedbackStrategy>(sp => sp.GetRequiredService<AiFeedbackStrategy>());
 }
 else
 {
