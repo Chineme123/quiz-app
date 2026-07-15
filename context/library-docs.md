@@ -41,8 +41,9 @@
 - **Gotchas:** the model id is a **config value**, not hardcoded (default to a current cost-effective Claude model for feedback; a stronger one for generation if quality demands). API key from secrets, only in the calling service. Validate model output before persisting (`security.md` §1). Always wire the fallback path first so the feature works before the model is connected.
 
 ### Swashbuckle.AspNetCore — ✅ (dev)
+- **Version:** **10.x** across all five services (bumped from 6.9.0). v10 pulls in **Microsoft.OpenApi v2** transitively.
 - **How used:** Swagger UI per service for manual testing in Development.
-- **Gotchas:** standardize the Bearer security scheme across services (QuizService registers it as `ApiKey`-type Bearer; keep one consistent definition).
+- **Gotchas:** Microsoft.OpenApi v2 changed the API surface — `using Microsoft.OpenApi;` (the old `Microsoft.OpenApi.Models` namespace was removed); `OpenApiSecurityScheme` lost its `.Reference` property, so the requirement references a scheme via `new OpenApiSecuritySchemeReference("Bearer", document)`; and Swashbuckle's `AddSecurityRequirement` now takes a **`Func<OpenApiDocument, OpenApiSecurityRequirement>`** delegate, not the object. `OpenApiSecurityRequirement`'s value type is `List<string>` (an array won't compile). The Bearer scheme still differs per service (QuizService `ApiKey`-type, UserService `Http`-type) — both render the Authorize button; standardize only if it matters.
 
 ### xUnit + Moq — ✅ (test)
 - **How used:** unit tests for the domain (state machine, scoring, gating). `QuizAttemptTests` exists.
@@ -100,7 +101,7 @@ Do not install anything outside this list without adding it here first (with a w
 | Microsoft.AspNetCore.Authentication.JwtBearer (10.x) | JWT validation | ✅ |
 | System.IdentityModel.Tokens.Jwt (8.x) | JWT issuing (AuthService) | ✅ |
 | Yarp.ReverseProxy (2.x) | API gateway | ✅ (new) |
-| Swashbuckle.AspNetCore (6–7.x) | Swagger UI (dev) | ✅ |
+| Swashbuckle.AspNetCore (10.x) | Swagger UI (dev) | ✅ |
 | Anthropic Claude client (typed HttpClient wrapper, or `Anthropic.SDK`) | AI generation + feedback | 🕗 mechanism |
 | xUnit, Moq, coverlet | Testing | ✅ |
 | React 19, Vite 8, TypeScript | Frontend SPA | ✅ (spec 0001) |
