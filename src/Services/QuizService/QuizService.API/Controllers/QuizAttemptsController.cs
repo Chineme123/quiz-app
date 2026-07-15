@@ -49,10 +49,18 @@ namespace QuizService.API.Controllers
         [HttpPost("{attemptId}/submit")]
         public async Task<IActionResult> SubmitQuiz(Guid attemptId, [FromBody] SubmitQuizDto dto)
         {
+            var studentId = GetCurrentUserId();
             try
             {
-                await _facade.SubmitQuizAsync(attemptId, dto);
-                return Ok(new { message = "Quiz submitted successfully." });
+                // Scoped to the caller: submitting an attempt that isn't the student's own (or
+                // one that doesn't exist) returns null -> 404, so it never reveals another
+                // student's attempt (code-standards §5, security.md §4/§7). Otherwise returns
+                // the graded result (score + per-question breakdown); a resubmit with a fresh
+                // CommandId is an idempotent no-op that returns the existing result rather than
+                // a 400 — see TakeQuizFacade.SubmitQuizAsync.
+                var result = await _facade.SubmitQuizAsync(attemptId, studentId, dto);
+                if (result is null) return NotFound();
+                return Ok(result);
             }
             catch (Exception ex)
             {

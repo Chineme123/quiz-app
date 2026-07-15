@@ -26,7 +26,7 @@ namespace QuizService.Infrastructure.Strategies
     /// the boundary: no identity, no ids (AC-5). Feedback is length capped and stored as
     /// plain text (AC-10).
     /// </summary>
-    public sealed class AiFeedbackStrategy : IFeedbackStrategy, IDisposable
+    public sealed class AiFeedbackStrategy : IFeedbackStrategy
     {
         private const int MaxFeedbackChars = 600;
         private const int MaxTokens = 1024;
@@ -34,10 +34,10 @@ namespace QuizService.Infrastructure.Strategies
         private readonly StandardFeedbackStrategy _fallback;
         private readonly ILogger<AiFeedbackStrategy> _logger;
         private readonly AnthropicOptions _options;
-        private readonly HttpClient _httpClient;
         private readonly AnthropicClient _client;
 
         public AiFeedbackStrategy(
+            HttpClient httpClient,
             IOptions<AnthropicOptions> options,
             StandardFeedbackStrategy fallback,
             ILogger<AiFeedbackStrategy> logger)
@@ -45,9 +45,13 @@ namespace QuizService.Infrastructure.Strategies
             _options = options.Value;
             _fallback = fallback;
             _logger = logger;
-            // The per call timeout is how "Claude times out" degrades to the fallback (AC-4).
-            _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(Math.Max(1, _options.TimeoutSeconds)) };
-            _client = new AnthropicClient(new APIAuthentication(_options.ApiKey), _httpClient);
+            // The HttpClient is a pooled, long-lived client from IHttpClientFactory (registered
+            // as a typed client in Program.cs), so its connections are reused across attempts
+            // rather than a fresh TCP+TLS handshake per call. We neither create nor dispose it —
+            // the factory owns the handler lifetime. The per-call timeout that degrades to the
+            // deterministic fallback (AC-4) is set there as this client's Timeout, because
+            // Anthropic.SDK 5.10.0's GetClaudeMessageAsync takes no CancellationToken.
+            _client = new AnthropicClient(new APIAuthentication(_options.ApiKey), httpClient);
         }
 
         public async Task GenerateAsync(QuizAttempt attempt, IReadOnlyList<Question> questions, CancellationToken cancellationToken = default)
@@ -127,8 +131,8 @@ namespace QuizService.Infrastructure.Strategies
                 System = new List<SystemMessage> { new SystemMessage(SystemPrompt) },
                 Messages = new List<Message> { new Message(RoleType.User, payload) }
             };
-            // The HttpClient timeout bounds the call; cancellation on shutdown is handled by
-            // the worker loop. (The SDK method takes no CancellationToken in this version.)
+            // The pooled client's timeout bounds the call; cancellation on shutdown is handled
+            // by the worker loop. (The SDK method takes no CancellationToken in this version.)
             var result = await _client.Messages.GetClaudeMessageAsync(parameters);
             return result.Content?.OfType<TextContent>().FirstOrDefault()?.Text ?? string.Empty;
         }
@@ -190,7 +194,5 @@ namespace QuizService.Infrastructure.Strategies
             public int Index { get; init; }
             public string Feedback { get; init; } = string.Empty;
         }
-
-        public void Dispose() => _httpClient.Dispose();
     }
 }

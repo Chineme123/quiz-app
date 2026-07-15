@@ -65,31 +65,59 @@ namespace QuizService.Application.Facades
             return attempt.Id;
         }
 
-        public async Task SubmitQuizAsync(Guid attemptId, SubmitQuizDto submission)
+        public async Task<AttemptResultDto?> SubmitQuizAsync(Guid attemptId, Guid studentId, SubmitQuizDto submission)
         {
-            // 0. Idempotency Check
+            // Ownership scoping is a security boundary, not a nicety (code-standards §5,
+            // security.md §4/§7): load the attempt and reject it when it isn't the caller's.
+            // Return null so the controller answers 404 whether the attempt is missing OR
+            // someone else's — a non-owner never learns another student's attempt exists
+            // (mirrors GetResultAsync, spec 0005 AC-9). Identity is the caller's Guid from the
+            // token, never a client-supplied id. Checked before the idempotency guard below, so
+            // no path can act on — or reveal — an attempt the caller doesn't own.
+            var attempt = await _attemptRepository.GetByIdAsync(attemptId);
+            if (attempt == null || attempt.StudentId != studentId) return null;
+
+            // 0. Idempotency — an EXACT CommandId replay already ran to completion. Return the
+            // existing result rather than re-running the submit. (Guard unchanged; it now hands
+            // back the same result a first call returns, so an exact retry is a clean success.)
             if (await _attemptRepository.HasCommandBeenProcessedAsync(submission.CommandId))
             {
-                return; // Already processed, idempotent success
+                return await LoadResultAsync(attempt);
             }
 
-            var attempt = await _attemptRepository.GetByIdAsync(attemptId);
-            if (attempt == null) throw new Exception("Attempt not found");
-            
             // Rehydrate state
             attempt.LoadState();
 
+            // Only an InProgress attempt is actually submitted by the command. Once it is
+            // Submitted/Graded/Reviewable the command is a deliberate no-op — the case here is
+            // a resubmit with a FRESH CommandId (an ordinary client retry after a network
+            // hiccup) that slips past the exact-match guard above. Capture the distinction now,
+            // before the command runs, so we can tell "just graded" from "already graded".
+            var wasInProgress = attempt.CurrentStateName == "InProgress";
+
             // Create command
             var command = new SubmitQuizCommand(attempt, submission);
-            
+
             // Execute command
             await _commandInvoker.ExecuteCommandAsync(command);
 
             // Post-submission logic (Grading, etc.) orchestrated here.
-            // Load the quiz's questions — they carry the correct answers scoring/feedback need.
+            // Load the quiz's questions — they carry the correct answers scoring/feedback need,
+            // and back the result mapping on both paths below.
             var quiz = await _quizRepository.GetByIdAsync(attempt.QuizId)
                 ?? throw new InvalidOperationException("Quiz not found for this attempt.");
             var questions = quiz.Questions.ToList();
+
+            if (!wasInProgress)
+            {
+                // No-op resubmit: the command did nothing because the attempt was already
+                // Submitted/Graded/Reviewable. Evaluating from a terminal (Graded/Reviewable)
+                // state throws InvalidOperationException — which the controller surfaces as a
+                // 400 — even though the command layer treats a resubmit as a safe no-op. So
+                // skip Evaluate and the graded-event re-dispatch, and return the existing
+                // graded result unchanged (the same DTO a poll of the attempt would return).
+                return MapToResult(attempt, questions);
+            }
 
             // 1. Evaluate. Submit grades and returns fast; it does NOT call the model.
             // The attempt ends Graded with the score set and feedback Pending; the
@@ -109,6 +137,8 @@ namespace QuizService.Application.Facades
              // 4. Dispatch events (After commit)
             var gradedEvent = new QuizAttemptGradedEvent(attempt.Id, attempt.StudentId, attempt.QuizId, attempt.TotalScore ?? 0);
             await _eventDispatcher.DispatchAsync(gradedEvent);
+
+            return MapToResult(attempt, questions);
         }
 
         /// <summary>
@@ -123,8 +153,32 @@ namespace QuizService.Application.Facades
             if (attempt == null || attempt.StudentId != studentId) return null;
 
             var quiz = await _quizRepository.GetByIdAsync(attempt.QuizId);
-            var questions = quiz?.Questions.ToDictionary(q => q.Id) ?? new Dictionary<Guid, Question>();
+            var questions = quiz?.Questions.ToList() ?? new List<Question>();
+            return MapToResult(attempt, questions);
+        }
 
+        /// <summary>
+        /// Maps an already-owner-checked attempt to the result DTO, loading its quiz's
+        /// questions for the per-question breakdown. The exact-CommandId idempotency replay
+        /// uses this to hand back the existing result without re-grading. Ownership was already
+        /// enforced by the caller (<see cref="SubmitQuizAsync"/>); the caller-scoped read path
+        /// is <see cref="GetResultAsync"/>.
+        /// </summary>
+        private async Task<AttemptResultDto> LoadResultAsync(QuizAttempt attempt)
+        {
+            var quiz = await _quizRepository.GetByIdAsync(attempt.QuizId);
+            var questions = quiz?.Questions.ToList() ?? new List<Question>();
+            return MapToResult(attempt, questions);
+        }
+
+        /// <summary>
+        /// The single attempt -> result DTO mapping, shared by submit and <see cref="GetResultAsync"/>
+        /// so the resubmit no-op path returns exactly what the happy path (and a later poll of the
+        /// attempt) returns. Manual, explicit mapping per code-standards §4.
+        /// </summary>
+        private static AttemptResultDto MapToResult(QuizAttempt attempt, IReadOnlyList<Question> questions)
+        {
+            var questionsById = questions.ToDictionary(q => q.Id);
             return new AttemptResultDto
             {
                 AttemptId = attempt.Id,
@@ -134,7 +188,7 @@ namespace QuizService.Application.Facades
                 Status = attempt.CurrentStateName,
                 Answers = attempt.Answers.Select(a =>
                 {
-                    questions.TryGetValue(a.QuestionId, out var question);
+                    questionsById.TryGetValue(a.QuestionId, out var question);
                     return new AttemptAnswerResultDto
                     {
                         QuestionId = a.QuestionId,
