@@ -51,8 +51,11 @@ namespace QuizService.API.Controllers
         {
             try
             {
-                await _facade.SubmitQuizAsync(attemptId, dto);
-                return Ok(new { message = "Quiz submitted successfully." });
+                // Returns the graded result (score + per-question breakdown). A resubmit with a
+                // fresh CommandId is an idempotent no-op that returns the existing result rather
+                // than a 400 — see TakeQuizFacade.SubmitQuizAsync.
+                var result = await _facade.SubmitQuizAsync(attemptId, dto);
+                return Ok(result);
             }
             catch (Exception ex)
             {
