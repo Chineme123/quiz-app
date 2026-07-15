@@ -13,6 +13,9 @@ export function useAttemptResult(attemptId: string) {
     queryKey: qk.attemptResult(attemptId),
     queryFn: () => getAttemptResult(attemptId),
     enabled: attemptId !== '',
-    refetchInterval: (query) => (query.state.data?.feedbackStatus === 'Ready' ? false : 2000),
+    // Poll ONLY while feedback is still generating. Any other state stops the timer:
+    // Ready (done), null (a 404 not-found), or an error, so a bad result never polls
+    // forever. The first load happens regardless; refetchInterval governs refetches.
+    refetchInterval: (query) => (query.state.data?.feedbackStatus === 'Pending' ? 2000 : false),
   });
 }
