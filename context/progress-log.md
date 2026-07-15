@@ -20,6 +20,16 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [chore] Swashbuckle 6→10 / Microsoft.OpenApi v2 migration — all five API services
+- **Date:** 2026-07-14
+- **Area:** backend
+- **What:** Completed the deferred Swashbuckle major (the follow-up flagged during the dependency-PR cleanup below).
+  - Bumped `Swashbuckle.AspNetCore` **6.9.0 → 10.2.3** in all five `*.API.csproj` (Quiz, User, Auth, Result, Notification) — not just the two the build error named, to avoid mixed major versions across the services.
+  - Migrated the JWT Swagger wiring in `QuizService.API` and `UserService.API` `Program.cs` to **Microsoft.OpenApi v2** (Auth/Result/Notification only call `AddSwaggerGen()`, so no code change): `using Microsoft.OpenApi.Models` → `using Microsoft.OpenApi`; the old `OpenApiSecurityScheme { Reference = new OpenApiReference {…} }` → `new OpenApiSecuritySchemeReference("Bearer", document)`; and `AddSecurityRequirement(…)` now takes a `Func<OpenApiDocument, OpenApiSecurityRequirement>` delegate (its value type is `List<string>`, not an array).
+  - Removed the Swashbuckle-major `ignore` from `.github/dependabot.yml` (its rationale — deferring this migration — no longer applies), and updated `library-docs.md` (the entry + approved-list row) with the v2 API notes.
+- **Result:** `dotnet build QuizApp.sln` → **0 errors**; `dotnet test` → **42/42 pass** (Quiz 6, User 9, Auth 27). Ran both migrated services and confirmed the generated OpenAPI doc still carries the `Bearer` scheme + the security requirement (`[{"Bearer": []}]`) and Swagger UI returns 200 — the Authorize button renders. QuizService was booted with migrate+seed against a throwaway Postgres.
+- **Notes:** The local .NET 10 SDK had vanished from `~/.dotnet`; reinstalled **10.0.302** (satisfies `global.json` 10.0.301 + latestMinor). Migration articles are unreliable here (version-confused between Swashbuckle 9 and 10); the authoritative sources were the Microsoft.OpenApi 2.0 type definitions and the compiler itself.
+
 ### [chore] Dependency-PR cleanup — cleared the open Dependabot backlog
 - **Date:** 2026-07-14
 - **Area:** infra / context
