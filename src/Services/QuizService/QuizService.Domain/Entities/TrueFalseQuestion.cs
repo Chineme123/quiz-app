@@ -19,5 +19,7 @@ namespace QuizService.Domain.Entities
         {
             return bool.TryParse(providedAnswer?.Trim(), out var value) && value == CorrectAnswer;
         }
+
+        public override string GetCorrectAnswerText() => CorrectAnswer ? "True" : "False";
     }
 }

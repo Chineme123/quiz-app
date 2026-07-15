@@ -83,6 +83,10 @@ namespace QuizService.Infrastructure.Persistence
                 entity.Ignore("_currentState");
                 entity.Ignore("_answers");
 
+                // Store the feedback status as text, matching the CurrentStateName style,
+                // so the column reads plainly in the DB (spec 0005).
+                entity.Property(a => a.FeedbackStatus).HasConversion<string>();
+
                 // Optimistic concurrency via Postgres' xmin system column.
                 entity.Property<uint>("xmin").HasColumnName("xmin").IsRowVersion();
             });
@@ -90,6 +94,14 @@ namespace QuizService.Infrastructure.Persistence
             modelBuilder.Entity<QuizAnswer>(entity =>
             {
                 entity.HasKey(e => e.Id);
+                // The Id is a client generated Guid (set in the constructor). Without this,
+                // EF treats the key as store generated, so a new answer discovered in a
+                // tracked attempt's collection at submit is assumed to be an existing row
+                // and UPDATEd (0 rows) instead of INSERTed. Marking it client generated
+                // makes EF add new answers correctly.
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                // Nullable until feedback is written, then "Ai" or "Deterministic" as text.
+                entity.Property(a => a.FeedbackSource).HasConversion<string>();
             });
 
             modelBuilder.Entity<Enrollment>(entity =>

@@ -1,7 +1,7 @@
 # 0004. The core loop (umbrella)
 
 **Date**: 2026-07-14
-**Status**: Proposed
+**Status**: In Progress
 
 ## Summary
 

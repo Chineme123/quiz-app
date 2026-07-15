@@ -12,6 +12,11 @@ using QuizService.Domain.Events;
 using QuizService.Infrastructure.Persistence;
 using QuizService.Infrastructure.Strategies;
 using QuizService.Infrastructure.Factories;
+using QuizService.Infrastructure.Feedback;
+using QuizService.Infrastructure.Configuration;
+using QuizService.Infrastructure.Observers;
+using QuizService.Domain.Strategies;
+using QuizService.API.BackgroundServices;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -62,6 +67,28 @@ builder.Services.AddScoped<IEventDispatcher, QuizService.Infrastructure.Events.E
 
 // Observers
 builder.Services.AddScoped<QuizService.Domain.Observers.IObserver<QuizService.Domain.Events.QuizAttemptGradedEvent>, QuizService.Infrastructure.Observers.DashboardProjectionUpdater>();
+
+// AI feedback pipeline (spec 0005). The graded event enqueues the attempt; a hosted
+// worker generates feedback off the submit path so submitting stays fast (AC-1).
+builder.Services.Configure<AnthropicOptions>(builder.Configuration.GetSection(AnthropicOptions.SectionName));
+builder.Services.Configure<FeedbackOptions>(builder.Configuration.GetSection(FeedbackOptions.SectionName));
+builder.Services.AddSingleton<IFeedbackQueue, FeedbackQueue>();
+builder.Services.AddScoped<QuizService.Domain.Observers.IObserver<QuizService.Domain.Events.QuizAttemptGradedEvent>, FeedbackGenerationEnqueuer>();
+builder.Services.AddHostedService<FeedbackGenerationService>();
+
+// Feedback strategy: AI when the flag is on AND a key is present, else deterministic.
+// The flag lets the whole loop build and run before the Claude key is provisioned (AC-4).
+builder.Services.AddScoped<StandardFeedbackStrategy>();
+var aiFeedbackEnabled = builder.Configuration.GetValue<bool>("Feedback:AiEnabled");
+var anthropicKey = builder.Configuration.GetValue<string>("Anthropic:ApiKey");
+if (aiFeedbackEnabled && !string.IsNullOrWhiteSpace(anthropicKey))
+{
+    builder.Services.AddScoped<IFeedbackStrategy, AiFeedbackStrategy>();
+}
+else
+{
+    builder.Services.AddScoped<IFeedbackStrategy>(sp => sp.GetRequiredService<StandardFeedbackStrategy>());
+}
 
 // Authentication — JWT settings come from configuration (env/user-secrets in
 // practice; the signing key is never hardcoded — see security.md §3).

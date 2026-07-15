@@ -19,14 +19,8 @@ namespace QuizService.Infrastructure.Factories
             };
         }
 
-        public IFeedbackStrategy GetFeedbackStrategy(string strategyName)
-        {
-             return strategyName switch
-            {
-                "Standard" => new StandardFeedbackStrategy(),
-                // Add others here
-                _ => new StandardFeedbackStrategy() // Default
-            };
-        }
+        // Feedback strategies are resolved from DI now, not built here: the AI strategy
+        // needs an injected Anthropic client and the deterministic fallback, which a
+        // parameterless `new` cannot supply (spec 0005).
     }
 }

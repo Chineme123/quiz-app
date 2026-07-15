@@ -27,5 +27,13 @@ namespace QuizService.Domain.Entities
         /// decides correctness. Scoring strategies compose these per-question verdicts.
         /// </summary>
         public abstract bool IsCorrect(string providedAnswer);
+
+        /// <summary>
+        /// The correct answer as plain text. Used to give the feedback model the reference
+        /// answer without exposing the internal encoding (an option index, a bool). The
+        /// question owns this too (Information Expert). No identity crosses here (spec 0005,
+        /// AC-5).
+        /// </summary>
+        public abstract string GetCorrectAnswerText();
     }
 }
