@@ -16,15 +16,15 @@ These were the must-fixes from `foundation.md` §8.
 - 🟡 **API gateway (YARP)** as the single frontend origin (no CORS — same-origin, §7 #27). Spec 0002; a production concern, so the Vite proxy is the dev single-origin today.
 
 ## The keystone unlock
-The **create→take→results→feedback loop**. It's unblocked in this order: **(1)** the Postgres migration → **(2)** the redesigned scoring contract (a strategy that can see correct answers) → **(3)** ResultService's graded-event projection. Once those three exist, the loop closes and everything else is elaboration.
+The **create→take→results→feedback loop**. It's unblocked in this order: **(1)** the Postgres migration *(built)* → **(2)** the redesigned scoring contract, a strategy that sees correct answers *(built)* → **(3)** ResultService's graded-event projection *(not built; spec 0005 serves the student read from QuizService for now, a tracked deviation)*. **Spec 0005 closed the wedge**: a seeded student takes a quiz, is graded, and sees per-question AI feedback (deterministic fallback) on a results screen. Remaining loop children: classroom create/join UI, AI quiz generation, take-quiz UI, and the ResultService read side.
 
 ## Dependencies (X needs Y)
 - **UC2 Create Classroom** — hard: identity/auth (teacher principal), Classroom model *(built)*. soft: gateway.
 - **UC3 Join Classroom** — hard: UC2, Enrollment model *(built)*, identity. → unlocks **FR7** enforcement.
 - **UC6 Create Quiz (manual)** — hard: Quiz+Question model *(built)*, UC2 (a quiz needs a classroom), identity. *(mostly built)*
 - **UC6 AI generation (real)** — hard: Claude client + **fallback**; soft: UC6 manual path *(built)*.
-- **UC8 Take Quiz** — hard: migration, Quiz/Question *(built)*, UC3 enrolment (FR7), the **scoring contract redesign**; soft: real auth (testable with a seeded identity).
-- **UC8 AI feedback** — hard: Claude client + fallback, **scoring redesign** (feedback needs question + correct answer + student answer per `security.md` §2).
+- **UC8 Take Quiz** — hard: migration, Quiz/Question *(built)*, UC3 enrolment (FR7), the **scoring contract redesign** *(built)*; soft: real auth (testable with a seeded identity). Take-quiz API + grading work end-to-end (spec 0005); the take-quiz **UI** is a later child.
+- **UC8 AI feedback** *(built, spec 0005)* — the AI feedback strategy (`Anthropic.SDK`) runs in a background hosted service off submit, with the deterministic fallback; sends only question + correct answer + student answer per `security.md` §2. The student results screen renders it.
 - **UC8 attempt rules** (`Abandoned` triggers 1–4, one-active-attempt) — hard: QuizAttempt state machine *(built)*, `Quiz.CanStart`/attempt-limit *(built)*.
 - **UC9 View My Results** — hard: **ResultService** + graded-event projection + attempts existing (UC8).
 - **UC10 Classroom Results** — hard: UC9 read-side, classroom ownership (UC2). soft: UC9 first.

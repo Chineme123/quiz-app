@@ -35,10 +35,10 @@
 - **How used:** `src/Gateway/` (net10.0) loads routes/clusters from `appsettings.json` (`AddReverseProxy().LoadFromConfig`), serves `wwwroot` with an `index.html` fallback, and answers `/health`. Production overrides the cluster addresses via env (`ReverseProxy__Clusters__<id>__Destinations__primary__Address` → Railway private domains). **No CORS anywhere** (§7 #27).
 - **Gotchas:** the gateway **forwards** credentials; each service stays JWT-authoritative (§7 #30), so no auth logic lives in the gateway. Deploy the gateway **last** — deploying it before the services are up leaves its process caching failed private-DNS lookups (502) until a redeploy.
 
-### Anthropic Claude client — 🕗 (mechanism to confirm)
+### Anthropic Claude client (`Anthropic.SDK`) — ✅ feedback built (spec 0005) · 🕗 generation
 - **Why:** foundation §7 #6 — question generation + per-question feedback, each with a deterministic fallback.
-- **Recommended:** a thin **typed `HttpClient` wrapper** around the Messages API, living in QuizService Infrastructure behind `IQuestionGenerationStrategy` / the feedback strategy interface — matches the "few deps, explicit" house style (§7 #21) and keeps full control over the request shape and the data-minimization rules (`security.md` §2). Alternative: a community `Anthropic.SDK` NuGet (less code, another dependency).
-- **Gotchas:** the model id is a **config value**, not hardcoded (default to a current cost-effective Claude model for feedback; a stronger one for generation if quality demands). API key from secrets, only in the calling service. Validate model output before persisting (`security.md` §1). Always wire the fallback path first so the feature works before the model is connected.
+- **How used:** spec 0005 chose the community **`Anthropic.SDK`** NuGet (5.10.0, net10.0) as the client — a deliberate exception to the few-deps house style (§7 #21), recorded here per the dependency gate. The AI feedback strategy (`AiFeedbackStrategy`, QuizService Infrastructure) lives behind `IFeedbackStrategy`, makes one batched Messages call per graded attempt for the wrong answers (a correlation index maps the reply back), and falls back to `StandardFeedbackStrategy` on any failure. It runs in a background hosted service off the submit path. **Question generation still uses the stub** (`StubLLMQuestionGenerationStrategy`); the real generation client is a later core-loop child.
+- **Gotchas:** the model id is a **config value** (`Anthropic:FeedbackModel`, default `claude-haiku-4-5`), never hardcoded. API key from secrets/env, **QuizService only** (`Anthropic:ApiKey`), never in the frontend, never logged (`security.md` §3/§6). `Anthropic.SDK` 5.10.0's `GetClaudeMessageAsync` takes no `CancellationToken`, so the per-call timeout is a custom `HttpClient.Timeout`. Validate model output before persisting (length-capped, plain text, never raw HTML — `security.md` §1). The `Feedback:AiEnabled` flag + key presence decide whether the AI or the deterministic strategy is registered, so the loop builds and runs before the key exists.
 
 ### Swashbuckle.AspNetCore — ✅ (dev)
 - **Version:** **10.x** across all five services (bumped from 6.9.0). v10 pulls in **Microsoft.OpenApi v2** transitively.
@@ -102,7 +102,7 @@ Do not install anything outside this list without adding it here first (with a w
 | System.IdentityModel.Tokens.Jwt (8.x) | JWT issuing (AuthService) | ✅ |
 | Yarp.ReverseProxy (2.x) | API gateway | ✅ (new) |
 | Swashbuckle.AspNetCore (10.x) | Swagger UI (dev) | ✅ |
-| Anthropic Claude client (typed HttpClient wrapper, or `Anthropic.SDK`) | AI generation + feedback | 🕗 mechanism |
+| `Anthropic.SDK` (5.x) | AI feedback (spec 0005); generation still stubbed | ✅ feedback built · 🕗 generation |
 | xUnit, Moq, coverlet | Testing | ✅ |
 | React 19, Vite 8, TypeScript | Frontend SPA | ✅ (spec 0001) |
 | tailwindcss 4 + @tailwindcss/vite | Styling, bound to design tokens | ✅ (spec 0001) |

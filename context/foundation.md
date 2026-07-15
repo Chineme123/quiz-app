@@ -151,7 +151,7 @@ The heart of the file. Numbered so other files cite `foundation.md §7 #N`. Rows
 ### Must-fix before/inside v1 (repairs the loop depends on — not new features; these are Layer 0)
 > ✅ **All Layer-0 must-fixes are complete** (framework pin, PostgreSQL migration, real scoring, identity/auth) — see `progress-log.md` (2026-07-10). The bullets below are kept as the historical record of what Layer-0 covered.
 - ✅ **Migrated to Postgres + regenerated the EF migration** — dropped the SQL Server migration, added Npgsql, generated a fresh `InitialCreate` against Postgres including *all* current entities (QuizAttempt/QuizAnswer/Enrollment/ProcessedCommand, previously missing). One action covered the provider switch and the stale-migration bug.
-- ⚠️ **Redesign the scoring contract** so a strategy can see the correct answers (current `IScoringStrategy.Score(QuizAttempt)` structurally can't grade).
+- ✅ **Scoring contract redesigned (done).** `IScoringStrategy.Score(attempt, questions)` sees the questions; the question grades its own answer (`Question.IsCorrect`, Information Expert), and `PointsScoringStrategy` composes the per-question verdicts (all-or-nothing). Verified end-to-end by spec 0005.
 - ⚠️ **Pin the framework** (`global.json`) and reconcile every `.csproj` to .NET 10 (§7 #13).
 - ⚠️ **Fix identity + auth** to §7 #14/#15 (remove hardcoded IDs, unify JWT audience, uncomment `[Authorize]`).
 
@@ -186,7 +186,7 @@ The heart of the file. Numbered so other files cite `foundation.md §7 #N`. Rows
 Honest "not scaling yet, and here's what replaces it":
 
 - **AI is stubbed today** — `StubLLMQuestionGenerationStrategy` returns canned placeholders; v1 replaces it with a real Claude call behind the existing strategy seams, **with a deterministic fallback** (§7 #6) so an outage degrades gracefully.
-- **Scoring is fake** — flat 10 pts for any non-empty answer, can't see correct answers; replaced by the redesigned scoring contract (§8 must-fix).
+- ✅ **Scoring is real** — `IScoringStrategy.Score(attempt, questions)` grades against each question's correct answer (`Question.IsCorrect`), composed by `PointsScoringStrategy` (all-or-nothing per question). The old flat-10-points stub is gone (the §8 scoring must-fix is done, confirmed by spec 0005).
 - **Provider migration** ✅ done — the SQL Server → Postgres move touched the migration (regenerated fresh), the `Options` mapping (`nvarchar`+JSON → `jsonb`), the concurrency token (`rowversion` → `xmin`), connection strings, and `docker-compose` (`mssql` → `postgres`). One-time cost, paid.
 - **Graded-event dispatch is post-commit, no outbox** — can silently drop events on failure; acceptable for v1, replaced by an outbox when reliability matters.
 - **Committed secrets** — plaintext DB password + JWT signing key committed in code/appsettings → all move to secrets (§7 #15/#17, `security.md`).
