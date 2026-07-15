@@ -1,5 +1,5 @@
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,13 +9,22 @@ using QuizService.Infrastructure.Persistence;
 
 namespace QuizService.Infrastructure.Seeding
 {
+    /// <summary>
+    /// Seeds the whole core loop precondition chain so a student can take a quiz and see
+    /// AI feedback from a cold `docker compose up` (spec 0005, AC-11): a teacher, a
+    /// classroom, a published quiz with a few questions, a student, and an enrolment.
+    /// Development only, and idempotent, gated on fixed ids per entity.
+    /// </summary>
     public static class DataSeeder
     {
-        // Fixed ID for the seed teacher to ensure consistency across restarts
-        // In a real microservice with Auth, this ID should match the seeded user in AuthService.
-        // For now, we assume this is the ID the developer will use in their JWT tokens.
+        // Fixed identities so a developer can drive the flow with known ids. In a real
+        // system these match seeded users in AuthService; the developer mints a JWT whose
+        // NameIdentifier is SeedStudentId to take the quiz, or SeedTeacherId to author.
         public static readonly Guid SeedTeacherId = Guid.Parse("11111111-0000-0000-0000-000000000001");
-        
+        public static readonly Guid SeedStudentId = Guid.Parse("22222222-0000-0000-0000-000000000002");
+        public static readonly Guid SeedClassroomId = Guid.Parse("33333333-0000-0000-0000-000000000003");
+        public static readonly Guid SeedQuizId = Guid.Parse("44444444-0000-0000-0000-000000000004");
+
         public static async Task SeedDevelopmentDataAsync(IServiceProvider serviceProvider)
         {
             using var scope = serviceProvider.CreateScope();
@@ -24,31 +33,69 @@ namespace QuizService.Infrastructure.Seeding
 
             try
             {
-                 // ensure database is created/migrated
-                 await context.Database.MigrateAsync();
+                await context.Database.MigrateAsync();
 
-                 // Check if the classroom exists
-                 var classroomName = "Seed Classroom (Dev)";
-                 var existingClassroom = await context.Classrooms
-                     .FirstOrDefaultAsync(c => c.Name == classroomName && c.TeacherId == SeedTeacherId);
+                var seededAnything = false;
 
-                 if (existingClassroom == null)
-                 {
-                     logger.LogInformation("Seeding Development Data: Creating Classroom '{ClassroomName}' for Teacher '{TeacherId}'", classroomName, SeedTeacherId);
-                     
-                     var classroom = new Classroom(SeedTeacherId, classroomName);
-                     // If existing, we could optionally force the ID to a known GUID too, but letting it generate is fine 
-                     // as long as we can find it by Name+Teacher.
-                     
-                     await context.Classrooms.AddAsync(classroom);
-                     await context.SaveChangesAsync();
-                     
-                     logger.LogInformation("Seeding completed. Classroom ID: {ClassroomId}", classroom.Id);
-                 }
-                 else
-                 {
-                     logger.LogInformation("Seeding Development Data: Classroom '{ClassroomName}' | '{ClassroomId}' already exists. Skipping.", classroomName, existingClassroom.Id);
-                 }
+                // Classroom owned by the seed teacher.
+                if (!await context.Classrooms.AnyAsync(c => c.Id == SeedClassroomId))
+                {
+                    context.Classrooms.Add(new Classroom(SeedTeacherId, "Seed Classroom (Dev)") { Id = SeedClassroomId });
+                    seededAnything = true;
+                }
+
+                // Enrol the seed student in that classroom (makes FR7 gating pass for them).
+                if (!await context.Enrollments.AnyAsync(e => e.StudentId == SeedStudentId && e.ClassroomId == SeedClassroomId))
+                {
+                    context.Enrollments.Add(new Enrollment(SeedStudentId, SeedClassroomId));
+                    seededAnything = true;
+                }
+
+                // A published quiz with one of each question type, so the take -> grade ->
+                // feedback thread runs end to end. MaxAttempts is generous for dev iteration.
+                if (!await context.Quizzes.AnyAsync(q => q.Id == SeedQuizId))
+                {
+                    var quiz = new Quiz(SeedClassroomId, "Networking Basics (Dev)", durationMinutes: 15, teacherId: SeedTeacherId)
+                    {
+                        Id = SeedQuizId,
+                        IsPublished = true,
+                        MaxAttempts = 5
+                    };
+
+                    quiz.Questions.Add(new MultipleChoiceQuestion(
+                        "Which layer of the OSI model routes packets between networks?",
+                        points: 1,
+                        options: new List<string> { "The transport layer", "The network layer", "The data link layer", "The session layer" },
+                        correctOptionIndex: 1)
+                    { QuizId = SeedQuizId });
+
+                    quiz.Questions.Add(new TrueFalseQuestion(
+                        "TCP is a connectionless protocol.",
+                        points: 1,
+                        correctAnswer: false)
+                    { QuizId = SeedQuizId });
+
+                    quiz.Questions.Add(new ShortAnswerQuestion(
+                        "What does DNS translate a domain name into?",
+                        points: 1,
+                        correctAnswerText: "IP address")
+                    { QuizId = SeedQuizId });
+
+                    context.Quizzes.Add(quiz);
+                    seededAnything = true;
+                }
+
+                if (seededAnything)
+                {
+                    await context.SaveChangesAsync();
+                    logger.LogInformation(
+                        "Seeded the core loop: classroom {ClassroomId}, quiz {QuizId}, student {StudentId} enrolled.",
+                        SeedClassroomId, SeedQuizId, SeedStudentId);
+                }
+                else
+                {
+                    logger.LogInformation("Core loop seed data already present. Skipping.");
+                }
             }
             catch (Exception ex)
             {

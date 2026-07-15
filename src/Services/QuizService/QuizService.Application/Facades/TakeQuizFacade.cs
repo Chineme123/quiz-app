@@ -91,15 +91,13 @@ namespace QuizService.Application.Facades
                 ?? throw new InvalidOperationException("Quiz not found for this attempt.");
             var questions = quiz.Questions.ToList();
 
-            // 1. Evaluate
+            // 1. Evaluate. Submit grades and returns fast; it does NOT call the model.
+            // The attempt ends Graded with the score set and feedback Pending; the
+            // graded event (below) drives feedback generation in the background (AC-1).
             var scoringStrategy = _strategyFactory.GetScoringStrategy("Points");
             attempt.Evaluate(scoringStrategy, questions);
 
-            // 2. Generate feedback
-            var feedbackStrategy = _strategyFactory.GetFeedbackStrategy("Standard");
-            attempt.GenerateFeedback(feedbackStrategy, questions);
-
-            // 3. Save changes & Mark Command Processed (atomic + retriable).
+            // 2. Save changes & Mark Command Processed (atomic + retriable).
             // Event dispatch stays AFTER the commit (accepted at-least-once seam,
             // no outbox in v1 — see foundation.md §9/§10).
             await _attemptRepository.ExecuteInTransactionAsync(async () =>
@@ -113,11 +111,43 @@ namespace QuizService.Application.Facades
             await _eventDispatcher.DispatchAsync(gradedEvent);
         }
 
-        public async Task<QuizAttempt> GetReviewAsync(Guid attemptId)
+        /// <summary>
+        /// A student's own attempt result, scoped to the caller (spec 0005, AC-8, AC-9).
+        /// Returns null when the attempt does not exist OR is not the caller's, so the
+        /// controller answers 404 either way and never reveals another student's work
+        /// (security.md §7). Identity is the caller's Guid, never a client supplied id.
+        /// </summary>
+        public async Task<AttemptResultDto?> GetResultAsync(Guid attemptId, Guid studentId)
         {
-             var attempt = await _attemptRepository.GetByIdAsync(attemptId);
-             if (attempt == null) throw new Exception("Attempt not found");
-             return attempt;
+            var attempt = await _attemptRepository.GetByIdAsync(attemptId);
+            if (attempt == null || attempt.StudentId != studentId) return null;
+
+            var quiz = await _quizRepository.GetByIdAsync(attempt.QuizId);
+            var questions = quiz?.Questions.ToDictionary(q => q.Id) ?? new Dictionary<Guid, Question>();
+
+            return new AttemptResultDto
+            {
+                AttemptId = attempt.Id,
+                QuizId = attempt.QuizId,
+                TotalScore = attempt.TotalScore,
+                FeedbackStatus = attempt.FeedbackStatus.ToString(),
+                Status = attempt.CurrentStateName,
+                Answers = attempt.Answers.Select(a =>
+                {
+                    questions.TryGetValue(a.QuestionId, out var question);
+                    return new AttemptAnswerResultDto
+                    {
+                        QuestionId = a.QuestionId,
+                        QuestionText = question?.Prompt ?? string.Empty,
+                        ProvidedAnswer = a.ProvidedAnswer,
+                        CorrectAnswer = question?.GetCorrectAnswerText() ?? string.Empty,
+                        IsCorrect = a.IsCorrect,
+                        PointsAwarded = a.PointsAwarded,
+                        Feedback = a.Feedback,
+                        FeedbackSource = a.FeedbackSource?.ToString()
+                    };
+                }).ToList()
+            };
         }
     }
 }

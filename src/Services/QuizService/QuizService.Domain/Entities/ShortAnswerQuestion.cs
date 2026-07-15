@@ -21,5 +21,7 @@ namespace QuizService.Domain.Entities
             return !string.IsNullOrWhiteSpace(providedAnswer)
                 && string.Equals(providedAnswer.Trim(), CorrectAnswerText?.Trim(), StringComparison.OrdinalIgnoreCase);
         }
+
+        public override string GetCorrectAnswerText() => CorrectAnswerText;
     }
 }

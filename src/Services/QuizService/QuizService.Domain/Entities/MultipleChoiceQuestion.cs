@@ -37,5 +37,10 @@ namespace QuizService.Domain.Entities
             return CorrectOptionIndex >= 0 && CorrectOptionIndex < Options.Count
                 && string.Equals(Options[CorrectOptionIndex]?.Trim(), value, StringComparison.OrdinalIgnoreCase);
         }
+
+        public override string GetCorrectAnswerText()
+            => CorrectOptionIndex >= 0 && CorrectOptionIndex < Options.Count
+                ? Options[CorrectOptionIndex]
+                : CorrectOptionIndex.ToString();
     }
 }

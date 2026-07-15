@@ -1,4 +1,5 @@
 using System;
+using QuizService.Domain.Enums;
 
 namespace QuizService.Domain.Entities
 {
@@ -11,6 +12,7 @@ namespace QuizService.Domain.Entities
         public bool IsCorrect { get; set; } // Set by scoring strategy
         public decimal PointsAwarded { get; set; } // Set by scoring strategy
         public string? Feedback { get; set; } // Set by feedback strategy
+        public FeedbackSource? FeedbackSource { get; set; } // Ai or Deterministic; set with Feedback
 
         public QuizAnswer(Guid questionId, string providedAnswer)
         {

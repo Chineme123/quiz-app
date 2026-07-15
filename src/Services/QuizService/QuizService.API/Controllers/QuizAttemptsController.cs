@@ -60,39 +60,17 @@ namespace QuizService.API.Controllers
             }
         }
 
+        // GET /api/attempts/{attemptId}/result — the student's own result: score, feedback
+        // status, and the per question breakdown, scoped to the caller (spec 0005, AC-8).
+        // A request for someone else's attempt (or one that does not exist) returns 404,
+        // so it never reveals another student's work (AC-9).
         [HttpGet("{attemptId}/result")]
         public async Task<IActionResult> GetResult(Guid attemptId)
         {
-            try
-            {
-                var attempt = await _facade.GetReviewAsync(attemptId);
-                return Ok(new 
-                { 
-                    attempt.Id, 
-                    attempt.QuizId, 
-                    attempt.TotalScore, 
-                    Status = attempt.CurrentStateName 
-                });
-            }
-            catch (Exception ex)
-            {
-                return NotFound(new { error = ex.Message });
-            }
-        }
-
-        [HttpGet("{attemptId}/review")]
-        public async Task<IActionResult> GetReview(Guid attemptId)
-        {
-            try
-            {
-                var attempt = await _facade.GetReviewAsync(attemptId);
-                // Return DTO with feedback
-                return Ok(attempt); // Direct generic serialization for now, ideally map to DTO
-            }
-            catch (Exception ex)
-            {
-                 return NotFound(new { error = ex.Message });
-            }
+            var studentId = GetCurrentUserId();
+            var result = await _facade.GetResultAsync(attemptId, studentId);
+            if (result is null) return NotFound();
+            return Ok(result);
         }
     }
 }

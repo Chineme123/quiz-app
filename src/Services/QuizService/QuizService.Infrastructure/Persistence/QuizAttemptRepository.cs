@@ -39,7 +39,12 @@ namespace QuizService.Infrastructure.Persistence
 
         public async Task UpdateAsync(QuizAttempt attempt)
         {
-            _context.QuizAttempts.Update(attempt);
+            // The attempt is already tracked (loaded via GetByIdAsync on this same scoped
+            // context), so its own change and any newly added answers are detected on save.
+            // Do NOT call DbSet.Update here: it marks the whole graph Modified, which
+            // mis-classifies freshly submitted answers (they carry client generated Guid
+            // keys, so EF reads them as existing rows) and fails submit with a phantom
+            // "affected 0 rows" concurrency conflict.
             await _context.SaveChangesAsync();
         }
 
