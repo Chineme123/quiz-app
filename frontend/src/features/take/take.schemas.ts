@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { guid } from '@/lib/api/schemas';
 
 /**
  * The wire contract for taking a quiz (spec 0006). Validated at the boundary, so a server
@@ -9,13 +10,13 @@ import { z } from 'zod';
  */
 
 export const availableQuizSchema = z.object({
-  quizId: z.string().uuid(),
+  quizId: guid,
   title: z.string(),
   durationMinutes: z.number().int(),
   questionCount: z.number().int(),
   state: z.enum(['NotStarted', 'InProgress', 'Graded']),
   // Present for a quiz already started or finished: the attempt to resume, or to view.
-  attemptId: z.string().uuid().nullable(),
+  attemptId: guid.nullable(),
 });
 
 export const availableQuizzesSchema = z.object({
@@ -26,7 +27,7 @@ export const availableQuizzesSchema = z.object({
 });
 
 export const attemptQuestionSchema = z.object({
-  id: z.string().uuid(),
+  id: guid,
   questionType: z.enum(['MultipleChoiceQuestion', 'TrueFalseQuestion', 'ShortAnswerQuestion']),
   prompt: z.string(),
   points: z.number().int(),
@@ -35,7 +36,7 @@ export const attemptQuestionSchema = z.object({
 });
 
 export const attemptQuestionsSchema = z.object({
-  attemptId: z.string().uuid(),
+  attemptId: guid,
   quizTitle: z.string(),
   status: z.string(),
   // The deadline, pinned when the attempt started, and the server's clock at this read. The
@@ -48,7 +49,7 @@ export const attemptQuestionsSchema = z.object({
 });
 
 export const startAttemptSchema = z.object({
-  attemptId: z.string().uuid(),
+  attemptId: guid,
 });
 
 export type AvailableQuiz = z.infer<typeof availableQuizSchema>;
