@@ -67,8 +67,10 @@ Storing `ExpiresAt` looks like storing a derived value, which is normally wrong.
 
 | Entity | Change |
 |---|---|
-| `QuizAttempt` | **new** `ExpiresAt: DateTime` (not null), pinned at `Start()` to `StartedAt + Quiz.DurationMinutes`, never recalculated. **new** `DraftAnswersJson: string?` (`jsonb`, nullable), the in progress answers as a map of `questionId` to the answer string. Cleared when the attempt leaves `InProgress`. |
+| `QuizAttempt` | **new** `ExpiresAt: DateTime` (not null), pinned at `Start(durationMinutes)` to `StartedAt + Quiz.DurationMinutes`, never recalculated. **new** `DraftAnswers` (`jsonb`, not null, defaults to `{}`), the in progress answers as a map of `questionId` to the answer string, replaced whole on every save and cleared when the attempt leaves `InProgress`. **new** `AbandonReason: AbandonReason?` (nullable, stored as text like `CurrentStateName`), null unless the attempt is `Abandoned`. |
 | `QuizAnswer` | **unchanged.** No mutability, no nullable `IsCorrect`, no new index. Rows are still created once, at submit, from the draft blob, by the path that already works. |
+
+`AbandonReason` is what makes AC-15 enforceable: the attempt limit treats the reasons differently, so the reason has to be on the row. Its values are `Superseded` and `Quit` only. Trigger 1 is absent because expiry no longer abandons (AC-12), and trigger 2 is absent because the window gates starting rather than abandoning a running attempt (AC-14).
 
 Relationships are unchanged: `Classroom 1:N Quiz`, `Quiz 1:N Question`, `Quiz 1:N QuizAttempt`, `QuizAttempt 1:N QuizAnswer`, `Question 1:N QuizAnswer`, `Enrollment` unique on `(StudentId, ClassroomId)`.
 
@@ -165,9 +167,10 @@ Ordered breadth first, per `foundation.md` section 0 and the umbrella's note tha
 
 ## Follow-up
 
-- [ ] **Update `foundation.md` section 8**: remove "Save-Draft; in-progress auto-save" from the deferred list, since this child brings it into v1. Add a `progress-log.md` docs entry recording the override, per the drift rule.
-- [ ] **Update `foundation.md` section 69**: trigger 1 (time limit expiry) no longer abandons an attempt; it grades the saved answers. Record which abandons consume an attempt (trigger 4 does; triggers 2 and 3 do not). Triggers 2, 3, 4 and "no background sweeper" are otherwise unchanged. Record it the same way.
+- [x] **Update `foundation.md` section 8**: done (v3.1). "Save-Draft; in-progress auto-save" is struck from the deferred list with the reason, and a `progress-log.md` docs entry records the override.
+- [x] **Update `foundation.md` section 69**: done (v3.1). Trigger 1 no longer abandons; it grades the saved answers. Trigger 2 is clarified as gating starting only. Which abandons consume an attempt is recorded (only trigger 4). "No background sweeper" stays locked and unchanged.
 - [ ] **Fix the unscoped `GET /api/quizzes/{quizId}`** (`QuizController.cs`): it is `[Authorize]` but takes no identity, so any signed in user can read any quiz by id. This child routes around it rather than depending on it, but it is a live violation of umbrella contract 3 and should be scoped to the owning teacher.
-- [ ] Remove the dead first enrolment check in `TakeQuizFacade.StartQuizAsync`, which loads the quiz, discards the result, and is immediately followed by the real check. It sits inside the method this child already edits to pin `ExpiresAt`, so it is cheaper to fix inline than to defer.
+- [x] Remove the dead first enrolment check in `TakeQuizFacade.StartQuizAsync`: done inline while pinning `ExpiresAt`, since the same method was already being edited.
+- [ ] **Decide what to do with `SubmitQuizCommand`.** `code-standards.md` section 6 already called it a hollow passthrough; dropping its answers payload leaves it wrapping a zero argument call, so the choice between giving it real behaviour and removing it is now sharper. Surfaced during the build, out of scope for it.
 - [ ] **Snapshot the question set at start**, or decide not to. Only the deadline is pinned today, so a quiz edited mid attempt changes the question list under a student who resumes. `PointsScoringStrategy` already silently scores zero for an answer whose question is not found, so this would mask rather than surface. Out of scope here; it needs its own decision.
 - [ ] Decide whether the teacher needs a live view of in progress attempts. The draft blob cannot serve it (not queryable), so it would need real rows; it belongs with the ResultService child (UC10), not here.

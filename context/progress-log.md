@@ -20,6 +20,15 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [docs] Reconcile foundation with spec 0006's two overrides (the drift rule)
+- **Date:** 2026-07-16
+- **Area:** context / docs
+- **What:** Landed the two reconciliations spec 0006 owed `foundation.md`, plus the data model gap the build found. Without these the source of truth and the shipped code disagree, which is the one thing the golden rule forbids.
+  - **§69 (`Abandoned` triggers)**: trigger 1, time limit expiry, **no longer abandons**. An expired attempt grades the answers already saved, because once the work is on the server there is something to grade and binning it on a timeout is off brand for a learning tool. Trigger 2 is clarified as gating **starting only** (a student already inside a quiz may finish it, which is also what stops auto save abandoning them mid keystroke). Recorded which abandons cost an attempt: **only trigger 4** (superseded), because restarting is the one abandon a student controls, and `AbandonReason` persists which it was. Triggers 3 and 4 and "no background sweeper" stay locked and unchanged. The header now reads **v3.1** and names both amendments rather than leaving a "converged, no open questions" claim that had quietly stopped being true.
+  - **§8 (deferred out of v1)**: "Save-Draft; in-progress auto-save" struck from the list, with the reason: `MaxAttempts` defaults to 1, so a one shot timed quiz that loses work to a refresh is punishing.
+  - **Spec 0006 data model**: backfilled `AbandonReason`, which the build proved necessary and which the spec's data model had omitted, so AC-15 was unenforceable as written. Ticked the three follow ups that are actually done (§8, §69, the dead enrolment check) and added the one the build surfaced (what to do with the now hollower `SubmitQuizCommand`).
+- **Notes:** Both amendments were agreed deliberately during the design of 0006, not discovered late; this entry is the paperwork catching up with the decision. They narrow §69 and §8 rather than reopening them, and nothing else in either section moved. **Still open:** the unscoped `GET /api/quizzes/{quizId}` (0006 routes around it rather than depending on it) and the `SubmitQuizCommand` question. Next: `/check verify` against the steps in `docs/specs/0004-core-loop/verify.md`.
+
 ### [feat] Take quiz screen (spec 0006, build plan tasks 9 to 14) — the loop closes for a human
 - **Date:** 2026-07-16
 - **Area:** apps/frontend
