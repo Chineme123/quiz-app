@@ -6,6 +6,8 @@ import { SignInPage } from '@/features/auth/SignInPage';
 import { RegisterPage } from '@/features/auth/RegisterPage';
 import { ManageProfilePage } from '@/features/profile/ManageProfilePage';
 import { ResultsPage } from '@/features/results/ResultsPage';
+import { QuizListPage } from '@/features/take/QuizListPage';
+import { TakeQuizPage } from '@/features/take/TakeQuizPage';
 
 // Every route EXCEPT the public landing at "/". The landing is added separately, in
 // main.tsx and prerender.tsx, so it can be code split (spec 0003, AC-13): the client
@@ -22,6 +24,8 @@ export const otherRoutes: RouteObject[] = [
         element: <AppShell />,
         children: [
           { path: 'profile', element: <ManageProfilePage /> },
+          { path: 'quizzes', element: <QuizListPage /> },
+          { path: 'attempts/:attemptId/take', element: <TakeQuizPage /> },
           { path: 'results/:attemptId', element: <ResultsPage /> },
         ],
       },

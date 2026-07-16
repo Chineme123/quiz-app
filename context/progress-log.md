@@ -20,6 +20,17 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [feat] Take quiz screen (spec 0006, build plan tasks 9 to 14) — the loop closes for a human
+- **Date:** 2026-07-16
+- **Area:** apps/frontend
+- **What:** Built the SPA half of the take quiz child on the server surface from the entry below. A person can now find a quiz, take it, and read their feedback without curl or the seeder, which is the whole point of this child.
+  - **`/quizzes`** (`QuizListPage`): the student's entry point. Each row offers the one action that fits it, Start, Resume, or View result, driven by the state the list read supplies. Resume uses the `attemptId` the list carries, so it never calls start and cannot burn a second attempt on a one shot quiz.
+  - **`/attempts/:attemptId/take`** (`TakeQuizPage`): one question at a time, a navigator grid that jumps anywhere and marks answered state in words (not by colour alone), a sticky header with the quiz title, the save state, and the countdown. All three question types render: multiple choice and true or false as radio groups, short answer as a text box.
+  - **Countdown on the server's clock** (`useCountdown`): the offset between `serverNow` and the device clock is measured once at load and applied from then on, so a laptop with a wrong clock still shows the true time left. At zero it submits automatically.
+  - **Autosave** (`useDraftAutosave`): debounced about 500ms, always sending the WHOLE answer set rather than a delta, so two saves in flight cannot interleave and drop an answer. A failure keeps the answer on screen and retries quietly; a 409 (time up, or already finished) stops rather than retrying forever. The state shown is the honest one: it never says "Saved" until the server said so.
+  - **Submit** sends only an idempotency key minted once per attempt and reused on retry, flushes any debounced answer first, warns about unanswered questions without blocking, then goes to the 0005 results screen.
+- **Notes:** Two real defects found by the tests rather than by eye, both fixed: the question prompt was rendered twice (once as the heading, once as a fieldset legend), so a screen reader would have read it twice, now the group is labelled BY the heading via `aria-labelledby`; and there were two Submit buttons on the last question, now one "Submit quiz" living with the navigator, reachable from any question rather than only the last. Lint caught three more: `navigate()` returns a promise in react-router v8 and was floating, the autosave's retry referenced `flush` before it was declared (fixed with a ref), and the auto submit set state synchronously inside an effect (now deferred a tick). **All green:** frontend 82 tests across 18 files (was 70/16) including two axe passes, lint clean, typecheck clean; backend 61 tests; the dev server compiles and `/quizzes` correctly redirects to sign in when signed out. `verify.md` updated: AC-17, AC-18, and AC-19 are no longer "not covered", and the manual UI steps are written out. Spec 0006 is now fully built (tasks 1 to 14). Still open and unchanged: backfill `AbandonReason` into 0006's data model, the two foundation reconciliations (§8 auto save, §69 trigger 1), the unscoped `GET /api/quizzes/{quizId}`, and code-standards §6 on the now hollower `SubmitQuizCommand`. Next: `/check verify`, then `/test`, then one PR for the whole child.
+
 ### [feat] Take quiz backend (spec 0006, build plan tasks 1 to 8) — the whole server surface
 - **Date:** 2026-07-16
 - **Area:** backend (QuizService)
