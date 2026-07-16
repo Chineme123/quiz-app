@@ -26,3 +26,28 @@ _Steps derived from spec 0005 acceptance criteria. `/check verify` runs these; `
 
 ## Acceptance-criteria coverage
 - AC-1 submit fast, no model on submit · AC-2 one AI call per attempt, index-mapped · AC-3 correct → deterministic, no call · AC-4 fallback on any failure · AC-5 minimized pseudonymous payload · AC-6 no sensitive logging · AC-7 Pending→Ready, idempotent · AC-8 result breakdown · AC-9 scoped 404 · AC-10 untrusted, length-capped, plain text · AC-11 cold-start seed · AC-12 results screen with polling and the calm voice.
+
+---
+
+# Verify: Take quiz screen · spec 0006 · updated 2026-07-16
+_Steps derived from spec 0006 acceptance criteria. `/check verify` runs these; `/test` locks the durable ones._
+_Backend only (build plan tasks 1 to 8). The SPA (tasks 9 to 14) is not built yet, so AC-17, AC-18, and AC-19 are not covered here._
+
+## Commands
+- [ ] `dotnet test QuizApp.sln` → 61 pass (Auth 27, User 9, Quiz 25). → AC-5, AC-7, AC-12, AC-14, AC-15, AC-16
+- [ ] `docker compose exec postgres psql -U postgres -d quizdb -c '\d "QuizAttempts"'` → `DraftAnswers` jsonb default `'{}'::jsonb`, `ExpiresAt` timestamptz not null, `AbandonReason` text nullable. → AC-3, AC-6
+
+## API (mint a student JWT for the seeded student, call through the gateway)
+- [ ] `GET /api/quizzes/available` → only the enrolled, published, in-window quiz; carries `state` and the open `attemptId`; `total`, `page`, `pageSize` present. A quiz in a classroom the student is not enrolled in never appears. → AC-1, AC-2
+- [ ] `POST /api/quizzes/{quizId}/start` → `{attemptId}`; the row's `ExpiresAt` equals start + the quiz's DurationMinutes. → AC-3
+- [ ] `GET /api/attempts/{attemptId}/questions` → questions carry prompt, points, options and **no correct answer**; response also carries `expiresAt`, `serverNow`, and `draftAnswers`. → AC-4, AC-9, AC-10
+- [ ] `PUT /api/attempts/{attemptId}/answers` with the whole answer map → `204`. Repeat it → `204` again (safe to retry). → AC-6
+- [ ] Same `PUT` as a *different* student → `404`, never revealing the attempt exists. → AC-5
+- [ ] `GET /api/attempts/{attemptId}/questions` as a *different* student → `404`. → AC-5
+- [ ] `POST /api/attempts/{attemptId}/submit` with a body of only `{commandId}` → graded score computed from the saved drafts (no answers in the body). Replay the same `commandId` → the same result, no re-grade. → AC-11
+- [ ] Same submit as a *different* student → `404`; the owner's attempt is still `InProgress` and unscored. → AC-5
+- [ ] Start the same quiz again → the first attempt becomes `Abandoned` with reason `Superseded`, and a third start is refused with "Maximum attempts" (MaxAttempts = 1). → AC-15
+
+## Acceptance-criteria coverage
+- AC-1 available list, enrolment scoped + paginated · AC-2 per-quiz action + open attemptId · AC-3 ExpiresAt pinned at start · AC-4 questions via the attempt, no correct answers · AC-5 scoped 404 on every attempt endpoint · AC-6 whole-set draft save · AC-7 draft rejected past the deadline · AC-11 submit grades saved drafts, idempotent · AC-12 late submit grades rather than abandons · AC-14 window gates start only · AC-15 supersede consumes the limit · AC-16 superseded submit is a handled 409.
+- **Not covered (SPA not built):** AC-8 save-state indicator · AC-13 unanswered confirm · AC-17 wizard + navigator · AC-18 redirect to results · AC-19 accessibility.
