@@ -20,6 +20,15 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [fix] CD had never deployed — every `Deploy` run was a false green, and production was stale
+- **Date:** 2026-07-16
+- **Area:** infra / docs
+- **What:** Found that the Railway CD pipeline had **never shipped anything**, deployed for real, then made the pipeline actually work.
+  - **The bug:** `.github/workflows/deploy.yml` prints `"RAILWAY_TOKEN not set — skipping deploy."` and then **`exit 0`** — so a skip reports **success**. The secret was never set (`gh secret list` came back empty), so every `Deploy` run since the workflow was written was an ~8 second no-op wearing a green check. `main` was green, `Deploy` was green, and **nothing had reached production** — not spec 0005, not the three follow-up fixes. What was actually live on Railway was stale code from an earlier hand-run `railway up`.
+  - **Deployed for real** from the authenticated local CLI, in the workflow's own order (authservice → userservice → quizservice → **gateway last**, because the gateway resolves the services' private DNS at startup). All four rebuilt from `main @ a786d03`; the gateway image re-ran `npm ci` + `npm run build` and baked the SPA and prerendered landing page into `wwwroot`.
+  - **Fixed the pipeline:** a Railway **project token** was created and set as the repo secret `RAILWAY_TOKEN` (a credential, so the engineer set it — never the agent). A `workflow_dispatch` run then deployed for real.
+- **Notes:** **Verified, never assumed** — a green tick is precisely what lied here, so every claim was checked against evidence. The real run: conclusion `success`, **1m30s** (vs the 8s skip), log shows 4× `Indexing`/`Uploading`/`Build Logs`/`Deploy complete` and **zero** executed skip lines (the one grep hit is GitHub echoing the script source, i.e. the `echo "…"` line, not output). Production after: `/health` → **200** `{"status":"healthy"}`; `/` → **200** at 27,316B, matching the 27,315B prerender from that build; `GET /api/attempts/{id}/result` → **401** — the decisive check, since that route did not exist before 0005 and would have 404'd on the old image. Every merge to `main` now deploys for real. **Still open:** `quizservice` has no `Anthropic`/`Feedback` variables, so feedback runs **deterministic**, not real Claude — set `Anthropic__ApiKey` + `Feedback__AiEnabled=true` to light up the wedge. **Lesson worth keeping:** a CI step that `exit 0`s on missing config reports success for doing nothing. Prefer failing loudly when a deploy can't run, or add a check that the deployed commit matches `main` — a pipeline that silently no-ops is worse than one that's honestly red. Foundation §7 #31 needed no change: the CD *decision* was right all along, it just was not in force.
+
 ### [fix] Scope quiz submit to the authenticated caller (spec 0005 token-scoping gap)
 - **Date:** 2026-07-15
 - **Area:** backend (QuizService)
