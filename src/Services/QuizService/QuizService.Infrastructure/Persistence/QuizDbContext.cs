@@ -87,6 +87,28 @@ namespace QuizService.Infrastructure.Persistence
                 // so the column reads plainly in the DB (spec 0005).
                 entity.Property(a => a.FeedbackStatus).HasConversion<string>();
 
+                // Null unless the attempt is Abandoned; text for the same reason as above
+                // (spec 0006). The attempt limit reads it: only Superseded costs an attempt.
+                entity.Property(a => a.AbandonReason).HasConversion<string>();
+
+                // The in progress answers as one jsonb column, replaced whole on every save
+                // (spec 0006). Mapped from the private field so the entity stays encapsulated,
+                // and configured explicitly because EF discovers the field either way and
+                // cannot map a Dictionary on its own. Follows the Options jsonb precedent above.
+                var draftAnswers = entity.Property<Dictionary<Guid, string>>("_draftAnswers");
+                draftAnswers
+                    .HasColumnName("DraftAnswers")
+                    .HasColumnType("jsonb")
+                    .HasConversion(
+                        v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                        v => JsonSerializer.Deserialize<Dictionary<Guid, string>>(v, (JsonSerializerOptions)null)
+                             ?? new Dictionary<Guid, string>());
+                draftAnswers.Metadata.SetValueComparer(
+                    new ValueComparer<Dictionary<Guid, string>>(
+                        (d1, d2) => d1.Count == d2.Count && !d1.Except(d2).Any(),
+                        d => d.Aggregate(0, (a, kv) => HashCode.Combine(a, kv.Key.GetHashCode(), kv.Value.GetHashCode())),
+                        d => new Dictionary<Guid, string>(d)));
+
                 // Optimistic concurrency via Postgres' xmin system column.
                 entity.Property<uint>("xmin").HasColumnName("xmin").IsRowVersion();
             });

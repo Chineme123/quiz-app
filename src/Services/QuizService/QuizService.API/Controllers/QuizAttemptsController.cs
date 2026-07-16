@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QuizService.Application.DTOs;
 using QuizService.Application.Facades;
+using QuizService.Application.Results;
 
 namespace QuizService.API.Controllers
 {
@@ -46,21 +47,56 @@ namespace QuizService.API.Controllers
             }
         }
 
+        // GET /api/attempts/{attemptId}/questions — what the take screen renders (spec 0006,
+        // AC-4). Read through the attempt, which is the authorisation: it is already owned by
+        // one student and enrolment was checked when it started. The take screen therefore
+        // never touches the unscoped GET /api/quizzes/{quizId}. No correct answers are returned.
+        [HttpGet("{attemptId}/questions")]
+        public async Task<IActionResult> GetQuestions(Guid attemptId)
+        {
+            var studentId = GetCurrentUserId();
+            var questions = await _facade.GetAttemptQuestionsAsync(attemptId, studentId);
+            if (questions is null) return NotFound();
+            return Ok(questions);
+        }
+
+        // PUT /api/attempts/{attemptId}/answers — replaces the whole saved draft set in one
+        // write (spec 0006, AC-6). Whole set, not per question, so two saves in flight cannot
+        // interleave and drop an answer. 409 once the attempt is finished or its time is up,
+        // which is what makes the deadline server enforced rather than client counted (AC-7).
+        [HttpPut("{attemptId}/answers")]
+        public async Task<IActionResult> SaveDraftAnswers(Guid attemptId, [FromBody] SaveDraftAnswersDto dto)
+        {
+            var studentId = GetCurrentUserId();
+            var outcome = await _facade.SaveDraftAnswersAsync(attemptId, studentId, dto);
+            return outcome switch
+            {
+                SaveDraftOutcome.NotFound => NotFound(),
+                SaveDraftOutcome.Rejected => Conflict(new { error = "This attempt is no longer accepting answers." }),
+                _ => NoContent()
+            };
+        }
+
         [HttpPost("{attemptId}/submit")]
         public async Task<IActionResult> SubmitQuiz(Guid attemptId, [FromBody] SubmitQuizDto dto)
         {
             var studentId = GetCurrentUserId();
             try
             {
-                // Scoped to the caller: submitting an attempt that isn't the student's own (or
-                // one that doesn't exist) returns null -> 404, so it never reveals another
-                // student's attempt (code-standards §5, security.md §4/§7). Otherwise returns
-                // the graded result (score + per-question breakdown); a resubmit with a fresh
-                // CommandId is an idempotent no-op that returns the existing result rather than
-                // a 400 — see TakeQuizFacade.SubmitQuizAsync.
+                // The body carries only a CommandId: the drafts already saved are what gets
+                // graded (spec 0006, AC-11). Scoped to the caller, so an attempt that isn't the
+                // student's own (or doesn't exist) is 404 and never revealed (code-standards §5,
+                // security.md §4/§7). A resubmit with a fresh CommandId is an idempotent no-op
+                // returning the existing result; an attempt superseded by a newer one is a 409
+                // rather than a raw 400 out of the domain (AC-16).
                 var result = await _facade.SubmitQuizAsync(attemptId, studentId, dto);
-                if (result is null) return NotFound();
-                return Ok(result);
+                return result.Outcome switch
+                {
+                    SubmitQuizOutcome.NotFound => NotFound(),
+                    SubmitQuizOutcome.Superseded =>
+                        Conflict(new { error = "This attempt was superseded by a newer one and cannot be submitted." }),
+                    _ => Ok(result.Result)
+                };
             }
             catch (Exception ex)
             {

@@ -23,12 +23,13 @@ namespace QuizService.Tests
             questions = new List<Question> { mc, tf };
 
             var attempt = new QuizAttempt(Guid.NewGuid(), Guid.NewGuid());
-            attempt.Start();
-            attempt.Submit(new List<QuizAnswer>
+            attempt.Start(10);
+            attempt.SaveDraftAnswers(new Dictionary<Guid, string>
             {
-                new QuizAnswer(mc.Id, "1"),      // correct
-                new QuizAnswer(tf.Id, "false"),  // incorrect
-            });
+                [mc.Id] = "1",      // correct
+                [tf.Id] = "false",  // incorrect
+            }, DateTime.UtcNow);
+            attempt.Submit();
             attempt.Evaluate(new PointsScoringStrategy(), questions);
             return attempt;
         }

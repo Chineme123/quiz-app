@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using QuizService.Domain.Entities;
+using QuizService.Domain.Enums;
 using QuizService.Domain.Interfaces;
 
 namespace QuizService.Infrastructure.Persistence
@@ -63,9 +64,38 @@ namespace QuizService.Infrastructure.Persistence
             return attempt;
         }
 
-        public async Task<int> GetAttemptCountAsync(Guid studentId, Guid quizId)
+        public async Task<int> GetConsumedAttemptCountAsync(Guid studentId, Guid quizId)
         {
-            return await _context.QuizAttempts.CountAsync(a => a.StudentId == studentId && a.QuizId == quizId);
+            // Only attempts that actually spent a try (spec 0006, AC-15). Counting every row
+            // would lock a student out after one abandon; counting none of them would let them
+            // restart forever and read the questions for free, so Superseded is the line.
+            return await _context.QuizAttempts.CountAsync(a =>
+                a.StudentId == studentId
+                && a.QuizId == quizId
+                && (a.CurrentStateName == "Submitted"
+                    || a.CurrentStateName == "Graded"
+                    || a.CurrentStateName == "Reviewable"
+                    || (a.CurrentStateName == "Abandoned" && a.AbandonReason == AbandonReason.Superseded)));
+        }
+
+        public async Task<IReadOnlyList<QuizAttempt>> GetAttemptsForQuizzesAsync(Guid studentId, IReadOnlyList<Guid> quizIds)
+        {
+            // Scoped to the caller's own attempts: this feeds a list, and a list is exactly
+            // where an unscoped query leaks someone else's work (code-standards §5).
+            return await _context.QuizAttempts
+                .Where(a => a.StudentId == studentId && quizIds.Contains(a.QuizId))
+                .OrderByDescending(a => a.StartedAt)
+                .ToListAsync();
+        }
+
+        public async Task<QuizAttempt?> GetInProgressAttemptAsync(Guid studentId, Guid quizId)
+        {
+            var attempt = await _context.QuizAttempts
+                .FirstOrDefaultAsync(a =>
+                    a.StudentId == studentId && a.QuizId == quizId && a.CurrentStateName == "InProgress");
+
+            attempt?.LoadState();
+            return attempt;
         }
 
         public async Task<bool> HasCommandBeenProcessedAsync(Guid commandId)

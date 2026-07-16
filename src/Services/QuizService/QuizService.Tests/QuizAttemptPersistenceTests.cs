@@ -64,13 +64,15 @@ namespace QuizService.Tests
 
             // Start an attempt and persist it (this is what StartQuiz does).
             var attempt = new QuizAttempt(_quizId, studentId);
-            attempt.Start();
+            attempt.Start(10);
             await repository.AddAsync(attempt);
 
-            // Reload it tracked, submit answers, grade, and save — the exact submit path.
+            // Reload it tracked, save the answers as drafts, submit, grade, and save — the
+            // exact submit path: the drafts become the answer rows at Submit (spec 0006).
             var question = new MultipleChoiceQuestion("2 + 2?", 10, new List<string> { "3", "4", "5" }, 1);
             var loaded = await repository.GetByIdAsync(attempt.Id);
-            loaded.Submit(new List<QuizAnswer> { new QuizAnswer(question.Id, "1") }); // correct
+            loaded.SaveDraftAnswers(new Dictionary<Guid, string> { [question.Id] = "1" }, DateTime.UtcNow); // correct
+            loaded.Submit();
             loaded.Evaluate(new PointsScoringStrategy(), new List<Question> { question });
 
             var thrown = await Record.ExceptionAsync(() => repository.UpdateAsync(loaded));
@@ -101,10 +103,11 @@ namespace QuizService.Tests
             var question = new MultipleChoiceQuestion("2 + 2?", 10, new List<string> { "3", "4", "5" }, 1);
 
             var attempt = new QuizAttempt(_quizId, studentId);
-            attempt.Start();
+            attempt.Start(10);
             await repository.AddAsync(attempt);
             var graded = await repository.GetByIdAsync(attempt.Id);
-            graded.Submit(new List<QuizAnswer> { new QuizAnswer(question.Id, "0") }); // incorrect
+            graded.SaveDraftAnswers(new Dictionary<Guid, string> { [question.Id] = "0" }, DateTime.UtcNow); // incorrect
+            graded.Submit();
             graded.Evaluate(new PointsScoringStrategy(), new List<Question> { question });
             await repository.UpdateAsync(graded);
 

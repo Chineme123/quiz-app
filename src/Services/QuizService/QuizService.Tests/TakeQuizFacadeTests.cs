@@ -8,7 +8,9 @@ using Xunit;
 using QuizService.Application.DTOs;
 using QuizService.Application.Facades;
 using QuizService.Application.Invokers;
+using QuizService.Application.Results;
 using QuizService.Domain.Entities;
+using QuizService.Domain.Enums;
 using QuizService.Domain.Events;
 using QuizService.Infrastructure.Factories;
 using QuizService.Infrastructure.Persistence;
@@ -16,17 +18,10 @@ using QuizService.Infrastructure.Persistence;
 namespace QuizService.Tests
 {
     /// <summary>
-    /// Submit at the facade seam (spec 0005 code-review fixes), against a real Postgres
-    /// (Testcontainers, per code-standards §10). Covers two properties:
-    /// (1) Idempotency — the top-level guard only short-circuits on an EXACT CommandId match,
-    /// so a resubmit with a FRESH CommandId (an ordinary client retry after a network hiccup)
-    /// slips past it and reaches the command. The command no-ops once the attempt is
-    /// Graded/Reviewable; the facade must then return the existing graded result rather than
-    /// calling Evaluate from a terminal state, which throws InvalidOperationException and
-    /// surfaces as a 400.
-    /// (2) Ownership scoping — a submit against an attempt that isn't the caller's is rejected
-    /// with null (-> 404 at the controller), like GetResultAsync, without grading or
-    /// dispatching, so it never reveals or mutates another student's attempt.
+    /// The take path at the facade seam, against a real Postgres (Testcontainers, per
+    /// code-standards §10). Covers the properties that are easy to break and expensive to get
+    /// wrong: idempotency, ownership scoping, the server enforced deadline, and the attempt
+    /// limit rules that keep a one shot quiz honest (specs 0005 and 0006).
     /// Needs Docker (available in CI).
     /// </summary>
     public class TakeQuizFacadeTests : IAsyncLifetime
@@ -59,46 +54,42 @@ namespace QuizService.Tests
         [Fact]
         public async Task Resubmit_WithFreshCommandId_ReturnsExistingResult_WithoutRegradeOrRedispatch()
         {
-            var (attemptId, questionId, studentId) = await SeedInProgressAttemptAsync();
+            var (attemptId, _, studentId, _) = await SeedInProgressAttemptAsync();
             var dispatcher = new CountingEventDispatcher();
-            var responses = new List<QuizAnswerDto> { new() { QuestionId = questionId, Answer = "1" } }; // correct -> 10
 
             // First submit: a real InProgress -> Graded run that dispatches the graded event.
-            AttemptResultDto? first;
+            // The body carries only a CommandId; the drafts already saved are what gets graded.
+            SubmitQuizResult first;
             await using (var ctx = NewContext())
             {
                 first = await BuildFacade(ctx, dispatcher).SubmitQuizAsync(
-                    attemptId, studentId, new SubmitQuizDto { CommandId = Guid.NewGuid(), Responses = responses });
+                    attemptId, studentId, new SubmitQuizDto { CommandId = Guid.NewGuid() });
             }
-            Assert.NotNull(first); // the owner's own attempt — never the non-owner null/404 path
-            Assert.Equal("Graded", first.Status);
-            Assert.Equal(10m, first.TotalScore);
+            Assert.Equal(SubmitQuizOutcome.Graded, first.Outcome);
+            Assert.Equal("Graded", first.Result!.Status);
+            Assert.Equal(10m, first.Result.TotalScore);
             Assert.Equal(1, dispatcher.DispatchCount);
 
             // Second submit with a DIFFERENT CommandId. It slips past the exact-CommandId
             // idempotency guard and reaches the command, which no-ops because the attempt is
-            // already Graded. Pre-fix the facade then called Evaluate on a Graded attempt ->
-            // InvalidOperationException -> 400; a throw here would fail this test. It must
-            // instead return the existing graded result.
-            AttemptResultDto? second;
+            // already Graded. The facade must return the existing graded result rather than
+            // calling Evaluate from a terminal state, which throws and surfaces as a 400.
+            SubmitQuizResult second;
             await using (var ctx = NewContext())
             {
                 second = await BuildFacade(ctx, dispatcher).SubmitQuizAsync(
-                    attemptId, studentId, new SubmitQuizDto { CommandId = Guid.NewGuid(), Responses = responses });
+                    attemptId, studentId, new SubmitQuizDto { CommandId = Guid.NewGuid() });
             }
 
-            // Same graded result as the first call — not a re-grade, not a throw.
-            Assert.NotNull(second);
-            Assert.Equal("Graded", second.Status);
-            Assert.Equal(first.TotalScore, second.TotalScore);
-            Assert.Equal(attemptId, second.AttemptId);
-            Assert.Single(second.Answers);
-            Assert.True(second.Answers[0].IsCorrect);
+            Assert.Equal(SubmitQuizOutcome.Graded, second.Outcome);
+            Assert.Equal("Graded", second.Result!.Status);
+            Assert.Equal(first.Result.TotalScore, second.Result.TotalScore);
+            Assert.Single(second.Result.Answers);
+            Assert.True(second.Result.Answers[0].IsCorrect);
 
             // The no-op path skipped the graded-event re-dispatch: still exactly one dispatch.
             Assert.Equal(1, dispatcher.DispatchCount);
 
-            // And the persisted attempt is untouched by the resubmit: still Graded, still 10.
             await using (var verify = NewContext())
             {
                 var saved = await verify.QuizAttempts.FirstAsync(a => a.Id == attemptId);
@@ -110,61 +101,51 @@ namespace QuizService.Tests
         [Fact]
         public async Task Resubmit_WithSameCommandId_ShortCircuits_AndReturnsExistingResult()
         {
-            var (attemptId, questionId, studentId) = await SeedInProgressAttemptAsync();
+            var (attemptId, _, studentId, _) = await SeedInProgressAttemptAsync();
             var dispatcher = new CountingEventDispatcher();
-            var responses = new List<QuizAnswerDto> { new() { QuestionId = questionId, Answer = "1" } };
             var commandId = Guid.NewGuid();
 
-            AttemptResultDto? first;
+            SubmitQuizResult first;
             await using (var ctx = NewContext())
             {
                 first = await BuildFacade(ctx, dispatcher).SubmitQuizAsync(
-                    attemptId, studentId, new SubmitQuizDto { CommandId = commandId, Responses = responses });
+                    attemptId, studentId, new SubmitQuizDto { CommandId = commandId });
             }
-            Assert.NotNull(first);
+            Assert.Equal(SubmitQuizOutcome.Graded, first.Outcome);
 
-            // Same CommandId replay: short-circuits at the idempotency guard and returns the
-            // existing result (the guard now hands back the DTO, not void).
-            AttemptResultDto? second;
+            SubmitQuizResult second;
             await using (var ctx = NewContext())
             {
                 second = await BuildFacade(ctx, dispatcher).SubmitQuizAsync(
-                    attemptId, studentId, new SubmitQuizDto { CommandId = commandId, Responses = responses });
+                    attemptId, studentId, new SubmitQuizDto { CommandId = commandId });
             }
 
-            Assert.NotNull(second);
-            Assert.Equal("Graded", second.Status);
-            Assert.Equal(first.TotalScore, second.TotalScore);
-            Assert.Equal(10m, second.TotalScore);
+            Assert.Equal(SubmitQuizOutcome.Graded, second.Outcome);
+            Assert.Equal(10m, second.Result!.TotalScore);
             // Guard short-circuits before the command/evaluate/dispatch — no second dispatch.
             Assert.Equal(1, dispatcher.DispatchCount);
         }
 
         [Fact]
-        public async Task Submit_ByNonOwner_ReturnsNull_WithoutGradingOrDispatch()
+        public async Task Submit_ByNonOwner_IsNotFound_WithoutGradingOrDispatch()
         {
-            // The attempt belongs to the seeded student; a DIFFERENT authenticated student
-            // submits it by id. Ownership scoping (code-standards §5, security.md §4/§7) must
-            // reject it exactly like GetResultAsync: return null so the controller answers 404
-            // — never revealing that another student's attempt exists (spec 0005 AC-9) — and
-            // never touching the victim's attempt.
-            var (attemptId, questionId, ownerId) = await SeedInProgressAttemptAsync();
+            // Ownership scoping (code-standards §5, security.md §4/§7): a submit for someone
+            // else's attempt is answered exactly like a missing one, so a non owner never
+            // learns it exists (spec 0005 AC-9, spec 0006 AC-5).
+            var (attemptId, _, ownerId, _) = await SeedInProgressAttemptAsync();
             var dispatcher = new CountingEventDispatcher();
-            var responses = new List<QuizAnswerDto> { new() { QuestionId = questionId, Answer = "1" } };
-
             var nonOwner = Guid.NewGuid();
             Assert.NotEqual(ownerId, nonOwner);
 
-            AttemptResultDto? result;
+            SubmitQuizResult result;
             await using (var ctx = NewContext())
             {
                 result = await BuildFacade(ctx, dispatcher).SubmitQuizAsync(
-                    attemptId, nonOwner, new SubmitQuizDto { CommandId = Guid.NewGuid(), Responses = responses });
+                    attemptId, nonOwner, new SubmitQuizDto { CommandId = Guid.NewGuid() });
             }
 
-            // Rejected as if the attempt did not exist: null (-> 404 at the controller), and
-            // nothing graded or dispatched — the ownership gate is before any state change.
-            Assert.Null(result);
+            Assert.Equal(SubmitQuizOutcome.NotFound, result.Outcome);
+            Assert.Null(result.Result);
             Assert.Equal(0, dispatcher.DispatchCount);
 
             // The victim's attempt is untouched: still InProgress, still unscored.
@@ -176,30 +157,230 @@ namespace QuizService.Tests
             }
         }
 
-        // Seeds a classroom, a published quiz with one graded question, and a started
-        // (InProgress) attempt — the exact state the first submit expects. Returns the
-        // attempt id, the question id the responses answer, and the owning student's id (the
-        // caller a submit must be scoped to).
-        private async Task<(Guid attemptId, Guid questionId, Guid studentId)> SeedInProgressAttemptAsync()
+        [Fact]
+        public async Task SaveDraft_ByNonOwner_IsNotFound()
         {
-            var classroom = new Classroom(_teacherId, "Idempotency Test Classroom");
-            var quiz = new Quiz(classroom.Id, "Idempotency Test Quiz", 10, _teacherId) { IsPublished = true };
+            var (attemptId, questionId, ownerId, _) = await SeedInProgressAttemptAsync();
+            var nonOwner = Guid.NewGuid();
+            Assert.NotEqual(ownerId, nonOwner);
+
+            SaveDraftOutcome outcome;
+            await using (var ctx = NewContext())
+            {
+                outcome = await BuildFacade(ctx, new CountingEventDispatcher()).SaveDraftAnswersAsync(
+                    attemptId, nonOwner,
+                    new SaveDraftAnswersDto { Answers = new Dictionary<Guid, string> { [questionId] = "0" } });
+            }
+
+            // Same answer as a missing attempt: a non owner cannot write to, or learn about,
+            // another student's work (spec 0006, AC-5).
+            Assert.Equal(SaveDraftOutcome.NotFound, outcome);
+        }
+
+        [Fact]
+        public async Task SaveDraft_AfterTheDeadline_IsRejected()
+        {
+            // The deadline has to be enforced by the server, not merely counted down by the
+            // client, or a student who blocks the timer just keeps working (spec 0006, AC-7).
+            var (attemptId, questionId, studentId, _) = await SeedInProgressAttemptAsync(durationMinutes: -1);
+
+            SaveDraftOutcome outcome;
+            await using (var ctx = NewContext())
+            {
+                outcome = await BuildFacade(ctx, new CountingEventDispatcher()).SaveDraftAnswersAsync(
+                    attemptId, studentId,
+                    new SaveDraftAnswersDto { Answers = new Dictionary<Guid, string> { [questionId] = "0" } });
+            }
+
+            Assert.Equal(SaveDraftOutcome.Rejected, outcome);
+        }
+
+        [Fact]
+        public async Task Submit_AfterTheDeadline_GradesTheSavedDrafts()
+        {
+            // Expiry grades rather than abandons (spec 0006, AC-12, overriding foundation §69
+            // trigger 1). What is graded is what the student had saved when time ran out,
+            // because drafts stopped being writable at the deadline.
+            var (attemptId, _, studentId, _) = await SeedInProgressAttemptAsync(durationMinutes: -1);
+
+            SubmitQuizResult result;
+            await using (var ctx = NewContext())
+            {
+                result = await BuildFacade(ctx, new CountingEventDispatcher()).SubmitQuizAsync(
+                    attemptId, studentId, new SubmitQuizDto { CommandId = Guid.NewGuid() });
+            }
+
+            Assert.Equal(SubmitQuizOutcome.Graded, result.Outcome);
+            Assert.Equal(10m, result.Result!.TotalScore);
+        }
+
+        [Fact]
+        public async Task Submit_OnASupersededAttempt_ReportsSuperseded_NotARawError()
+        {
+            // The real case: a stale tab auto submits at its countdown's zero after the student
+            // restarted the quiz elsewhere. Without this the domain throws out of Submit and the
+            // student sees a raw 400 (spec 0006, AC-16).
+            var (attemptId, _, studentId, quizId) = await SeedInProgressAttemptAsync();
+
+            await using (var ctx = NewContext())
+            {
+                var repo = new QuizAttemptRepository(ctx);
+                var running = await repo.GetInProgressAttemptAsync(studentId, quizId);
+                running!.Abandon(AbandonReason.Superseded);
+                await repo.UpdateAsync(running);
+            }
+
+            SubmitQuizResult result;
+            await using (var ctx = NewContext())
+            {
+                result = await BuildFacade(ctx, new CountingEventDispatcher()).SubmitQuizAsync(
+                    attemptId, studentId, new SubmitQuizDto { CommandId = Guid.NewGuid() });
+            }
+
+            Assert.Equal(SubmitQuizOutcome.Superseded, result.Outcome);
+            Assert.Null(result.Result);
+        }
+
+        [Fact]
+        public async Task Restarting_AbandonsTheOldAttempt_AndConsumesTheAttemptLimit()
+        {
+            // The farming hole: if a superseded abandon cost nothing, a student could start,
+            // read the questions, restart, and repeat forever on a MaxAttempts=1 quiz. Only a
+            // restart is an abandon the student controls, so it is the one that pays (AC-15).
+            var (firstAttemptId, _, studentId, quizId) = await SeedInProgressAttemptAsync();
+
+            Guid secondAttemptId;
+            await using (var ctx = NewContext())
+            {
+                secondAttemptId = await BuildFacade(ctx, new CountingEventDispatcher())
+                    .StartQuizAsync(studentId, quizId);
+            }
+            Assert.NotEqual(firstAttemptId, secondAttemptId);
+
+            await using (var verify = NewContext())
+            {
+                var old = await verify.QuizAttempts.FirstAsync(a => a.Id == firstAttemptId);
+                Assert.Equal("Abandoned", old.CurrentStateName);
+                Assert.Equal(AbandonReason.Superseded, old.AbandonReason);
+            }
+
+            // The quiz is MaxAttempts = 1 and the restart already spent it, so a third start
+            // is refused rather than handing out another free look at the questions.
+            await using (var ctx = NewContext())
+            {
+                var facade = BuildFacade(ctx, new CountingEventDispatcher());
+                var thrown = await Record.ExceptionAsync(() => facade.StartQuizAsync(studentId, quizId));
+                Assert.NotNull(thrown);
+                Assert.Contains("Maximum attempts", thrown.Message);
+            }
+        }
+
+        [Fact]
+        public async Task GetAttemptQuestions_NeverReturnsTheCorrectAnswer_AndCarriesTheClockAndDrafts()
+        {
+            var (attemptId, questionId, studentId, _) = await SeedInProgressAttemptAsync();
+
+            AttemptQuestionsDto? payload;
+            await using (var ctx = NewContext())
+            {
+                payload = await BuildFacade(ctx, new CountingEventDispatcher())
+                    .GetAttemptQuestionsAsync(attemptId, studentId);
+            }
+
+            Assert.NotNull(payload);
+            var question = Assert.Single(payload!.Questions);
+            Assert.Equal("MultipleChoiceQuestion", question.QuestionType);
+            Assert.Equal(new List<string> { "3", "4", "5" }, question.Options);
+            // The payload lives in a student's browser, so the whole point is what is NOT here:
+            // nothing on it says which option is right (spec 0006, AC-4).
+            Assert.DoesNotContain("Correct", string.Join(",", typeof(AttemptQuestionDto).GetProperties().Select(p => p.Name)));
+            // The clock the client counts down on, and the work already saved (AC-9, AC-10).
+            Assert.True(payload.ExpiresAt > payload.ServerNow);
+            Assert.Equal("1", payload.DraftAnswers[questionId]);
+        }
+
+        [Fact]
+        public async Task GetAttemptQuestions_ByNonOwner_IsNotFound()
+        {
+            var (attemptId, _, ownerId, _) = await SeedInProgressAttemptAsync();
+            var nonOwner = Guid.NewGuid();
+            Assert.NotEqual(ownerId, nonOwner);
+
+            await using var ctx = NewContext();
+            var payload = await BuildFacade(ctx, new CountingEventDispatcher())
+                .GetAttemptQuestionsAsync(attemptId, nonOwner);
+
+            Assert.Null(payload);
+        }
+
+        [Fact]
+        public async Task AvailableQuizzes_ListsOnlyEnrolledPublishedQuizzes_WithTheRightAction()
+        {
+            var (_, _, studentId, quizId) = await SeedInProgressAttemptAsync();
+
+            // A second classroom and quiz the student is NOT enrolled in: it must never appear.
+            var otherClassroom = new Classroom(_teacherId, "Someone Else's Classroom");
+            var otherQuiz = new Quiz(otherClassroom.Id, "Not Mine", 10, _teacherId) { IsPublished = true };
+            _context.Classrooms.Add(otherClassroom);
+            _context.Quizzes.Add(otherQuiz);
+            // An unpublished quiz in the student's own classroom: also must not appear.
+            var draftQuiz = new Quiz((await _context.Quizzes.FirstAsync(q => q.Id == quizId)).ClassroomId,
+                "Unpublished", 10, _teacherId) { IsPublished = false };
+            _context.Quizzes.Add(draftQuiz);
+            await _context.SaveChangesAsync();
+
+            AvailableQuizzesDto list;
+            await using (var ctx = NewContext())
+            {
+                list = await BuildFacade(ctx, new CountingEventDispatcher())
+                    .GetAvailableQuizzesAsync(studentId, page: 1, pageSize: 0);
+            }
+
+            var item = Assert.Single(list.Items);
+            Assert.Equal(quizId, item.QuizId);
+            Assert.Equal(1, list.Total);
+            // The student has a running attempt, so the list offers Resume and hands over the
+            // id, which is what stops the list starting a second attempt (AC-2).
+            Assert.Equal("InProgress", item.State);
+            Assert.NotNull(item.AttemptId);
+            Assert.Equal(1, item.QuestionCount);
+        }
+
+        /// <summary>
+        /// Seeds a classroom, an enrolment, a published one shot quiz with one question, and a
+        /// started attempt whose correct answer is already saved as a draft. That is the state
+        /// a submit now expects: the answers are on the server before submit, not in its body.
+        /// A negative duration pins a deadline in the past, which is how the expiry tests get an
+        /// already expired attempt without waiting.
+        /// </summary>
+        private async Task<(Guid attemptId, Guid questionId, Guid studentId, Guid quizId)> SeedInProgressAttemptAsync(
+            int durationMinutes = 10)
+        {
+            var classroom = new Classroom(_teacherId, "Take Test Classroom");
+            var quiz = new Quiz(classroom.Id, "Take Test Quiz", durationMinutes, _teacherId) { IsPublished = true };
             var question = new MultipleChoiceQuestion("2 + 2?", 10, new List<string> { "3", "4", "5" }, 1);
             quiz.Questions.Add(question);
             _context.Classrooms.Add(classroom);
             _context.Quizzes.Add(quiz);
-            await _context.SaveChangesAsync();
 
             var studentId = Guid.NewGuid();
+            _context.Enrollments.Add(new Enrollment(studentId, classroom.Id));
+            await _context.SaveChangesAsync();
+
             var attempt = new QuizAttempt(quiz.Id, studentId);
-            attempt.Start();
+            attempt.Start(durationMinutes);
+            // Save as of just inside the deadline, not as of StartedAt: with a negative duration
+            // the deadline is already behind StartedAt, so anchoring to it is what lets an
+            // expired seed still carry the work the expiry tests expect to be graded.
+            attempt.SaveDraftAnswers(
+                new Dictionary<Guid, string> { [question.Id] = "1" }, attempt.ExpiresAt.AddSeconds(-1));
             await new QuizAttemptRepository(_context).AddAsync(attempt);
 
-            return (attempt.Id, question.Id, studentId);
+            return (attempt.Id, question.Id, studentId, quiz.Id);
         }
 
         // A fresh context per facade call, mirroring the per-request scope of the real app
-        // (each submit is its own HTTP request with its own scoped DbContext).
+        // (each call is its own HTTP request with its own scoped DbContext).
         private QuizDbContext NewContext() =>
             new(new DbContextOptionsBuilder<QuizDbContext>()
                 .UseNpgsql(_postgres.GetConnectionString()).Options);
