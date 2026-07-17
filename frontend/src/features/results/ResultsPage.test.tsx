@@ -85,6 +85,35 @@ describe('ResultsPage (AC-8, AC-12)', () => {
     expect(screen.getAllByText(/Quiztin is writing your feedback/).length).toBeGreaterThan(0);
   });
 
+  it('renders a skipped question honestly, not as a blank answer (spec 0006)', async () => {
+    // A skipped question now arrives as a graded row with a blank answer (the backend completes
+    // the record at grading). The screen must read "Not answered", never an empty value, and the
+    // count must include it so the headline cannot overstate the score.
+    vi.mocked(api.getAttemptResult).mockResolvedValue({
+      ...readyResult,
+      totalScore: 1,
+      answers: [
+        ...readyResult.answers,
+        {
+          questionId: 'x3',
+          questionText: 'Which protocol assigns IP addresses automatically?',
+          providedAnswer: '',
+          correctAnswer: 'DHCP',
+          isCorrect: false,
+          pointsAwarded: 0,
+          feedback: 'Not quite — worth another look at this one.',
+          feedbackSource: 'Deterministic',
+        },
+      ],
+    });
+    renderResults();
+
+    // Three questions now, one correct: the count is honest, not "every one right".
+    expect(await screen.findByText(/1 of 3/)).toBeInTheDocument();
+    expect(screen.getByText('Not answered')).toBeInTheDocument();
+    expect(screen.getByText('DHCP')).toBeInTheDocument();
+  });
+
   it('shows a not found state for an unknown attempt or one that is not the caller’s (AC-9)', async () => {
     vi.mocked(api.getAttemptResult).mockResolvedValue(null);
     renderResults();

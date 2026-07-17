@@ -90,7 +90,9 @@ function AnswerReview({
         <div className="flex flex-wrap gap-x-2">
           <dt className="text-text-muted">Your answer:</dt>
           <dd className={`font-semibold ${correct ? 'text-success-text' : 'text-danger-text'}`}>
-            {answer.providedAnswer}
+            {/* A skipped question now has a graded row with a blank answer (spec 0006), so say
+                "Not answered" rather than render an empty value that reads like a bug. */}
+            {answer.providedAnswer || 'Not answered'}
           </dd>
         </div>
         {!correct && (

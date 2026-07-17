@@ -103,5 +103,36 @@ namespace QuizService.Tests
             Assert.Equal(15m, attempt.TotalScore);
             Assert.Equal("Graded", attempt.CurrentStateName);
         }
+
+        [Fact]
+        public void Evaluate_GradesEveryQuestion_IncludingOnesLeftUnanswered()
+        {
+            var mc = new MultipleChoiceQuestion("2 + 2?", 10, new List<string> { "3", "4", "5" }, 1);
+            var tf = new TrueFalseQuestion("The sky is blue.", 5, true);
+            var skipped = new ShortAnswerQuestion("Capital of France?", 5, "Paris");
+            var questions = new List<Question> { mc, tf, skipped };
+
+            var attempt = new QuizAttempt(Guid.NewGuid(), Guid.NewGuid());
+            attempt.Start(10);
+            // Answer the first two, leave the third with no draft at all.
+            attempt.SaveDraftAnswers(new Dictionary<Guid, string>
+            {
+                [mc.Id] = "1",     // correct  -> 10
+                [tf.Id] = "true",  // correct  -> 5
+            }, DateTime.UtcNow);
+            attempt.Submit();
+
+            attempt.Evaluate(new PointsScoringStrategy(), questions);
+
+            // The graded record covers the whole quiz, not only the answered part (spec 0006):
+            // the skipped question is a blank answer that scored zero, so the results screen's
+            // "N of M" is honest rather than reading "2 of 2 right".
+            Assert.Equal(3, attempt.Answers.Count);
+            var skippedAnswer = attempt.Answers.Single(a => a.QuestionId == skipped.Id);
+            Assert.False(skippedAnswer.IsCorrect);
+            Assert.Equal(0m, skippedAnswer.PointsAwarded);
+            Assert.Equal(string.Empty, skippedAnswer.ProvidedAnswer);
+            Assert.Equal(15m, attempt.TotalScore);
+        }
     }
 }

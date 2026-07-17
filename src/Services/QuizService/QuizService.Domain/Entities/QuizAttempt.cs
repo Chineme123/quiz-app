@@ -132,6 +132,18 @@ namespace QuizService.Domain.Entities
         public void Evaluate(IScoringStrategy strategy, IReadOnlyList<Question> questions)
         {
             _currentState.Evaluate(this);
+
+            // Complete the graded record before scoring: every question gets a row, including
+            // any the student left unanswered (spec 0006). A skipped question has no draft, so
+            // without this it would have no row, and the results screen counts rows — it would
+            // then read "2 of 2 right" for a student who skipped the third and got the rest, an
+            // overstatement. A blank answer scores zero like any wrong one, so the count is honest.
+            foreach (var question in questions)
+            {
+                if (_answers.All(a => a.QuestionId != question.Id))
+                    _answers.Add(new QuizAnswer(question.Id, string.Empty));
+            }
+
             strategy.Score(this, questions);
             GradedAt = DateTime.UtcNow;
             // Feedback comes later, in the background; the attempt is graded and Pending.
