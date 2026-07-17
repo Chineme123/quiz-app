@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using QuizService.Domain.Entities;
@@ -44,6 +46,30 @@ namespace QuizService.Infrastructure.Persistence
             // FR7: only students enrolled in the classroom may take its quizzes.
             return await _context.Enrollments
                 .AnyAsync(e => e.StudentId == studentId && e.ClassroomId == classroomId);
+        }
+
+        public async Task<(IReadOnlyList<Quiz> Items, int Total)> GetAvailableForStudentAsync(Guid studentId, int skip, int take)
+        {
+            var now = DateTime.UtcNow;
+
+            // The enrolment subquery IS the tenant scope (FR7, code-standards §5): a quiz the
+            // student is not enrolled for can never appear, whatever they pass. The window and
+            // published checks mirror Quiz.CanStart, so the list only offers what Start accepts.
+            var available = _context.Quizzes
+                .Where(q => q.IsPublished
+                            && (q.AvailableFrom == null || q.AvailableFrom <= now)
+                            && (q.AvailableTo == null || q.AvailableTo >= now)
+                            && _context.Enrollments.Any(e => e.StudentId == studentId && e.ClassroomId == q.ClassroomId));
+
+            var total = await available.CountAsync();
+            var items = await available
+                .OrderBy(q => q.Title)
+                .Skip(skip)
+                .Take(take)
+                .Include(q => q.Questions)
+                .ToListAsync();
+
+            return (items, total);
         }
     }
 }

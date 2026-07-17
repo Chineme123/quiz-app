@@ -17,20 +17,23 @@ namespace QuizService.Tests
         }
 
         [Fact]
-        public void Start_ShouldTransitionTo_InProgress()
+        public void Start_ShouldTransitionTo_InProgress_AndPinTheDeadline()
         {
             var attempt = new QuizAttempt(Guid.NewGuid(), Guid.NewGuid());
-            attempt.Start();
+            attempt.Start(30);
             Assert.Equal("InProgress", attempt.CurrentStateName);
             Assert.NotEqual(default, attempt.StartedAt);
+            // The deadline is pinned from the duration at this instant, so nothing can move
+            // it later (spec 0006, AC-3).
+            Assert.Equal(attempt.StartedAt.AddMinutes(30), attempt.ExpiresAt);
         }
 
         [Fact]
         public void Submit_ShouldTransitionTo_Submitted()
         {
             var attempt = new QuizAttempt(Guid.NewGuid(), Guid.NewGuid());
-            attempt.Start();
-            attempt.Submit(new List<QuizAnswer>());
+            attempt.Start(10);
+            attempt.Submit();
             Assert.Equal("Submitted", attempt.CurrentStateName);
             Assert.NotNull(attempt.SubmittedAt);
         }
@@ -48,8 +51,8 @@ namespace QuizService.Tests
         public void Evaluate_ShouldTransitionTo_Graded()
         {
             var attempt = new QuizAttempt(Guid.NewGuid(), Guid.NewGuid());
-            attempt.Start();
-            attempt.Submit(new List<QuizAnswer>());
+            attempt.Start(10);
+            attempt.Submit();
             attempt.Evaluate(new MockScoringStrategy(), new List<Question>());
 
             Assert.Equal("Graded", attempt.CurrentStateName);
@@ -84,18 +87,52 @@ namespace QuizService.Tests
             var questions = new List<Question> { mc, tf, sa };
 
             var attempt = new QuizAttempt(Guid.NewGuid(), Guid.NewGuid());
-            attempt.Start();
-            attempt.Submit(new List<QuizAnswer>
+            attempt.Start(10);
+            // Answers reach the attempt as saved drafts now; submit grades what is saved
+            // rather than taking a payload (spec 0006, AC-11).
+            attempt.SaveDraftAnswers(new Dictionary<Guid, string>
             {
-                new QuizAnswer(mc.Id, "1"),       // correct  -> 10
-                new QuizAnswer(tf.Id, "false"),   // incorrect -> 0
-                new QuizAnswer(sa.Id, " paris "), // correct  -> 5
-            });
+                [mc.Id] = "1",       // correct   -> 10
+                [tf.Id] = "false",   // incorrect -> 0
+                [sa.Id] = " paris ", // correct   -> 5
+            }, DateTime.UtcNow);
+            attempt.Submit();
 
             attempt.Evaluate(new PointsScoringStrategy(), questions);
 
             Assert.Equal(15m, attempt.TotalScore);
             Assert.Equal("Graded", attempt.CurrentStateName);
+        }
+
+        [Fact]
+        public void Evaluate_GradesEveryQuestion_IncludingOnesLeftUnanswered()
+        {
+            var mc = new MultipleChoiceQuestion("2 + 2?", 10, new List<string> { "3", "4", "5" }, 1);
+            var tf = new TrueFalseQuestion("The sky is blue.", 5, true);
+            var skipped = new ShortAnswerQuestion("Capital of France?", 5, "Paris");
+            var questions = new List<Question> { mc, tf, skipped };
+
+            var attempt = new QuizAttempt(Guid.NewGuid(), Guid.NewGuid());
+            attempt.Start(10);
+            // Answer the first two, leave the third with no draft at all.
+            attempt.SaveDraftAnswers(new Dictionary<Guid, string>
+            {
+                [mc.Id] = "1",     // correct  -> 10
+                [tf.Id] = "true",  // correct  -> 5
+            }, DateTime.UtcNow);
+            attempt.Submit();
+
+            attempt.Evaluate(new PointsScoringStrategy(), questions);
+
+            // The graded record covers the whole quiz, not only the answered part (spec 0006):
+            // the skipped question is a blank answer that scored zero, so the results screen's
+            // "N of M" is honest rather than reading "2 of 2 right".
+            Assert.Equal(3, attempt.Answers.Count);
+            var skippedAnswer = attempt.Answers.Single(a => a.QuestionId == skipped.Id);
+            Assert.False(skippedAnswer.IsCorrect);
+            Assert.Equal(0m, skippedAnswer.PointsAwarded);
+            Assert.Equal(string.Empty, skippedAnswer.ProvidedAnswer);
+            Assert.Equal(15m, attempt.TotalScore);
         }
     }
 }

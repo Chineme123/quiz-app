@@ -26,5 +26,14 @@ namespace QuizService.Domain.States
         {
             throw new InvalidOperationException($"Cannot generate feedback from state {Name}.");
         }
+
+        /// <summary>
+        /// Abandon the attempt (foundation §69 triggers 3 and 4, spec 0006). Only a running
+        /// attempt can be abandoned; a finished one keeps its result.
+        /// </summary>
+        public virtual void Abandon(QuizAttempt attempt)
+        {
+            throw new InvalidOperationException($"Cannot abandon quiz from state {Name}.");
+        }
     }
 }

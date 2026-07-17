@@ -10,5 +10,10 @@ namespace QuizService.Domain.States
         {
             attempt.TransitionTo(new SubmittedState());
         }
+
+        public override void Abandon(QuizAttempt attempt)
+        {
+            attempt.TransitionTo(new AbandonedState());
+        }
     }
 }

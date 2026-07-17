@@ -1,12 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using QuizService.Domain.Entities;
+using QuizService.Domain.Enums;
 using QuizService.Domain.Interfaces;
 using QuizService.Domain.Factories;
 using QuizService.Application.Commands;
 using QuizService.Application.DTOs;
 using QuizService.Application.Invokers;
+using QuizService.Application.Results;
 using QuizService.Domain.Events;
 using QuizService.Domain.Observers; // Assuming existing or we need to add dispatch logic
 
@@ -34,59 +37,128 @@ namespace QuizService.Application.Facades
             _eventDispatcher = eventDispatcher;
         }
 
+        /// <summary>Default and maximum page sizes for the available list (spec 0006, AC-1).</summary>
+        private const int DefaultPageSize = 20;
+        private const int MaxPageSize = 50;
+
+        /// <summary>
+        /// The quizzes this student may take, one page at a time (spec 0006, AC-1, AC-2). The
+        /// repository scopes by enrolment, so this can never surface another classroom's work.
+        /// Each row carries the single action that makes sense for it, and the open attempt id
+        /// when there is one, so Resume needs no second call and cannot start a duplicate.
+        /// </summary>
+        public async Task<AvailableQuizzesDto> GetAvailableQuizzesAsync(Guid studentId, int page, int pageSize)
+        {
+            // Clamp rather than trust: a caller asking for 10,000 rows gets the cap, not the
+            // database. Pagination is not optional even while the lists are small.
+            var size = Math.Clamp(pageSize <= 0 ? DefaultPageSize : pageSize, 1, MaxPageSize);
+            var pageNumber = Math.Max(page, 1);
+
+            var (quizzes, total) = await _quizRepository.GetAvailableForStudentAsync(
+                studentId, (pageNumber - 1) * size, size);
+
+            var quizIds = quizzes.Select(q => q.Id).ToList();
+            var attempts = quizIds.Count == 0
+                ? new List<QuizAttempt>()
+                : (await _attemptRepository.GetAttemptsForQuizzesAsync(studentId, quizIds)).ToList();
+
+            return new AvailableQuizzesDto
+            {
+                Total = total,
+                Page = pageNumber,
+                PageSize = size,
+                Items = quizzes.Select(q =>
+                {
+                    var mine = attempts.Where(a => a.QuizId == q.Id).ToList();
+                    // A running attempt wins: the student is mid quiz, so Resume is the only
+                    // action that makes sense. Otherwise a finished one means a result exists.
+                    var running = mine.FirstOrDefault(a => a.CurrentStateName == "InProgress");
+                    var finished = mine.FirstOrDefault(a =>
+                        a.CurrentStateName is "Submitted" or "Graded" or "Reviewable");
+
+                    return new AvailableQuizDto
+                    {
+                        QuizId = q.Id,
+                        Title = q.Title,
+                        DurationMinutes = q.DurationMinutes,
+                        QuestionCount = q.Questions.Count,
+                        State = running != null ? "InProgress" : finished != null ? "Graded" : "NotStarted",
+                        AttemptId = running?.Id ?? finished?.Id
+                    };
+                }).ToList()
+            };
+        }
+
         public async Task<Guid> StartQuizAsync(Guid studentId, Guid quizId)
         {
-            // 1. Verify student enrolled
-            if (!await _quizRepository.IsStudentEnrolledAsync(studentId, (await _quizRepository.GetByIdAsync(quizId))?.ClassroomId ?? Guid.Empty))
-            {
-                 // Note: getting quiz twice here, optimize in real app
-                 // For now, let's get quiz first
-            }
-            
             var quiz = await _quizRepository.GetByIdAsync(quizId);
             if (quiz == null) throw new Exception("Quiz not found");
 
+            // Enrolment gates taking (FR7). Scoped from the caller's token, never a client id.
             if (!await _quizRepository.IsStudentEnrolledAsync(studentId, quiz.ClassroomId))
             {
                 throw new Exception("Student is not enrolled in the classroom.");
             }
 
-            // 2. Check availability and attempt limits
-            var attemptsCount = await _attemptRepository.GetAttemptCountAsync(studentId, quizId);
+            // The availability window gates STARTING (foundation §69 trigger 2, spec 0006
+            // AC-14): CanStart refuses outside it. A student already inside a quiz is left
+            // alone to finish, which is why nothing re-checks the window on save or submit.
+            // Only attempts that actually spent a try count here: submitted/graded ones, plus
+            // any abandoned by a restart. An attempt abandoned by a quit does not (AC-15).
+            var attemptsCount = await _attemptRepository.GetConsumedAttemptCountAsync(studentId, quizId);
             if (!quiz.CanStart(attemptsCount, out var reason))
             {
                 throw new Exception($"Cannot start quiz: {reason}");
             }
-            
+
+            // Trigger 4, superseded: starting a new attempt abandons a prior unfinished one,
+            // which is the one-active-attempt rule. It is recorded as Superseded so it counts
+            // against MaxAttempts above, otherwise a student could restart forever and read
+            // the questions for free (AC-15).
+            var running = await _attemptRepository.GetInProgressAttemptAsync(studentId, quizId);
+            if (running != null)
+            {
+                running.LoadState();
+                running.Abandon(AbandonReason.Superseded);
+                await _attemptRepository.UpdateAsync(running);
+            }
+
             var attempt = new QuizAttempt(quizId, studentId);
-            attempt.Start();
-            
+            // The deadline is pinned from the quiz's duration at this instant (AC-3).
+            attempt.Start(quiz.DurationMinutes);
+
             await _attemptRepository.AddAsync(attempt);
             return attempt.Id;
         }
 
-        public async Task<AttemptResultDto?> SubmitQuizAsync(Guid attemptId, Guid studentId, SubmitQuizDto submission)
+        public async Task<SubmitQuizResult> SubmitQuizAsync(Guid attemptId, Guid studentId, SubmitQuizDto submission)
         {
             // Ownership scoping is a security boundary, not a nicety (code-standards §5,
             // security.md §4/§7): load the attempt and reject it when it isn't the caller's.
-            // Return null so the controller answers 404 whether the attempt is missing OR
+            // NotFound so the controller answers 404 whether the attempt is missing OR
             // someone else's — a non-owner never learns another student's attempt exists
             // (mirrors GetResultAsync, spec 0005 AC-9). Identity is the caller's Guid from the
             // token, never a client-supplied id. Checked before the idempotency guard below, so
             // no path can act on — or reveal — an attempt the caller doesn't own.
             var attempt = await _attemptRepository.GetByIdAsync(attemptId);
-            if (attempt == null || attempt.StudentId != studentId) return null;
+            if (attempt == null || attempt.StudentId != studentId) return SubmitQuizResult.NotFound();
 
             // 0. Idempotency — an EXACT CommandId replay already ran to completion. Return the
             // existing result rather than re-running the submit. (Guard unchanged; it now hands
             // back the same result a first call returns, so an exact retry is a clean success.)
             if (await _attemptRepository.HasCommandBeenProcessedAsync(submission.CommandId))
             {
-                return await LoadResultAsync(attempt);
+                return SubmitQuizResult.Ok(await LoadResultAsync(attempt));
             }
 
             // Rehydrate state
             attempt.LoadState();
+
+            // A superseded attempt has no result and can never gain one, so say so plainly
+            // instead of letting the domain throw out of Submit as a raw 400. The real case is
+            // a stale tab auto submitting at its countdown's zero after the student restarted
+            // the quiz somewhere else (spec 0006, AC-16).
+            if (attempt.CurrentStateName == "Abandoned") return SubmitQuizResult.Superseded();
 
             // Only an InProgress attempt is actually submitted by the command. Once it is
             // Submitted/Graded/Reviewable the command is a deliberate no-op — the case here is
@@ -95,8 +167,11 @@ namespace QuizService.Application.Facades
             // before the command runs, so we can tell "just graded" from "already graded".
             var wasInProgress = attempt.CurrentStateName == "InProgress";
 
-            // Create command
-            var command = new SubmitQuizCommand(attempt, submission);
+            // The command carries no answers: it grades the drafts already saved (AC-11). A
+            // submit arriving after ExpiresAt is graded, not refused, because the drafts stopped
+            // being writable at the deadline, so what is graded is exactly what the student had
+            // saved when their time ran out (AC-12).
+            var command = new SubmitQuizCommand(attempt);
 
             // Execute command
             await _commandInvoker.ExecuteCommandAsync(command);
@@ -116,7 +191,7 @@ namespace QuizService.Application.Facades
                 // 400 — even though the command layer treats a resubmit as a safe no-op. So
                 // skip Evaluate and the graded-event re-dispatch, and return the existing
                 // graded result unchanged (the same DTO a poll of the attempt would return).
-                return MapToResult(attempt, questions);
+                return SubmitQuizResult.Ok(MapToResult(attempt, questions));
             }
 
             // 1. Evaluate. Submit grades and returns fast; it does NOT call the model.
@@ -138,7 +213,73 @@ namespace QuizService.Application.Facades
             var gradedEvent = new QuizAttemptGradedEvent(attempt.Id, attempt.StudentId, attempt.QuizId, attempt.TotalScore ?? 0);
             await _eventDispatcher.DispatchAsync(gradedEvent);
 
-            return MapToResult(attempt, questions);
+            return SubmitQuizResult.Ok(MapToResult(attempt, questions));
+        }
+
+        /// <summary>
+        /// The take screen's questions, read through the attempt (spec 0006, AC-4). The attempt
+        /// is the authorisation: it is already owned by one student and enrolment was checked
+        /// when it started, so this never touches the unscoped GET /api/quizzes/{id}.
+        /// Returns null when the attempt is missing or not the caller's, so the controller
+        /// answers 404 either way (AC-5). Correct answers never cross this boundary.
+        /// </summary>
+        public async Task<AttemptQuestionsDto?> GetAttemptQuestionsAsync(Guid attemptId, Guid studentId)
+        {
+            var attempt = await _attemptRepository.GetByIdAsync(attemptId);
+            if (attempt == null || attempt.StudentId != studentId) return null;
+
+            var quiz = await _quizRepository.GetByIdAsync(attempt.QuizId);
+            if (quiz == null) return null;
+
+            return new AttemptQuestionsDto
+            {
+                AttemptId = attempt.Id,
+                QuizTitle = quiz.Title,
+                Status = attempt.CurrentStateName,
+                ExpiresAt = attempt.ExpiresAt,
+                // The client counts down on the gap between these two, not on its own clock,
+                // so a device with a wrong clock still shows the true time left (AC-10).
+                ServerNow = DateTime.UtcNow,
+                DraftAnswers = new Dictionary<Guid, string>(attempt.DraftAnswers),
+                Questions = quiz.Questions.Select(q => new AttemptQuestionDto
+                {
+                    Id = q.Id,
+                    QuestionType = q.GetType().Name,
+                    Prompt = q.Prompt,
+                    Points = q.Points,
+                    // Only a multiple choice question has options; nothing here reveals which
+                    // one is right.
+                    Options = (q as MultipleChoiceQuestion)?.Options.ToList()
+                }).ToList()
+            };
+        }
+
+        /// <summary>
+        /// Replaces the whole saved draft set (spec 0006, AC-6, AC-7). Scoped to the caller like
+        /// every other attempt endpoint. Rejected once the attempt is not running or its time is
+        /// up, which is what makes the deadline server enforced rather than merely counted down
+        /// by the client. The availability window is deliberately NOT re-checked here: a student
+        /// already inside a quiz is left to finish (AC-14).
+        /// </summary>
+        public async Task<SaveDraftOutcome> SaveDraftAnswersAsync(Guid attemptId, Guid studentId, SaveDraftAnswersDto draft)
+        {
+            var attempt = await _attemptRepository.GetByIdAsync(attemptId);
+            if (attempt == null || attempt.StudentId != studentId) return SaveDraftOutcome.NotFound;
+
+            attempt.LoadState();
+            try
+            {
+                attempt.SaveDraftAnswers(draft.Answers, DateTime.UtcNow);
+            }
+            catch (InvalidOperationException)
+            {
+                // The entity guards both cases (wrong state, past the deadline). Either way the
+                // answer is the same to the client: this attempt will not take more writes.
+                return SaveDraftOutcome.Rejected;
+            }
+
+            await _attemptRepository.UpdateAsync(attempt);
+            return SaveDraftOutcome.Saved;
         }
 
         /// <summary>

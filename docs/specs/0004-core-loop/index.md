@@ -15,10 +15,10 @@ Treat the core loop as an umbrella of the five children listed below, and build 
 
 Children of this umbrella. Each is a separate spec; each is designed in its own `/architect` pass and gets its number then.
 
-- [0005 AI feedback and student results](0005-ai-feedback-and-results.md): the wedge, built as the thinnest end to end thread. Real Claude feedback on the wrong answers of a graded attempt, shown on a student results screen (supports UC8 feedback and the UC9 student read). **Designed, ready to build.**
+- [0005 AI feedback and student results](0005-ai-feedback-and-results.md): the wedge, built as the thinnest end to end thread. Real Claude feedback on the wrong answers of a graded attempt, shown on a student results screen (supports UC8 feedback and the UC9 student read). **Built and merged.**
+- [0006 Take quiz screen](0006-take-quiz-screen.md): the student take experience in the SPA, so a human drives the attempt rather than the API or the seeder (UC8 UI). Adds a list of available quizzes, a one question at a time screen with a navigator and a countdown, and answers saved to the server as they are picked. Overrides two locked foundation decisions (section 8 auto save, section 69 trigger 1); both carry follow ups to reconcile it. **Designed, ready to build.**
 - (planned) Classroom create and join: teacher creates a classroom, student joins, which makes enrolment gating (FR7) real (UC2, UC3). The dependency root for real, not seeded, preconditions.
 - (planned) AI quiz generation: the authoring side of the wedge, Claude assisted question generation behind the existing generation seam, with the empty editable template fallback (UC6 real).
-- (planned) Take quiz screen: the student take experience in the SPA, so a human drives the attempt rather than the API or the seeder (UC8 UI).
 - (planned) ResultService read side: the graded event projection into `resultdb`, the UC9 read moved off QuizService, and the teacher classroom results view (UC9 move, UC10).
 
 ## Shared contracts

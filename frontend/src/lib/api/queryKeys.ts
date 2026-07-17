@@ -2,4 +2,6 @@
 export const qk = {
   profile: ['profile'] as const,
   attemptResult: (attemptId: string) => ['attemptResult', attemptId] as const,
+  availableQuizzes: ['availableQuizzes'] as const,
+  attemptQuestions: (attemptId: string) => ['attemptQuestions', attemptId] as const,
 };
