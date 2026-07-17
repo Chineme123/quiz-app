@@ -46,7 +46,7 @@ _Covers the whole child: backend (tasks 1 to 8) and the SPA (tasks 9 to 14)._
 - [ ] `GET /api/attempts/{attemptId}/questions` as a *different* student → `404`. → AC-5
 - [ ] `POST /api/attempts/{attemptId}/submit` with a body of only `{commandId}` → graded score computed from the saved drafts (no answers in the body). Replay the same `commandId` → the same result, no re-grade. → AC-11
 - [ ] Same submit as a *different* student → `404`; the owner's attempt is still `InProgress` and unscored. → AC-5
-- [ ] Start the same quiz again → the first attempt becomes `Abandoned` with reason `Superseded`, and a third start is refused with "Maximum attempts" (MaxAttempts = 1). → AC-15
+- [ ] Start the same quiz again → the previous attempt becomes `Abandoned` with reason `Superseded`. Repeat until the limit: the seed quiz is `MaxAttempts = 5`, so the 6th start is refused with "Maximum attempts (5) exceeded" (each restart consumed one). → AC-15
 
 ## UI / manual (sign in as the seeded student)
 - [ ] `npx vitest run src/features/take` → 12 pass, including two axe checks. → AC-17, AC-19
