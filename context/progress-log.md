@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [fix] De-flake the take-quiz navigator test
+- **Date:** 2026-07-18
+- **Area:** apps/frontend
+- **What:** `TakeQuizPage.test.tsx` → "shows one question at a time with the countdown and the navigator" intermittently failed in CI (`Unable to find an accessible element with role "button" and name "Question 1, answered"`). The assertion used a synchronous `getByRole` for the navigator's "answered" label, which settles a render *after* the quiz title (`findByText('Networking basics')`) — once the saved draft answers hydrate the form state. Changed that one query to `await screen.findByRole(...)` so it waits for the label; Q2's "not answered yet" stays synchronous (the navigator is fully rendered by then). Other tests in the file already awaited correctly.
+- **Notes:** Verified with 8× single-file runs + a full `npm run test` (19 files / 87 tests) all green. Spec 0006 (take-quiz screen) test code; no product code touched.
+
 ### [refactor] Microservices → modular monolith (spec 0007); profile FK bug fixed
 - **Date:** 2026-07-18
 - **Area:** backend / infra / context
