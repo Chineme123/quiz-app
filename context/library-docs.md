@@ -1,6 +1,7 @@
 # Quiztin — Library Docs
 
 > Each dependency and how *this project* uses it. Conventions live in `code-standards.md`; the reasoning behind each stack choice lives in `foundation.md` §7. This file describes the **target** stack (the locked decisions); where the current code still differs, it's marked ⚠️.
+> **⚠️ Superseded in part by [spec 0007](../docs/specs/0007-modular-monolith/index.md) (2026-07-18):** the app is now one host (`Quiztin.Api`) with two module projects, not five services + a YARP gateway. YARP is gone; there is **one** `AddJwtBearer` in the host; each module has **one** `DbContext` mapped to its own Postgres schema in the single `quiztin` database. The per-package notes below still hold.
 
 **Status key:** ✅ locked / in use · 🕗 TBD (decide when we get there) · ⚠️ current-state drift to reconcile
 

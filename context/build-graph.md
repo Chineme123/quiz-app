@@ -1,6 +1,7 @@
 # Quiztin — Build Graph
 
 > A dependency map, not a plan. What depends on what. For *why* anything is built, see `foundation.md`; for what already exists, see `progress-log.md`.
+> **⚠️ Superseded in part by [spec 0007](../docs/specs/0007-modular-monolith/index.md) (2026-07-18):** there is no gateway node and no ResultService node any more — one host, two modules (Identity, Assessment), one database. Results live in the Assessment module (no separate `resultdb` projection). Read the nodes below through that lens.
 
 ## How to read this file
 This is a map of *what-requires-what* — **NOT a timeline, a build plan, or a prescribed order**. The developer builds breadth-first with Claude (foundation §0), picking their own path; this file just says what a node genuinely needs before it can work. **Hard requirement** = cannot build/run without it. **Soft benefit** = easier or nicer with it, possible without.

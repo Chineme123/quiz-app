@@ -19,7 +19,7 @@ Children of this umbrella. Each is a separate spec; each is designed in its own 
 - [0006 Take quiz screen](0006-take-quiz-screen.md): the student take experience in the SPA, so a human drives the attempt rather than the API or the seeder (UC8 UI). Adds a list of available quizzes, a one question at a time screen with a navigator and a countdown, and answers saved to the server as they are picked. Overrides two locked foundation decisions (section 8 auto save, section 69 trigger 1); both carry follow ups to reconcile it. **Designed, ready to build.**
 - (planned) Classroom create and join: teacher creates a classroom, student joins, which makes enrolment gating (FR7) real (UC2, UC3). The dependency root for real, not seeded, preconditions.
 - (planned) AI quiz generation: the authoring side of the wedge, Claude assisted question generation behind the existing generation seam, with the empty editable template fallback (UC6 real).
-- (planned) ResultService read side: the graded event projection into `resultdb`, the UC9 read moved off QuizService, and the teacher classroom results view (UC9 move, UC10).
+- (planned) Teacher classroom results (UC10): the classroom-wide results read. **Note (spec 0007):** there is no separate ResultService or `resultdb` any more — results live in the Assessment module (UC9 is already served there), so this is a read within Assessment, not a cross-service projection. The "grading feeds results" shared contract keeps the in-process graded event; the cross-service framing is dropped.
 
 ## Shared contracts
 
