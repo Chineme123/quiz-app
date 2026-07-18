@@ -87,6 +87,9 @@ if (app.Environment.IsDevelopment())
     await DataSeeder.SeedDevelopmentDataAsync(app.Services);
 }
 
+// Serve the SPA assets baked into wwwroot (empty in local dev, where Vite serves the SPA).
+app.UseStaticFiles();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -94,5 +97,27 @@ app.MapControllers();
 
 // Liveness for docker-compose, Railway health checks (spec 0002).
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+
+// The prerendered landing page, served only at the exact root path (spec 0003, AC-14):
+// an explicit "/" endpoint outranks the SPA fallback, so a crawler or social scraper gets
+// the landing markup + SEO tags, while every other route falls back to the neutral
+// bootstrap. Falls back to index.html when the prerender file is absent (local dev).
+app.MapGet("/", async (HttpContext context, IWebHostEnvironment env) =>
+{
+    var webRoot = env.WebRootPath ?? string.Empty;
+    var landing = Path.Combine(webRoot, "index.prerender.html");
+    var file = File.Exists(landing) ? landing : Path.Combine(webRoot, "index.html");
+    if (!File.Exists(file))
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+    context.Response.ContentType = "text/html; charset=utf-8";
+    await context.Response.SendFileAsync(file);
+});
+
+// SPA client-side routing: any non-/api, non-asset, non-root path returns the neutral
+// bootstrap index.html (never the prerendered landing markup, per AC-14).
+app.MapFallbackToFile("index.html");
 
 app.Run();
