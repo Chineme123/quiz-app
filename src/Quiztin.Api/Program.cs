@@ -2,12 +2,14 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Quiztin.Modules.Assessment;
+using Quiztin.Modules.Identity;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Controllers come from the module assemblies (discovered via AddApplicationPart).
 builder.Services.AddControllers()
+    .AddApplicationPart(typeof(IdentityModule).Assembly)
     .AddApplicationPart(typeof(AssessmentModule).Assembly);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -31,6 +33,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Modules
+builder.Services.AddIdentityModule(builder.Configuration);
 builder.Services.AddAssessmentModule(builder.Configuration);
 
 // ONE JWT validator for the whole app (was one per service). The Identity module

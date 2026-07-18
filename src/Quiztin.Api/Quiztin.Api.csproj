@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Quiztin.Modules.Identity\Quiztin.Modules.Identity.csproj" />
     <ProjectReference Include="..\Quiztin.Modules.Assessment\Quiztin.Modules.Assessment.csproj" />
   </ItemGroup>
 
