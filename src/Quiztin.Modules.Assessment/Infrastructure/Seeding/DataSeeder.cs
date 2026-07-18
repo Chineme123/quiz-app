@@ -33,8 +33,7 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Seeding
 
             try
             {
-                await context.Database.MigrateAsync();
-
+                // Migration is the host's single job now (one migrate-on-startup, spec 0007).
                 var seededAnything = false;
 
                 // Classroom owned by the seed teacher.

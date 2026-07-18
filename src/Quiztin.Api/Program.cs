@@ -1,8 +1,13 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Quiztin.Modules.Assessment;
+using Quiztin.Modules.Assessment.Infrastructure.Persistence;
+using Quiztin.Modules.Assessment.Infrastructure.Seeding;
 using Quiztin.Modules.Identity;
+using Quiztin.Modules.Identity.Infrastructure.Persistence;
+using Quiztin.Modules.Identity.Infrastructure.Seeding;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -63,9 +68,11 @@ var app = builder.Build();
 // Populated when the module DbContexts land (Stage 3 migrates IdentityDbContext + QuizDbContext).
 if (app.Configuration.GetValue<bool>("RUN_MIGRATIONS_ON_STARTUP"))
 {
+    // One migrate path for the whole app: each module owns its schema and its own
+    // migration history in the single `quiztin` database (spec 0007).
     using var migrationScope = app.Services.CreateScope();
-    // Stage 3: migrationScope.ServiceProvider.GetRequiredService<IdentityDbContext>().Database.Migrate();
-    //          migrationScope.ServiceProvider.GetRequiredService<QuizDbContext>().Database.Migrate();
+    migrationScope.ServiceProvider.GetRequiredService<IdentityDbContext>().Database.Migrate();
+    migrationScope.ServiceProvider.GetRequiredService<QuizDbContext>().Database.Migrate();
 }
 
 // Configure the HTTP request pipeline.
@@ -73,6 +80,11 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    // Seed the demo users first (Identity), then the classroom/quiz/enrolment that
+    // reference them by Guid (Assessment). Assumes migrations have run.
+    await IdentitySeeder.SeedDevelopmentAsync(app.Services);
+    await DataSeeder.SeedDevelopmentDataAsync(app.Services);
 }
 
 app.UseAuthentication();

@@ -26,5 +26,16 @@ namespace Quiztin.Modules.Identity.Domain.Entities
             PasswordHash = passwordHash;
             Role = role;
         }
+
+        /// <summary>
+        /// Dev seeding only: create a user with a KNOWN id, so a seeded student/teacher can
+        /// log in and their JWT NameIdentifier lines up with the seeded classroom/quiz Guids.
+        /// </summary>
+        public static AuthUser CreateSeed(Guid id, string email, string passwordHash, string role)
+        {
+            var user = new AuthUser(email, passwordHash, role);
+            user.Id = id;
+            return user;
+        }
     }
 }
