@@ -39,11 +39,11 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - name: Restore
-        run: dotnet restore QuizApp.sln
+        run: dotnet restore Quiztin.sln
       - name: Build
-        run: dotnet build QuizApp.sln --no-restore -c Release
+        run: dotnet build Quiztin.sln --no-restore -c Release
       - name: Test (with coverage)
-        run: dotnet test QuizApp.sln --no-build -c Release --collect:"XPlat Code Coverage" --results-directory ./coverage
+        run: dotnet test Quiztin.sln --no-build -c Release --collect:"XPlat Code Coverage" --results-directory ./coverage
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4
@@ -60,9 +60,8 @@ jobs:
         run: |
           set -e
           ef() { dotnet tool run dotnet-ef migrations has-pending-model-changes --no-build --configuration Release "$@"; }
-          ef --project src/Services/AuthService/AuthService.Infrastructure --startup-project src/Services/AuthService/AuthService.API --context AuthDbContext
-          ef --project src/Services/UserService/UserService.Infrastructure --startup-project src/Services/UserService/UserService.API --context UserDbContext
-          ef --project src/Services/QuizService/QuizService.Infrastructure --startup-project src/Services/QuizService/QuizService.API --context QuizDbContext
+          ef --project src/Quiztin.Modules.Identity --startup-project src/Quiztin.Api --context IdentityDbContext
+          ef --project src/Quiztin.Modules.Assessment --startup-project src/Quiztin.Api --context QuizDbContext
 
   frontend:
     name: frontend

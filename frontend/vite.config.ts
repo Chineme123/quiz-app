@@ -6,12 +6,12 @@ import path from 'node:path';
 
 // The dev server is the SAME ORIGIN as the API: there is no CORS anywhere in the
 // backend (foundation §7 #27), so the browser reaches the API through this proxy.
-// One target now: the YARP gateway (spec 0002), which does the /api routing to the
-// services. This mirrors production (the SPA and the API share the gateway origin).
+// One target now: the single Quiztin.Api host (spec 0007), which owns /api and serves
+// the SPA. This mirrors production (the SPA and the API share the one host origin).
 // changeOrigin + an empty cookieDomainRewrite let the refresh cookie survive.
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const GATEWAY = env.GATEWAY_ORIGIN ?? 'http://localhost:8080';
+  const API_ORIGIN = env.API_ORIGIN ?? 'http://localhost:8080';
 
   return {
     plugins: [react(), tailwindcss()],
@@ -27,9 +27,9 @@ export default defineConfig(({ mode }) => {
       // design-system/ is a sibling of frontend/, imported by src/styles/tailwind.css.
       fs: { allow: ['..'] },
       proxy: {
-        // Everything under /api goes to the gateway, which routes to the right service.
+        // Everything under /api goes to the single host.
         '/api': {
-          target: GATEWAY,
+          target: API_ORIGIN,
           changeOrigin: true,
           secure: false,
           cookieDomainRewrite: '',

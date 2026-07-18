@@ -20,6 +20,14 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [refactor] Microservices → modular monolith (spec 0007); profile FK bug fixed
+- **Date:** 2026-07-18
+- **Area:** backend / infra / context
+- **What:** Re-architected the backend from five microservices (database-per-service, YARP gateway) into a modular monolith per new [spec 0007](../docs/specs/0007-modular-monolith/index.md). One `Quiztin.Api` host serves `/api` and the SPA; the domain is two module projects — `Quiztin.Modules.Identity` (Auth + User merged) and `Quiztin.Modules.Assessment` (the old Quiz; named Assessment to dodge a C# namespace/type clash with the `Quiz` entity) — each with Domain/Application/Infrastructure/Api folders. One `quiztin` Postgres database, a schema per module (`identity`, `quiz`), one DbContext + migration history each; real FKs within a module, plain Guids across module boundaries (splittable). One `AddJwtBearer` in the host; the Identity module issues. Deleted the YARP gateway and the two empty stub services (Result, Notification); docker-compose is postgres + one app; deploy is one Railway service; CI targets `Quiztin.sln`. Full `Quiztin` rename. Done as one branch in seven staged, individually-green commits.
+- **The bug fix (the motivation):** the profile-save 500 (foundation §5/§10) is fixed by construction — the anemic, never-populated `userdb.Users` + `UserDbContext` are gone; `AuthUser` is the sole users table and `Profiles.UserId` is a real FK to it; registration creates that row.
+- **Result:** `dotnet build` 0 errors; `dotnet test` **62 pass** (Identity 36 = old Auth 27 + User 9; Assessment 26); frontend build clean. Booted the host against a fresh Postgres: both schemas migrate + seed, `POST /api/auth/register` → `PUT /api/profile` → **200** (was 500), persisted; seeded student login → `GET /api/quizzes/available` → 200.
+- **Notes:** No production data existed, so the DB was reset (one fresh migration per module). Context reconciled: spec 0007 + supersession banners on foundation/architecture/build-graph/library-docs + the 0004 umbrella's ResultService child retired (results live in Assessment now). A full prose sweep of stray "five services / gateway" mentions in the context files is a tracked follow-up (spec 0007 Follow-up, `/sync`). Dev seed users: `teacher@quiztin.dev` / `student@quiztin.dev`, password `Password123!`.
+
 ### [fix] Two defects `/check verify` caught on 0006 that 82 green tests missed
 - **Date:** 2026-07-16
 - **Area:** apps/frontend + backend (QuizService)

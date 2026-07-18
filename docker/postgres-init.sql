@@ -1,7 +1,4 @@
--- Database-per-service on one Postgres instance (foundation §7 #10).
--- Runs once on first container start, against the default 'postgres' database.
-CREATE DATABASE authdb;
-CREATE DATABASE userdb;
-CREATE DATABASE quizdb;
-CREATE DATABASE resultdb;
-CREATE DATABASE notificationdb;
+-- One database for the modular monolith (spec 0007). Runs once, against the default
+-- 'postgres' database, when the volume is first initialised. The app owns the schemas
+-- inside it: `identity` and `quiz`, each with its own EF migration history.
+CREATE DATABASE quiztin;

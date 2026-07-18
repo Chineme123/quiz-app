@@ -31,13 +31,5 @@ jobs:
             exit 0
           fi
           npm i -g @railway/cli
-          # Backend services first, then the gateway LAST — the gateway resolves the
-          # services' private DNS at startup, so it must come up after they exist.
-          for svc in authservice userservice quizservice; do
-            echo "::group::deploy $svc"
-            railway up --service "$svc" --ci
-            echo "::endgroup::"
-          done
-          echo "::group::deploy gateway"
-          railway up --service gateway --ci
-          echo "::endgroup::"
+          # One service now: the Quiztin host serves /api and the SPA (spec 0007).
+          railway up --service quiztin --ci

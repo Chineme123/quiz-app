@@ -1,6 +1,7 @@
 # Quiztin — Architecture
 
 > How the pieces fit. For *why* any choice was made, see `foundation.md` (cited as §7 #N) — it wins if this file ever disagrees. Coding conventions live in `code-standards.md`; the stack details live in `library-docs.md`.
+> **⚠️ Superseded by [spec 0007](../docs/specs/0007-modular-monolith/index.md) (2026-07-18):** the multi-service shape and the YARP gateway described below are now a **modular monolith** — one `Quiztin.Api` host serving `/api` + the SPA, two module projects (`Quiztin.Modules.Identity`, `Quiztin.Modules.Assessment`), one `quiztin` database with a schema per module. No gateway, no per-service databases. Read the shape here through that lens until this file is fully swept.
 
 ## Shape
 
