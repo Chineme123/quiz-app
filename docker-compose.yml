@@ -1,15 +1,14 @@
-# Local dev stack (spec 0002). `docker compose up` brings up Postgres + the built
-# services. The gateway service is added in Phase 3; the SPA runs on the host Vite
-# server (hot reload) proxying to the gateway. NotificationService is deferred (stub)
-# and omitted; its database is still created by docker/postgres-init.sql for later.
+# Local dev stack (spec 0007). `docker compose up` brings up Postgres and the single
+# Quiztin app, which owns /api and serves the SPA. For hot reload the SPA can instead
+# run on the host Vite server, proxying /api to the app.
 #
-# Host ports use a non-colliding 150xx block so they never clash with the `dotnet run`
-# launchSettings ports (Auth 5005, User 5079, Quiz 5224). Containers all listen on 8080.
+# The app listens on 8080. First `up` runs docker/postgres-init.sql, which creates the
+# `quiztin` database; the app migrates its two schemas (identity, quiz) on startup.
 
 services:
   postgres:
     image: postgres:17
-    container_name: quizapp-postgres
+    container_name: quiztin-postgres
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
@@ -25,84 +24,25 @@ services:
       timeout: 3s
       retries: 15
 
-  authservice:
-    image: ${DOCKER_REGISTRY-}authservice
+  app:
+    image: ${DOCKER_REGISTRY-}quiztin
     build:
       context: .
-      dockerfile: src/Services/AuthService/AuthService.API/Dockerfile
-    ports:
-      - "15001:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - RUN_MIGRATIONS_ON_STARTUP=true
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=authdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
-      - JwtSettings__Secret=${JWT_SECRET:-local-dev-only-insecure-secret-change-me}
-
-  userservice:
-    image: ${DOCKER_REGISTRY-}userservice
-    build:
-      context: .
-      dockerfile: src/Services/UserService/UserService.API/Dockerfile
-    ports:
-      - "15002:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - RUN_MIGRATIONS_ON_STARTUP=true
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=userdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
-      - JwtSettings__Secret=${JWT_SECRET:-local-dev-only-insecure-secret-change-me}
-
-  quizservice:
-    image: ${DOCKER_REGISTRY-}quizservice
-    build:
-      context: .
-      dockerfile: src/Services/QuizService/QuizService.API/Dockerfile
-    ports:
-      - "15224:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - RUN_MIGRATIONS_ON_STARTUP=true
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=quizdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
-      - JwtSettings__Secret=${JWT_SECRET:-local-dev-only-insecure-secret-change-me}
-
-  resultservice:
-    image: ${DOCKER_REGISTRY-}resultservice
-    build:
-      context: .
-      dockerfile: src/Services/ResultService/ResultService.API/Dockerfile
-    ports:
-      - "15004:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=resultdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
-      - JwtSettings__Secret=${JWT_SECRET:-local-dev-only-insecure-secret-change-me}
-
-  # The single origin: forwards /api/* to the services and (in the image) serves the
-  # SPA. In local dev the SPA runs on the host Vite server and proxies /api here.
-  gateway:
-    image: ${DOCKER_REGISTRY-}gateway
-    build:
-      context: .
-      dockerfile: src/Gateway/Dockerfile
+      dockerfile: src/Quiztin.Api/Dockerfile
     ports:
       - "8080:8080"
     depends_on:
-      - authservice
-      - userservice
-      - quizservice
+      postgres:
+        condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - RUN_MIGRATIONS_ON_STARTUP=true
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=quiztin;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
+      - JwtSettings__Secret=${JWT_SECRET:-local-dev-only-insecure-secret-change-me}
+      # Set these to enable the live Claude feedback path; otherwise the deterministic
+      # fallback runs and the loop still works end to end.
+      - Anthropic__ApiKey=${ANTHROPIC_API_KEY:-}
+      - Feedback__AiEnabled=${FEEDBACK_AI_ENABLED:-false}
 
 volumes:
   pgdata:
