@@ -49,8 +49,9 @@ public static class IdentitySeeder
             if (seededAny)
             {
                 await context.SaveChangesAsync();
-                logger.LogInformation("Seeded dev users: {Teacher} (Teacher) and {Student} (Student), password '{Password}'.",
-                    SeedTeacherEmail, SeedStudentEmail, SeedPassword);
+                // Never log the credentials themselves (security.md §6); they are the
+                // constants above for a developer to read from source.
+                logger.LogInformation("Seeded the demo teacher and student (Development only).");
             }
         }
         catch (Exception ex)
