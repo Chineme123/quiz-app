@@ -17,6 +17,8 @@
     </PackageReference>
   </ItemGroup>
 
-  <!-- Module project references are added as each module lands (Stages 1-2). -->
+  <ItemGroup>
+    <ProjectReference Include="..\Quiztin.Modules.Assessment\Quiztin.Modules.Assessment.csproj" />
+  </ItemGroup>
 
 </Project>

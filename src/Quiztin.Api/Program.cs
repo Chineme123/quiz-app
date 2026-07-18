@@ -1,15 +1,37 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
+using Quiztin.Modules.Assessment;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Controllers are contributed by the module assemblies. Each module's registration
-// extension (AddIdentityModule / AddQuizModule) lands in later stages, and the host
-// discovers its controllers via AddApplicationPart at that point.
-builder.Services.AddControllers();
+// Controllers come from the module assemblies (discovered via AddApplicationPart).
+builder.Services.AddControllers()
+    .AddApplicationPart(typeof(AssessmentModule).Assembly);
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Quiztin.Api", Version = "v1" });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+    c.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecuritySchemeReference("Bearer", document),
+            new List<string>()
+        }
+    });
+});
+
+// Modules
+builder.Services.AddAssessmentModule(builder.Configuration);
 
 // ONE JWT validator for the whole app (was one per service). The Identity module
 // issues the token; the host validates it. Issuer/Audience/Secret come from config

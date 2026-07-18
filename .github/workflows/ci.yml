@@ -62,7 +62,7 @@ jobs:
           ef() { dotnet tool run dotnet-ef migrations has-pending-model-changes --no-build --configuration Release "$@"; }
           ef --project src/Services/AuthService/AuthService.Infrastructure --startup-project src/Services/AuthService/AuthService.API --context AuthDbContext
           ef --project src/Services/UserService/UserService.Infrastructure --startup-project src/Services/UserService/UserService.API --context UserDbContext
-          ef --project src/Services/QuizService/QuizService.Infrastructure --startup-project src/Services/QuizService/QuizService.API --context QuizDbContext
+          ef --project src/Quiztin.Modules.Assessment --startup-project src/Quiztin.Api --context QuizDbContext
 
   frontend:
     name: frontend
