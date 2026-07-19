@@ -3,6 +3,22 @@ using System.Collections.Generic;
 
 namespace Quiztin.Modules.Assessment.Application.DTOs
 {
+    /// <summary>Request bodies for the classroom endpoints.</summary>
+    public class CreateClassroomDto
+    {
+        public string Name { get; set; } = string.Empty;
+    }
+
+    public class RenameClassroomDto
+    {
+        public string Name { get; set; } = string.Empty;
+    }
+
+    public class JoinClassroomDto
+    {
+        public string Code { get; set; } = string.Empty;
+    }
+
     /// <summary>A classroom as its owning teacher sees it (spec 0008).</summary>
     public class ClassroomDto
     {

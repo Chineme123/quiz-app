@@ -12,21 +12,13 @@ namespace Quiztin.Modules.Assessment.Api.Controllers
     [ApiController]
     [Route("api/attempts")]
     [Authorize]
-    public class QuizAttemptsController : ControllerBase
+    public class QuizAttemptsController : AssessmentControllerBase
     {
         private readonly TakeQuizFacade _facade;
 
         public QuizAttemptsController(TakeQuizFacade facade)
         {
             _facade = facade;
-        }
-
-        private Guid GetCurrentUserId()
-        {
-            var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(id, out var userId))
-                throw new UnauthorizedAccessException("No valid user identity in the token.");
-            return userId;
         }
 
         // POST /api/quizzes/{quizId}/start
