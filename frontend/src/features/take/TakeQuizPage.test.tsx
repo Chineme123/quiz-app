@@ -69,8 +69,11 @@ describe('TakeQuizPage', () => {
     expect(screen.getByText('Which layer routes packets between networks?')).toBeInTheDocument();
     expect(screen.queryByText('Name the protocol that resolves names to addresses.')).not.toBeInTheDocument();
     expect(screen.getByText(/Question 1 of 2/)).toBeInTheDocument();
-    // The navigator says the state in words, not by colour alone.
-    expect(screen.getByRole('button', { name: 'Question 1, answered' })).toBeInTheDocument();
+    // The navigator says the state in words, not by colour alone. Await the "answered"
+    // label: it settles a render after the title, once the saved draft answers hydrate the
+    // form state, so a synchronous query here races that update (flaky in CI). Once Q1 reads
+    // "answered" the navigator is fully rendered, so Q2 can be queried synchronously.
+    expect(await screen.findByRole('button', { name: 'Question 1, answered' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Question 2, not answered yet' })).toBeInTheDocument();
   });
 
