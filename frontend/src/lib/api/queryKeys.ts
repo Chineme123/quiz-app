@@ -7,4 +7,7 @@ export const qk = {
   ownedClassrooms: ['ownedClassrooms'] as const,
   enrolledClassrooms: ['enrolledClassrooms'] as const,
   classroomByCode: (code: string) => ['classroomByCode', code] as const,
+  classroom: (classroomId: string) => ['classroom', classroomId] as const,
+  classroomRoster: (classroomId: string, page: number) =>
+    ['classroomRoster', classroomId, page] as const,
 };

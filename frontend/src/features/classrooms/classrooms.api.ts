@@ -1,14 +1,19 @@
 import { apiFetch } from '@/lib/api/client';
 import { ApiError } from '@/lib/api/errors';
 import {
+  classroomDetailSchema,
+  classroomRosterSchema,
   classroomSchema,
   enrolledClassroomsSchema,
   joinPreviewSchema,
   joinResultSchema,
   ownedClassroomsSchema,
+  regeneratedCodeSchema,
 } from './classrooms.schemas';
 import type {
   Classroom,
+  ClassroomDetail,
+  ClassroomRoster,
   EnrolledClassroom,
   JoinPreview,
   JoinResult,
@@ -65,4 +70,56 @@ export async function joinClassroom(code: string): Promise<JoinResult> {
 /** Leaves a class. Idempotent, and it keeps every past attempt and result (AC-9). */
 export async function leaveClassroom(classroomId: string): Promise<void> {
   await apiFetch(`/api/classrooms/${classroomId}/leave`, { method: 'POST' });
+}
+
+/**
+ * One class in detail. A 404 covers both "no such class" and "not yours and you are not in it",
+ * because the server answers the same either way (AC-11).
+ */
+export async function getClassroom(classroomId: string): Promise<ClassroomDetail | null> {
+  try {
+    return await apiFetch(`/api/classrooms/${classroomId}`, { schema: classroomDetailSchema });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
+/** The owner's roster, paged (AC-10). */
+export async function getClassroomRoster(
+  classroomId: string,
+  page: number,
+  pageSize = 20,
+): Promise<ClassroomRoster> {
+  return apiFetch(`/api/classrooms/${classroomId}/students?page=${page}&pageSize=${pageSize}`, {
+    schema: classroomRosterSchema,
+  });
+}
+
+/** Renames a class. Owner only; a non owner gets a 404 rather than a refusal (AC-7). */
+export async function renameClassroom(classroomId: string, name: string): Promise<void> {
+  await apiFetch(`/api/classrooms/${classroomId}`, { method: 'PATCH', json: { name } });
+}
+
+/** Archives a class. Reversible, and it destroys nothing (AC-8). */
+export async function archiveClassroom(classroomId: string): Promise<void> {
+  await apiFetch(`/api/classrooms/${classroomId}/archive`, { method: 'POST' });
+}
+
+export async function unarchiveClassroom(classroomId: string): Promise<void> {
+  await apiFetch(`/api/classrooms/${classroomId}/unarchive`, { method: 'POST' });
+}
+
+/** Issues a new join code. The old code and its link stop working immediately (AC-7). */
+export async function regenerateJoinCode(classroomId: string): Promise<string> {
+  const { joinCode } = await apiFetch(`/api/classrooms/${classroomId}/regenerate-code`, {
+    method: 'POST',
+    schema: regeneratedCodeSchema,
+  });
+  return joinCode;
+}
+
+/** Removes a student's enrolment. Keeps their past attempts and results (AC-7). */
+export async function removeStudent(classroomId: string, studentId: string): Promise<void> {
+  await apiFetch(`/api/classrooms/${classroomId}/students/${studentId}`, { method: 'DELETE' });
 }

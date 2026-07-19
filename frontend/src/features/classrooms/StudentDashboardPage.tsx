@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { Button, Card, TextField, useToast } from '@/components/ui';
+import { SignOut } from '@phosphor-icons/react';
+import { Button, Card, Dialog, Icon, TextField, useToast } from '@/components/ui';
 import { ApiError } from '@/lib/api/errors';
 import { toUserMessage } from '@/lib/api/errorMessage';
-import { useEnrolledClassrooms, useJoinClassroom } from './useClassroomQueries';
+import { useEnrolledClassrooms, useJoinClassroom, useLeaveClassroom } from './useClassroomQueries';
+import type { EnrolledClassroom } from './classrooms.schemas';
 
 /**
  * The student's home (spec 0008, AC-5): the classes they are in, and the one box that gets them
@@ -14,8 +16,10 @@ export function StudentDashboardPage() {
   const joinClassroom = useJoinClassroom();
   const navigate = useNavigate();
   const toast = useToast();
+  const leaveClassroom = useLeaveClassroom();
   const [code, setCode] = useState('');
   const [codeError, setCodeError] = useState<string | null>(null);
+  const [leaving, setLeaving] = useState<EnrolledClassroom | null>(null);
 
   function handleJoin(event: React.FormEvent) {
     event.preventDefault();
@@ -107,18 +111,25 @@ export function StudentDashboardPage() {
         </Card>
       )}
 
-      {/* list-none + pl-0: Preflight is not loaded (spec 0001) and the design system reset does
-          not cover lists, so a bare <ul> still renders discs and a 40px indent. */}
       {classes.length > 0 && (
-        <ul className="flex list-none flex-col gap-3 pl-0">
+        <ul className="flex flex-col gap-3">
           {classes.map((classroom) => (
             <li key={classroom.id}>
               <Card padding="lg">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <h2 className="min-w-0 font-display text-lg text-text-strong">{classroom.name}</h2>
-                  <Button variant="secondary" onClick={() => void navigate('/quizzes')}>
-                    See quizzes
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="secondary" onClick={() => void navigate('/quizzes')}>
+                      See quizzes
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      icon={SignOut}
+                      onClick={() => setLeaving(classroom)}
+                    >
+                      Leave
+                    </Button>
+                  </div>
                 </div>
               </Card>
             </li>
@@ -131,6 +142,43 @@ export function StudentDashboardPage() {
           Looking for something to do? <Link to="/quizzes" className="text-primary">All your quizzes</Link> are in one place.
         </p>
       )}
+
+      {/* Leaving is reversible (the code lets you back in) but it does change what you can
+          reach, so it gets a plain spoken confirm rather than happening on one tap. */}
+      <Dialog
+        open={leaving !== null}
+        onClose={() => setLeaving(null)}
+        title={leaving ? `Leave ${leaving.name}?` : 'Leave this class?'}
+        description="You'll stop seeing its quizzes. Anything you've already submitted is kept, and you can join again with the class code."
+        icon={<Icon icon={SignOut} weight="fill" />}
+        tone="warning"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setLeaving(null)}>
+              Stay in the class
+            </Button>
+            <Button
+              loading={leaveClassroom.isPending}
+              onClick={() => {
+                if (!leaving) return;
+                leaveClassroom.mutate(leaving.id, {
+                  onSuccess: () => {
+                    toast.show({ tone: 'success', message: `You left ${leaving.name}.` });
+                    setLeaving(null);
+                  },
+                  onError: (error) =>
+                    toast.show({
+                      tone: 'danger',
+                      message: toUserMessage(error, "We couldn't leave that class just now."),
+                    }),
+                });
+              }}
+            >
+              Yes, leave
+            </Button>
+          </>
+        }
+      />
     </main>
   );
 }

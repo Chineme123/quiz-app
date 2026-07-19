@@ -52,6 +52,42 @@ export const joinPreviewSchema = z.object({
 });
 export type JoinPreview = z.infer<typeof joinPreviewSchema>;
 
+/**
+ * One class in detail. The owner gets the join code and counts; a participant gets the name
+ * only, so holding a place in a class is never permission to invite others into it.
+ */
+export const classroomDetailSchema = z.object({
+  id: guid,
+  name: z.string(),
+  isOwner: z.boolean(),
+  joinCode: z.string().nullish(),
+  archivedAt: z.string().nullish(),
+  studentCount: z.number().nullish(),
+  quizCount: z.number().nullish(),
+});
+export type ClassroomDetail = z.infer<typeof classroomDetailSchema>;
+
+/** The owner's roster, paged like every other list in the module. */
+export const rosterEntrySchema = z.object({
+  studentId: guid,
+  enrolledAt: z.string(),
+});
+
+export const classroomRosterSchema = z.object({
+  items: z.array(rosterEntrySchema),
+  total: z.number(),
+  page: z.number(),
+  pageSize: z.number(),
+});
+export type ClassroomRoster = z.infer<typeof classroomRosterSchema>;
+export type RosterEntry = z.infer<typeof rosterEntrySchema>;
+
+/** What regenerating a join code returns. */
+export const regeneratedCodeSchema = z.object({
+  id: guid,
+  joinCode: z.string(),
+});
+
 /** What a successful join returns. Already being in the class is also a success. */
 export const joinResultSchema = z.object({
   classroomId: guid,

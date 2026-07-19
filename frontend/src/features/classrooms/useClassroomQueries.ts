@@ -1,12 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { qk } from '@/lib/api/queryKeys';
 import {
+  archiveClassroom,
   createClassroom,
+  getClassroom,
+  getClassroomRoster,
   getEnrolledClassrooms,
   getOwnedClassrooms,
   joinClassroom,
   leaveClassroom,
   previewClassroomByCode,
+  regenerateJoinCode,
+  removeStudent,
+  renameClassroom,
+  unarchiveClassroom,
 } from './classrooms.api';
 
 /** The teacher dashboard's list (AC-2). */
@@ -61,6 +68,68 @@ export function useLeaveClassroom() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: qk.enrolledClassrooms });
       void queryClient.invalidateQueries({ queryKey: qk.availableQuizzes });
+    },
+  });
+}
+
+/** One class in detail. Null means it is not yours and you are not in it (AC-11). */
+export function useClassroom(classroomId: string) {
+  return useQuery({
+    queryKey: qk.classroom(classroomId),
+    queryFn: () => getClassroom(classroomId),
+    enabled: classroomId !== '',
+  });
+}
+
+/** The owner's roster, one page at a time (AC-10). */
+export function useClassroomRoster(classroomId: string, page: number) {
+  return useQuery({
+    queryKey: qk.classroomRoster(classroomId, page),
+    queryFn: () => getClassroomRoster(classroomId, page),
+    enabled: classroomId !== '',
+  });
+}
+
+/**
+ * The owner's management actions. Each refetches the class and the owned list, because a rename,
+ * an archive, or a new code changes what both the detail screen and the dashboard show.
+ */
+function useClassroomMutation<TArgs>(mutationFn: (args: TArgs) => Promise<unknown>, classroomId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: qk.classroom(classroomId) });
+      void queryClient.invalidateQueries({ queryKey: qk.ownedClassrooms });
+    },
+  });
+}
+
+export function useRenameClassroom(classroomId: string) {
+  return useClassroomMutation((name: string) => renameClassroom(classroomId, name), classroomId);
+}
+
+export function useArchiveClassroom(classroomId: string) {
+  return useClassroomMutation(() => archiveClassroom(classroomId), classroomId);
+}
+
+export function useUnarchiveClassroom(classroomId: string) {
+  return useClassroomMutation(() => unarchiveClassroom(classroomId), classroomId);
+}
+
+export function useRegenerateJoinCode(classroomId: string) {
+  return useClassroomMutation(() => regenerateJoinCode(classroomId), classroomId);
+}
+
+export function useRemoveStudent(classroomId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (studentId: string) => removeStudent(classroomId, studentId),
+    onSuccess: () => {
+      // The roster is paged, so drop every page rather than guess which one changed.
+      void queryClient.invalidateQueries({ queryKey: ['classroomRoster', classroomId] });
+      void queryClient.invalidateQueries({ queryKey: qk.classroom(classroomId) });
+      void queryClient.invalidateQueries({ queryKey: qk.ownedClassrooms });
     },
   });
 }

@@ -96,11 +96,8 @@ export function TeacherDashboardPage() {
         </Card>
       )}
 
-      {/* list-none + pl-0: Tailwind Preflight is deliberately not loaded (spec 0001), and the
-          design system reset does not cover lists, so a bare <ul> still renders discs and a
-          40px indent. */}
       {active.length > 0 && (
-        <ul className="flex list-none flex-col gap-3 pl-0">
+        <ul className="flex flex-col gap-3">
           {active.map((classroom) => (
             <li key={classroom.id}>
               <ClassroomRow classroom={classroom} />
@@ -115,7 +112,7 @@ export function TeacherDashboardPage() {
           <p className="mb-3 font-body text-sm text-text-muted">
             These are put away. Students can't join or take their quizzes, and everything is kept.
           </p>
-          <ul className="flex list-none flex-col gap-3 pl-0">
+          <ul className="flex flex-col gap-3">
             {archived.map((classroom) => (
               <li key={classroom.id}>
                 <ClassroomRow classroom={classroom} />

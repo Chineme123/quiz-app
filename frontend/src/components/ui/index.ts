@@ -25,6 +25,9 @@ export type { SelectProps, SelectOption } from './Select';
 export { Card } from './Card';
 export type { CardProps, CardVariant, CardPadding } from './Card';
 
+export { Dialog } from './Dialog';
+export type { DialogProps, DialogTone, DialogSize } from './Dialog';
+
 export { Toast, ToastProvider } from './Toast';
 export type { ToastProps, ToastProviderProps } from './Toast';
 export { useToast } from './useToast';

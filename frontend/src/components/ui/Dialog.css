@@ -1,0 +1,158 @@
+/* Dialog: the calm confirm surface. Warm translucent scrim with a light blur, a softly rounded
+   panel that pops in on the spring easing. Reduced motion is honored globally by base.css, and
+   the animations below opt out explicitly too. */
+
+.qz-dialog__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  /* Warm, never pure black: the same brown the shadow scale is built on. */
+  background: rgba(53, 46, 36, 0.38);
+  backdrop-filter: blur(3px);
+  animation: qz-dialog-fade var(--duration-fast) var(--ease-out);
+}
+
+.qz-dialog {
+  position: relative;
+  width: 100%;
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-modal);
+  box-shadow: var(--shadow-xl);
+  color: var(--text-body);
+  padding: var(--space-7);
+  animation: qz-dialog-pop var(--duration-base) var(--ease-spring);
+}
+
+.qz-dialog:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-xl), var(--focus-ring-shadow);
+}
+
+.qz-dialog--sm {
+  max-width: 26rem;
+}
+.qz-dialog--md {
+  max-width: 34rem;
+}
+
+.qz-dialog__head {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+  /* Room for the close button so a long title never runs under it. */
+  padding-right: var(--space-7);
+}
+
+.qz-dialog__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-pill);
+  font-size: 1.25rem;
+}
+
+.qz-dialog__icon--primary {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.qz-dialog__icon--accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.qz-dialog__icon--danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.qz-dialog__icon--warning {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.qz-dialog__titles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.qz-dialog__title {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  color: var(--text-strong);
+}
+
+.qz-dialog__desc {
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+}
+
+.qz-dialog__close {
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-5);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 44px target, per the accessibility floor. */
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition-colors);
+}
+
+.qz-dialog__close:hover {
+  background: var(--surface-sunken);
+  color: var(--text-strong);
+}
+
+.qz-dialog__close:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-shadow);
+}
+
+.qz-dialog__body {
+  margin-top: var(--space-5);
+  font-family: var(--font-body);
+  color: var(--text-body);
+}
+
+.qz-dialog__foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-7);
+}
+
+@keyframes qz-dialog-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes qz-dialog-pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qz-dialog__backdrop,
+  .qz-dialog {
+    animation: none;
+  }
+}
