@@ -163,6 +163,47 @@ namespace Quiztin.Modules.Assessment.Tests
         }
 
         [Fact]
+        public async Task Joining_by_code_makes_the_class_quizzes_reachable_and_startable()
+        {
+            // AC-6, the whole point of this slice: an enrolment created by a real join must be
+            // indistinguishable to the take path from one the seeder wrote. Nothing here touches
+            // the Enrollments table directly.
+            var (classroomId, quizId) = await SeedClassroomWithPublishedQuizAsync(enrolStudent: false);
+            var code = (await NewContext().Classrooms.SingleAsync(c => c.Id == classroomId)).JoinCode;
+
+            // Before joining, FR7 hides the quiz and refuses to start it.
+            var (before, _) = await new QuizRepository(NewContext()).GetAvailableForStudentAsync(_studentId, 0, 20);
+            Assert.Empty(before);
+            await Assert.ThrowsAsync<Exception>(() =>
+                BuildFacade(NewContext()).StartQuizAsync(_studentId, quizId));
+
+            var joined = await NewService(NewContext()).JoinAsync(code, _studentId);
+            Assert.Equal(JoinOutcome.Joined, joined.Outcome);
+
+            // After joining, the same reads let them in, and the attempt actually starts.
+            var (after, _) = await new QuizRepository(NewContext()).GetAvailableForStudentAsync(_studentId, 0, 20);
+            Assert.Single(after);
+
+            var attemptId = await BuildFacade(NewContext()).StartQuizAsync(_studentId, quizId);
+            Assert.NotEqual(Guid.Empty, attemptId);
+        }
+
+        [Fact]
+        public async Task Leaving_puts_the_quizzes_back_out_of_reach()
+        {
+            var (classroomId, quizId) = await SeedClassroomWithPublishedQuizAsync(enrolStudent: false);
+            var code = (await NewContext().Classrooms.SingleAsync(c => c.Id == classroomId)).JoinCode;
+            await NewService(NewContext()).JoinAsync(code, _studentId);
+
+            await NewService(NewContext()).LeaveAsync(classroomId, _studentId);
+
+            var (after, _) = await new QuizRepository(NewContext()).GetAvailableForStudentAsync(_studentId, 0, 20);
+            Assert.Empty(after);
+            await Assert.ThrowsAsync<Exception>(() =>
+                BuildFacade(NewContext()).StartQuizAsync(_studentId, quizId));
+        }
+
+        [Fact]
         public async Task A_non_owner_managing_a_class_gets_not_found_so_existence_never_leaks()
         {
             await SeedClassroomAsync();
@@ -249,7 +290,12 @@ namespace Quiztin.Modules.Assessment.Tests
             return created.Classroom!.JoinCode;
         }
 
-        private async Task<(Guid classroomId, Guid quizId)> SeedClassroomWithPublishedQuizAsync()
+        /// <summary>
+        /// A class with a published quiz. Pass enrolStudent: false to leave the student out, so a
+        /// test can prove the join itself is what grants access rather than a pre-written row.
+        /// </summary>
+        private async Task<(Guid classroomId, Guid quizId)> SeedClassroomWithPublishedQuizAsync(
+            bool enrolStudent = true)
         {
             var classroom = new Classroom(_teacherId, "Class With A Quiz");
             var quiz = new Quiz(classroom.Id, "Published Quiz", 10, _teacherId) { IsPublished = true };
@@ -258,7 +304,7 @@ namespace Quiztin.Modules.Assessment.Tests
             await using var ctx = NewContext();
             ctx.Classrooms.Add(classroom);
             ctx.Quizzes.Add(quiz);
-            ctx.Enrollments.Add(new Enrollment(_studentId, classroom.Id));
+            if (enrolStudent) ctx.Enrollments.Add(new Enrollment(_studentId, classroom.Id));
             await ctx.SaveChangesAsync();
 
             return (classroom.Id, quiz.Id);

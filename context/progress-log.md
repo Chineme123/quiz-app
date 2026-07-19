@@ -20,6 +20,20 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [feature] Classroom create + join built — FR7 is real (spec 0008, all 6 tasks)
+- **Date:** 2026-07-19
+- **Area:** backend / apps/frontend / db
+- **What:** Built [spec 0008](../docs/specs/0004-core-loop/0008-classroom-create-join.md) end to end, in six commits on `feat/0008-classroom-create-join`.
+  1. **Data model** — `Classroom` gains `JoinCode` (6 chars, unique), `ArchivedAt` (null = active), `CreatedAt`; `Enrollment.ClassroomId` becomes a real within-module FK. **Additive migration**, not a regenerated `InitialCreate` — the deployed Railway DB already has `InitialCreate` applied, so regenerating it would have broken production (a deliberate deviation from the spec's wording).
+  2. **Domain/application** — new `IClassroomRepository` (peer of `IQuizAttemptRepository`, not more methods on `IQuizRepository`) + `ClassroomAppService`. Failure signalling uses the outcome-enum pattern, chosen deliberately from the module's four competing styles.
+  3. **API** — `ClassroomsController` (12 endpoints); `GetCurrentUserId()` extracted to `AssessmentControllerBase` and **both** duplicate copies deleted.
+  4. **Frontend core loop** — `classrooms` slice; one role-aware `/dashboard` (teacher vs student); `/join/{code}` link flow; sign-in/register/wordmark now land on `/dashboard`.
+  5. **Management UI + `Dialog`** — owner class detail (paged roster w/ remove, rename, reissue code, archive/restore) and student leave. **Ported `Dialog`** from the design system per the registry rule, adding a focus trap and focus restore the export's prototype lacks. Registry updated.
+  6. **Verify** — AC-6/AC-8 automated, plus a live end-to-end walk.
+- **Key decisions:** join by short code with the link wrapping the same code (one secret to rotate, composed client-side from `window.location.origin`, so no server base-URL config); **strict create / open join** (Teacher role to create, any authenticated user to join — the code is the capability); **delete modelled as reversible archive** so graded student history is never destroyed; owner-scoped misses return **404, never 403**, so a class's existence never leaks.
+- **Loop closure (the point of the slice):** verified live — a brand-new student saw 0 available quizzes, joined with code `SEED23`, then saw the quiz and **started it (201)**. Archiving dropped it to 0 and refused the start (400) while the earlier attempt still read back (200); restoring brought it back. FR7 is now satisfiable by a real person instead of only the seeder.
+- **Notes:** 41 backend + 122 frontend tests pass. Cross-checked the spec on a second model before building; it caught that archive was unenforced on the take path (`GetAvailableForStudentAsync` / `StartQuizAsync` never checked the classroom), now fixed and tested. **Gap found and left alone:** a teacher can create a quiz but there is **no publish endpoint**, so an authored quiz can never reach students — that belongs to the AI-quiz-generation child, and `build-graph.md` now records it. Also outstanding from the spec's Follow-up: rate-limit `join` / `by-code`, and the teacher display name on student-facing views (needs a cross-module read, deferred by spec 0007).
+
 ### [fix] Preflight's missing list reset restored — stray bullets on every layout list
 - **Date:** 2026-07-19
 - **Area:** frontend
