@@ -4,4 +4,7 @@ export const qk = {
   attemptResult: (attemptId: string) => ['attemptResult', attemptId] as const,
   availableQuizzes: ['availableQuizzes'] as const,
   attemptQuestions: (attemptId: string) => ['attemptQuestions', attemptId] as const,
+  ownedClassrooms: ['ownedClassrooms'] as const,
+  enrolledClassrooms: ['enrolledClassrooms'] as const,
+  classroomByCode: (code: string) => ['classroomByCode', code] as const,
 };

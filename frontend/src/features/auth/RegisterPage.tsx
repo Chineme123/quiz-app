@@ -17,7 +17,9 @@ export function RegisterPage() {
   const { status, register: registerAccount } = useAuth();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const from = (location.state as { from?: string } | null)?.from ?? '/profile';
+  // Same as sign in: land on the role aware dashboard unless a guard was mid redirect, so a
+  // brand new teacher arrives at "create your first class" (spec 0008).
+  const from = (location.state as { from?: string } | null)?.from ?? '/dashboard';
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // A landing page CTA may hint the role via ?role=Student|Teacher; preselect it when valid.
