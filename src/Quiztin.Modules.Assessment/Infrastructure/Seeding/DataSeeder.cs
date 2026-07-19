@@ -25,6 +25,10 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Seeding
         public static readonly Guid SeedClassroomId = Guid.Parse("33333333-0000-0000-0000-000000000003");
         public static readonly Guid SeedQuizId = Guid.Parse("44444444-0000-0000-0000-000000000004");
 
+        // Fixed join code for the seed classroom, so joining it in dev needs no DB lookup.
+        // Uses only the unambiguous alphabet the generator draws from (spec 0008).
+        public const string SeedJoinCode = "SEED23";
+
         public static async Task SeedDevelopmentDataAsync(IServiceProvider serviceProvider)
         {
             using var scope = serviceProvider.CreateScope();
@@ -39,7 +43,13 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Seeding
                 // Classroom owned by the seed teacher.
                 if (!await context.Classrooms.AnyAsync(c => c.Id == SeedClassroomId))
                 {
-                    context.Classrooms.Add(new Classroom(SeedTeacherId, "Seed Classroom (Dev)") { Id = SeedClassroomId });
+                    // Pin the dev join code so a developer can always join the seed classroom
+                    // with a known code, instead of reading a freshly generated one out of the DB.
+                    context.Classrooms.Add(new Classroom(SeedTeacherId, "Seed Classroom (Dev)")
+                    {
+                        Id = SeedClassroomId,
+                        JoinCode = SeedJoinCode
+                    });
                     seededAnything = true;
                 }
 

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Quiztin.Modules.Assessment.Domain.Entities;
+using Quiztin.Modules.Assessment.Domain.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,7 +34,14 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Persistence
             modelBuilder.Entity<Classroom>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Name).IsRequired();
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+
+                // The join code is the capability to find a class, so it must be unique across
+                // every classroom, archived ones included: archiving never frees a code for
+                // reuse. The unique index is also what makes regenerate-on-collision safe,
+                // rather than relying on a read-then-write check (spec 0008).
+                entity.Property(e => e.JoinCode).IsRequired().HasMaxLength(JoinCodeGenerator.Length);
+                entity.HasIndex(e => e.JoinCode).IsUnique();
             });
 
             modelBuilder.Entity<Quiz>(entity =>
@@ -134,7 +142,18 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Persistence
             modelBuilder.Entity<Enrollment>(entity =>
             {
                 entity.HasKey(e => e.Id);
+
+                // Already present: at most one enrolment per user per class. This is what makes
+                // join idempotent at the database layer, so a double submit or two racing
+                // requests can never produce a second row (spec 0008).
                 entity.HasIndex(e => new { e.StudentId, e.ClassroomId }).IsUnique();
+
+                // ClassroomId becomes a real FK: it is a within-module reference, so integrity
+                // is enforced by the database. StudentId stays a plain Guid because users live
+                // in the Identity module across a schema boundary (spec 0007).
+                entity.HasOne<Classroom>()
+                      .WithMany()
+                      .HasForeignKey(e => e.ClassroomId);
             });
         }
     }
