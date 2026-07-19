@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [decision] Classroom create + join designed (spec 0008, core-loop child)
+- **Date:** 2026-07-19
+- **Area:** context / docs
+- **What:** Ran `/architect` for the "Classroom create and join" slice (UC2/UC3), the dependency-root child of the 0004 core-loop umbrella. Wrote [spec 0008](../docs/specs/0004-core-loop/0008-classroom-create-join.md) and linked it from the umbrella's child list. Locked decisions: a short 6-char join code on the classroom with the shareable link wrapping the same code; **strict create / open join** (only a Teacher-role user creates a classroom, any authenticated user joins by code — role read from the existing JWT `ClaimTypes.Role`); **role-aware teacher + student dashboards** replacing the empty post-login landing; **full class management** (rename, archive, regenerate-code, student leave, plus a teacher remove-student endpoint added on review); delete modelled as a **reversible archive** (`ArchivedAt`) so graded student history is never destroyed. Data-model delta: add `JoinCode` (unique), `ArchivedAt`, `CreatedAt` to `Classroom`; make `Enrollment.ClassroomId` a real within-module FK (the unique `(StudentId, ClassroomId)` index already exists). 11 ACs, a 6-task build plan.
+- **Notes:** Cross-checked on a second model (Sonnet, read-only). It confirmed the module boundary (spec 0007) and that a join here feeds the existing FR7 take-gate, and caught one blocker — archive was unenforced on the take path (`GetAvailableForStudentAsync` / `TakeQuizFacade.StartQuizAsync` / `Quiz.CanStart` never check the classroom) — now fixed in the spec (AC-8 + invariant + build task + test), plus the concurrent-join race (unique-violation → success), the already-existing unique index (data-model drift), and roster pagination (20/50). **Design only, not built.** Deferred to build time per the spec's Follow-up: cite 0008 in `foundation.md`, flip UC2/UC3 from "model built" to "built" in `build-graph.md`, and rate-limit join / by-code. No locked foundation decision changed (additive under the existing umbrella), so `foundation.md` is untouched for now.
+
 ### [fix] De-flake the take-quiz navigator test
 - **Date:** 2026-07-18
 - **Area:** apps/frontend
