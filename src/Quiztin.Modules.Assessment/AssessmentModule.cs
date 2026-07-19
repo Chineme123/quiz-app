@@ -43,6 +43,10 @@ public static class AssessmentModule
         services.AddScoped<IQuizAppService, QuizAppService>();
         services.AddScoped<IQuestionGenerationStrategy, StubLLMQuestionGenerationStrategy>();
 
+        // UC2/UC3 Registrations (classroom create, join, and management; spec 0008)
+        services.AddScoped<IClassroomRepository, ClassroomRepository>();
+        services.AddScoped<IClassroomAppService, ClassroomAppService>();
+
         // UC8 Registrations
         services.AddScoped<IQuizAttemptRepository, QuizAttemptRepository>();
         services.AddScoped<IStrategyFactory, StrategyFactory>();

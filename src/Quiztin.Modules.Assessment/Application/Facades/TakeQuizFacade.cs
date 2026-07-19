@@ -94,6 +94,15 @@ namespace Quiztin.Modules.Assessment.Application.Facades
             var quiz = await _quizRepository.GetByIdAsync(quizId);
             if (quiz == null) throw new Exception("Quiz not found");
 
+            // Archiving a classroom stops new starts (spec 0008, AC-8). An attempt already in
+            // progress is deliberately left alone to finish, exactly as the availability window
+            // behaves below: archiving gates STARTING, never an open attempt.
+            var classroom = await _quizRepository.GetClassroomAsync(quiz.ClassroomId);
+            if (classroom?.ArchivedAt != null)
+            {
+                throw new Exception("This classroom has been archived.");
+            }
+
             // Enrolment gates taking (FR7). Scoped from the caller's token, never a client id.
             if (!await _quizRepository.IsStudentEnrolledAsync(studentId, quiz.ClassroomId))
             {
