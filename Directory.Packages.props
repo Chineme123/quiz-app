@@ -1,0 +1,58 @@
+<Project>
+
+  <!-- Central Package Management (NuGet CPM). Every version lives here as a
+       <PackageVersion>; the .csproj files carry versionless <PackageReference>s.
+       Bump a package in exactly one place: this file. See context/library-docs.md
+       for the dependency list and the why behind each package.
+
+       Transitive pinning is deliberately NOT enabled
+       (CentralPackageTransitivePinningEnabled is unset), so a <PackageVersion>
+       here only binds a package a .csproj references directly. That is why the
+       EF Core group below still has to be referenced explicitly by the modules
+       (see the EF Core version rule). -->
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <!-- EF Core — keep these three on one exact version, always in lockstep.
+       Npgsql declares Relational as [10.0.4, 11.0.0) and NuGet resolves an open
+       range at its floor, so the modules reference Relational *directly* (see
+       their .csproj) purely to hold it at the same version as the base package;
+       otherwise it drifts to 10.0.4 and the API host's 10.0.10 (via .Design)
+       collide as MSB3277 in Quiztin.Api.Tests. Bump all three together. -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10" />
+  </ItemGroup>
+
+  <!-- Data / provider -->
+  <ItemGroup>
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+  </ItemGroup>
+
+  <!-- ASP.NET Core / API host -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10" />
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.19.2" />
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+  </ItemGroup>
+
+  <!-- AI -->
+  <ItemGroup>
+    <PackageVersion Include="Anthropic.SDK" Version="5.10.0" />
+  </ItemGroup>
+
+  <!-- Test stack — shared by all three test projects -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.10" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.13.0" />
+    <PackageVersion Include="Moq" Version="4.20.72" />
+  </ItemGroup>
+
+</Project>
