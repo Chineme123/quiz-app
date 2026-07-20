@@ -98,6 +98,7 @@ Do not install anything outside this list without adding it here first (with a w
 |---|---|---|
 | .NET 10 SDK | Runtime/build for all backend services | ✅ (pin via `global.json`) |
 | Microsoft.EntityFrameworkCore (10.x) | ORM | ✅ |
+| Microsoft.EntityFrameworkCore.Relational (10.x) | Relational EF primitives; **referenced directly** in both modules purely to pin the version — see the EF-version rule below | ✅ |
 | Npgsql.EntityFrameworkCore.PostgreSQL (10.x) | Postgres provider | ✅ |
 | Microsoft.EntityFrameworkCore.Design (10.x) | Migrations tooling | ✅ |
 | Microsoft.AspNetCore.Authentication.JwtBearer (10.x) | JWT validation | ✅ |
@@ -116,5 +117,7 @@ Do not install anything outside this list without adding it here first (with a w
 | vitest, @testing-library/react, vitest-axe | Frontend tests + a11y floor | ✅ (spec 0001) |
 | eslint + typescript-eslint + eslint-plugin-jsx-a11y + prettier | Lint (a11y rules enforced) | ✅ (spec 0001) |
 | UI components | Authored in-repo from `design-system/` | ✅ no library (export ships no React source) |
+
+**EF Core version rule — keep the four EF packages on one exact version (currently `10.0.10`).** Npgsql declares `Microsoft.EntityFrameworkCore.Relational` as `[10.0.4, 11.0.0)`, and NuGet resolves an open range at its **floor**. So a module that names only `Microsoft.EntityFrameworkCore` silently gets Relational at 10.0.4 while `Quiztin.Api` gets 10.0.10 through `.Design` — the MSB3277 skew fixed on 2026-07-20. Both modules therefore reference `.Relational` **explicitly**, and that pin must move in lockstep with `Microsoft.EntityFrameworkCore` and `.Design`. When bumping EF, bump all of them together, or the conflict returns silently. (There is deliberately **no** `Directory.Packages.props`: central package management alone does not pin *transitive* versions without `CentralPackageTransitivePinningEnabled`, so it would not have fixed this.)
 
 **Explicitly rejected**: FluentValidation, AutoMapper (foundation §7 #21 — validation and mapping are manual). React Router *framework mode* and any SSR meta-framework (§7 #5, #25). Any mock/MSW layer (§7 #28).

@@ -12,8 +12,14 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
+  <!-- Relational is pinned explicitly even though Npgsql already brings it in:
+       Npgsql 10.0.3 asks for [10.0.4, 11.0.0), which NuGet resolves at the floor
+       (10.0.4), while the API host pulls 10.0.10 through EntityFrameworkCore.Design.
+       Without this pin the two meet in Quiztin.Api.Tests as an MSB3277 conflict.
+       Keep this version in lockstep with Microsoft.EntityFrameworkCore above. -->
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.19.2" />
   </ItemGroup>
