@@ -20,6 +20,13 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [chore] Reconciled the outstanding branches into main
+- **Date:** 2026-07-20
+- **Area:** infra / backend
+- **What:** Local `main` and `origin/main` had diverged: the EF-align, Central Package Management, and `/api` 404-fallback work existed on **both** (as `--no-ff` merge commits locally, as squash-merged PRs `#79`/`#76` on origin) so `git diff main origin/main` was **empty outside frontend**. The only real delta was origin's npm bump (`#78`: react-query, react-hook-form, tailwind, vite). Reconciled by building an integration branch off `origin/main` (canonical) and cherry-picking the two genuinely-outstanding units: **publish/unpublish** (spec 0009 task 1, was on `feat/0009-quiz-authoring`) and the **add-question concurrency fix** (was on `fix/add-question-update`). One `progress-log.md` overlap resolved (newest-first: fix, feature, decision). Local `main` realigned to this branch; opened one PR to `origin/main`.
+- **Result:** `dotnet build` 0 errors; `dotnet test` **90 passed / 0 failed** on the reconciled tree (publish + fix together on the latest deps). No migration touched.
+- **Notes — deliberately left out:** `chore/dependabot-ignore-swashbuckle-major` (a 7-line `dependabot.yml` ignore for Swashbuckle major bumps, referencing closed `#60`). Confirmed it is on **neither** `main`, so skipping it drops the change rather than deduping it; the local branch is kept, not deleted, pending a call on whether to keep the ignore. Stale remote-only branches (`feat/0008`, `refactor/modular-monolith`, `chore/railway-monolith-config`, `fix/flaky-take-quiz-navigator-test`, `dependabot/…/setup-dotnet-6`) are already squash-merged into main; cleaning them is a separate remote-delete task.
+
 ### [fix] Adding a question over HTTP no longer throws a phantom concurrency conflict
 - **Date:** 2026-07-20
 - **Area:** backend
