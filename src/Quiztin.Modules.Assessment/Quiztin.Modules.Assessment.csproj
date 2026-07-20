@@ -14,10 +14,17 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
+  <!-- Versions are centralised in Directory.Packages.props. Relational is listed
+       here even though Npgsql already brings it in transitively: Npgsql 10.0.3 asks
+       for [10.0.4, 11.0.0), which NuGet resolves at the floor (10.0.4), while the API
+       host pulls 10.0.10 through EntityFrameworkCore.Design. This direct reference
+       holds it at the central version; without it the two collide in Quiztin.Api.Tests
+       as an MSB3277 conflict. -->
   <ItemGroup>
-    <PackageReference Include="Anthropic.SDK" Version="5.10.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageReference Include="Anthropic.SDK" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
   </ItemGroup>
 
 </Project>

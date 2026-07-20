@@ -98,6 +98,7 @@ Do not install anything outside this list without adding it here first (with a w
 |---|---|---|
 | .NET 10 SDK | Runtime/build for all backend services | ✅ (pin via `global.json`) |
 | Microsoft.EntityFrameworkCore (10.x) | ORM | ✅ |
+| Microsoft.EntityFrameworkCore.Relational (10.x) | Relational EF primitives; **referenced directly** in both modules purely to pin the version — see the EF-version rule below | ✅ |
 | Npgsql.EntityFrameworkCore.PostgreSQL (10.x) | Postgres provider | ✅ |
 | Microsoft.EntityFrameworkCore.Design (10.x) | Migrations tooling | ✅ |
 | Microsoft.AspNetCore.Authentication.JwtBearer (10.x) | JWT validation | ✅ |
@@ -116,5 +117,9 @@ Do not install anything outside this list without adding it here first (with a w
 | vitest, @testing-library/react, vitest-axe | Frontend tests + a11y floor | ✅ (spec 0001) |
 | eslint + typescript-eslint + eslint-plugin-jsx-a11y + prettier | Lint (a11y rules enforced) | ✅ (spec 0001) |
 | UI components | Authored in-repo from `design-system/` | ✅ no library (export ships no React source) |
+
+**Package versions are centralised — `Directory.Packages.props` at the repo root (Central Package Management).** Every `.csproj` carries versionless `<PackageReference>`s; the one place a version is declared or bumped is the root props file. Adding a package means adding a `<PackageVersion>` there *and* a versionless `<PackageReference>` in the project that uses it — a bare `Version=` on a `PackageReference` is now a build error (NU1008). Transitive pinning is intentionally **off** (`CentralPackageTransitivePinningEnabled` unset), so a `<PackageVersion>` only binds packages a project references **directly**.
+
+**EF Core version rule — keep the three EF packages on one exact version (currently `10.0.10`), declared together in the props file.** Npgsql declares `Microsoft.EntityFrameworkCore.Relational` as `[10.0.4, 11.0.0)`, and NuGet resolves an open range at its **floor**. So a module that names only `Microsoft.EntityFrameworkCore` silently gets Relational at 10.0.4 while `Quiztin.Api` gets 10.0.10 through `.Design` — the MSB3277 skew fixed on 2026-07-20. Both modules therefore keep an explicit **direct** `<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />`: because transitive pinning is off, the central `<PackageVersion>` for Relational only takes effect where the package is referenced directly. That reference holds Relational at the central version; without it Npgsql's transitive floor wins again. When bumping EF, move all three `<PackageVersion>`s (`EntityFrameworkCore`, `.Relational`, `.Design`) together — they sit adjacent in the props file for exactly this reason.
 
 **Explicitly rejected**: FluentValidation, AutoMapper (foundation §7 #21 — validation and mapping are manual). React Router *framework mode* and any SSR meta-framework (§7 #5, #25). Any mock/MSW layer (§7 #28).
