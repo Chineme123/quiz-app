@@ -116,8 +116,21 @@ app.MapGet("/", async (HttpContext context, IWebHostEnvironment env) =>
     await context.Response.SendFileAsync(file);
 });
 
+// An unmatched /api/* path is a 404, never the SPA shell. A catch-all endpoint is the
+// cheapest way to say that in the routing system itself: literal controller routes
+// outrank `{**rest}`, so every registered endpoint still wins, while this outranks the
+// fallback below. Without it MapFallbackToFile answers 200 text/html for endpoints that
+// were never registered — which masks a broken deployment (a module missing its
+// AddApplicationPart looks green) and turns a clean 404 into a Zod ContractError in the
+// client's apiFetch.
+app.Map("/api/{**rest}", () => Results.NotFound(new { error = "Not found." }));
+
 // SPA client-side routing: any non-/api, non-asset, non-root path returns the neutral
 // bootstrap index.html (never the prerendered landing markup, per AC-14).
 app.MapFallbackToFile("index.html");
 
 app.Run();
+
+// Top-level statements compile to an internal Program; WebApplicationFactory needs it
+// public to boot this exact pipeline in tests (Quiztin.Api.Tests).
+public partial class Program;
