@@ -55,10 +55,14 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Persistence
             // The enrolment subquery IS the tenant scope (FR7, code-standards §5): a quiz the
             // student is not enrolled for can never appear, whatever they pass. The window and
             // published checks mirror Quiz.CanStart, so the list only offers what Start accepts.
+            // The archived check is the other half of that mirror (spec 0008, AC-8): archiving a
+            // classroom must stop its quizzes listing as well as starting, and Quiz has no
+            // Classroom navigation, so it reads as a subquery like the enrolment one above.
             var available = _context.Quizzes
                 .Where(q => q.IsPublished
                             && (q.AvailableFrom == null || q.AvailableFrom <= now)
                             && (q.AvailableTo == null || q.AvailableTo >= now)
+                            && _context.Classrooms.Any(c => c.Id == q.ClassroomId && c.ArchivedAt == null)
                             && _context.Enrollments.Any(e => e.StudentId == studentId && e.ClassroomId == q.ClassroomId));
 
             var total = await available.CountAsync();

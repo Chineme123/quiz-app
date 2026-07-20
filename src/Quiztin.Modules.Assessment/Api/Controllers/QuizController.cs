@@ -12,7 +12,7 @@ namespace Quiztin.Modules.Assessment.Api.Controllers
     [ApiController]
     [Route("api")]
     [Authorize] // Require a valid JWT for all endpoints
-    public class QuizController : ControllerBase
+    public class QuizController : AssessmentControllerBase
     {
         private readonly IQuizAppService _quizService;
         private readonly TakeQuizFacade _takeQuizFacade;
@@ -21,18 +21,6 @@ namespace Quiztin.Modules.Assessment.Api.Controllers
         {
             _quizService = quizService;
             _takeQuizFacade = takeQuizFacade;
-        }
-
-        // Canonical identity: the Guid from the JWT NameIdentifier claim. No fallback —
-        // [Authorize] guarantees an authenticated principal; a missing/invalid id is a 403.
-        // One identity for every caller: the same claim answers "which teacher" for authoring
-        // and "which student" for the available list, so it is named for neither (§4).
-        private Guid GetCurrentUserId()
-        {
-            var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(id, out var userId))
-                throw new UnauthorizedAccessException("No valid user identity in the token.");
-            return userId;
         }
 
         [HttpPost("classrooms/{classroomId}/quizzes")]

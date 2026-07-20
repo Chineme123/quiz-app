@@ -91,14 +91,30 @@
   --container-reading: var(--reading-max);
 }
 
-/* Preflight normally sets `border-style: solid` globally. Without Preflight,
-   Tailwind's `border` utilities render invisible. Restore just that one rule. */
+/* Preflight compensation. Leaving it out (see the header) drops two rules the rest
+   of the stack assumes; the design system's base.css covers neither. Restore only
+   these — anything more would be the second reset base.css is meant to replace. */
 @layer base {
+  /* Preflight sets `border-style: solid` globally. Without it, Tailwind's `border`
+     utilities render invisible. */
   *,
   ::before,
   ::after {
     border-width: 0;
     border-style: solid;
     border-color: var(--border);
+  }
+
+  /* Preflight also makes lists unstyled — `list-style: none` on ol/ul/menu, plus the
+     universal margin/padding reset. base.css zeroes margins element by element and
+     never reaches lists, so a bare <ul> keeps `list-style: disc` and a 40px indent:
+     every layout list built with <ul>/<li> for semantics renders stray bullets until
+     it opts out by hand. Restore the list half so the markup can stay honest. */
+  ol,
+  ul,
+  menu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
   }
 }

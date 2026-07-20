@@ -13,8 +13,10 @@ import type { SignInValues } from './auth.schemas';
 export function SignInPage() {
   const { status, signIn } = useAuth();
   const location = useLocation();
-  // Where the guard was sending the user before it bounced them here (AC-9).
-  const from = (location.state as { from?: string } | null)?.from ?? '/profile';
+  // Where the guard was sending the user before it bounced them here (AC-9). Otherwise the
+  // dashboard, which is role aware, so a teacher and a student each land on their own home
+  // without this page having to know the difference (spec 0008, AC-2/AC-5).
+  const from = (location.state as { from?: string } | null)?.from ?? '/dashboard';
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
