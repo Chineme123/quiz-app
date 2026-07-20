@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [chore] Ignore Swashbuckle.AspNetCore major bumps in Dependabot
+- **Date:** 2026-07-20
+- **Area:** infra / ci
+- **What:** Added an `ignore` for `Swashbuckle.AspNetCore` **major** version updates to the nuget group in [.github/dependabot.yml](../.github/dependabot.yml), so Dependabot stops re-opening the major bump that breaks the build. Swashbuckle 7+ moves onto Microsoft.OpenApi v2, which drops the `Microsoft.OpenApi.Models` namespace the Swagger/JWT setup uses (CS0234, closed `#60`). Minor and patch Swashbuckle updates still auto-take.
+- **Notes:** Reconciled in from the dropped `chore/dependabot-ignore-swashbuckle-major` branch — its change was on neither `main`, so this restores it rather than dropping it. The Swashbuckle 6→10 / Microsoft.OpenApi v2 migration is a separate follow-up (the Swagger wiring now lives in `Quiztin.Api`, not the retired per-service `Program.cs` files the original branch referenced).
+
 ### [chore] Reconciled the outstanding branches into main
 - **Date:** 2026-07-20
 - **Area:** infra / backend
