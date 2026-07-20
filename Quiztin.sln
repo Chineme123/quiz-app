@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quiztin.Modules.Identity", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quiztin.Modules.Identity.Tests", "tests\Quiztin.Modules.Identity.Tests\Quiztin.Modules.Identity.Tests.csproj", "{0657E022-94D9-42F6-B55B-1CF74E16AA4A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quiztin.Api.Tests", "tests\Quiztin.Api.Tests\Quiztin.Api.Tests.csproj", "{1074B86C-13A5-48B8-BD03-861C36C70506}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +89,18 @@ Global
 		{0657E022-94D9-42F6-B55B-1CF74E16AA4A}.Release|x64.Build.0 = Release|Any CPU
 		{0657E022-94D9-42F6-B55B-1CF74E16AA4A}.Release|x86.ActiveCfg = Release|Any CPU
 		{0657E022-94D9-42F6-B55B-1CF74E16AA4A}.Release|x86.Build.0 = Release|Any CPU
+		{1074B86C-13A5-48B8-BD03-861C36C70506}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1074B86C-13A5-48B8-BD03-861C36C70506}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1074B86C-13A5-48B8-BD03-861C36C70506}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1074B86C-13A5-48B8-BD03-861C36C70506}.Debug|x64.Build.0 = Debug|Any CPU
+		{1074B86C-13A5-48B8-BD03-861C36C70506}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1074B86C-13A5-48B8-BD03-861C36C70506}.Debug|x86.Build.0 = Debug|Any CPU
+		{1074B86C-13A5-48B8-BD03-861C36C70506}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1074B86C-13A5-48B8-BD03-861C36C70506}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1074B86C-13A5-48B8-BD03-861C36C70506}.Release|x64.ActiveCfg = Release|Any CPU
+		{1074B86C-13A5-48B8-BD03-861C36C70506}.Release|x64.Build.0 = Release|Any CPU
+		{1074B86C-13A5-48B8-BD03-861C36C70506}.Release|x86.ActiveCfg = Release|Any CPU
+		{1074B86C-13A5-48B8-BD03-861C36C70506}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -97,5 +111,6 @@ Global
 		{99F4CD5D-EEBA-4BA0-8A7C-6C2F0D68817F} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{5717D3DC-3744-4D1C-A288-ACF4C902CA8B} = {4B3EF644-D71C-4B57-AA2D-6EC4B9FDD3F0}
 		{0657E022-94D9-42F6-B55B-1CF74E16AA4A} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{1074B86C-13A5-48B8-BD03-861C36C70506} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal
