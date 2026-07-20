@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Quiztin.Modules.Assessment.Application.DTOs;
 using Quiztin.Modules.Assessment.Application.Interfaces;
+using Quiztin.Modules.Assessment.Application.Results;
 using Quiztin.Modules.Assessment.Domain.Entities;
 using Quiztin.Modules.Assessment.Domain.Factories;
 using Quiztin.Modules.Assessment.Domain.Interfaces;
@@ -100,6 +101,46 @@ namespace Quiztin.Modules.Assessment.Application.Services
              return MapToDto(quiz);
         }
 
+        public async Task<PublishResult> PublishAsync(Guid quizId, Guid teacherId, PublishQuizDto input)
+        {
+            var quiz = await _quizRepository.GetByIdAsync(quizId);
+            // Not found and not yours read the same: 404, so a quiz's existence never leaks (AC-1).
+            if (quiz == null || quiz.CreatedByTeacherId != teacherId)
+                return PublishResult.Failed(PublishOutcome.NotFound);
+
+            // An empty published quiz would show a student a quiz with nothing to answer.
+            if (quiz.Questions.Count == 0)
+                return PublishResult.Failed(PublishOutcome.NoQuestions);
+
+            // A window with both bounds must run forward.
+            if (input.AvailableFrom.HasValue && input.AvailableTo.HasValue
+                && input.AvailableFrom.Value >= input.AvailableTo.Value)
+                return PublishResult.Failed(PublishOutcome.InvalidWindow);
+
+            if (input.MaxAttempts < 1)
+                return PublishResult.Failed(PublishOutcome.InvalidMaxAttempts);
+
+            quiz.AvailableFrom = input.AvailableFrom;
+            quiz.AvailableTo = input.AvailableTo;
+            quiz.MaxAttempts = input.MaxAttempts;
+            quiz.IsPublished = true;
+            await _quizRepository.UpdateAsync(quiz);
+
+            return PublishResult.Ok(MapToDto(quiz));
+        }
+
+        public async Task<PublishResult> UnpublishAsync(Guid quizId, Guid teacherId)
+        {
+            var quiz = await _quizRepository.GetByIdAsync(quizId);
+            if (quiz == null || quiz.CreatedByTeacherId != teacherId)
+                return PublishResult.Failed(PublishOutcome.NotFound);
+
+            quiz.IsPublished = false;
+            await _quizRepository.UpdateAsync(quiz);
+
+            return PublishResult.Ok(MapToDto(quiz));
+        }
+
         private QuizDto MapToDto(Quiz quiz)
         {
             return new QuizDto
@@ -109,6 +150,10 @@ namespace Quiztin.Modules.Assessment.Application.Services
                 DurationMinutes = quiz.DurationMinutes,
                 ClassroomId = quiz.ClassroomId,
                 TeacherId = quiz.CreatedByTeacherId,
+                IsPublished = quiz.IsPublished,
+                AvailableFrom = quiz.AvailableFrom,
+                AvailableTo = quiz.AvailableTo,
+                MaxAttempts = quiz.MaxAttempts,
                 Questions = quiz.Questions.Select(q => new QuestionDto
                 {
                     Id = q.Id,
