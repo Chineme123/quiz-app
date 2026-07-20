@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Quiztin.Modules.Assessment.Application.DTOs;
 using Quiztin.Modules.Assessment.Application.Facades;
 using Quiztin.Modules.Assessment.Application.Interfaces;
+using Quiztin.Modules.Assessment.Application.Results;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -82,6 +83,32 @@ namespace Quiztin.Modules.Assessment.Api.Controllers
             var studentId = GetCurrentUserId();
             var result = await _takeQuizFacade.GetAvailableQuizzesAsync(studentId, page, pageSize);
             return Ok(result);
+        }
+
+        // POST /api/quizzes/{quizId}/publish — the missing link that lets a quiz reach a
+        // student (spec 0009, AC-1, AC-2). Owner only; a non owner gets 404, so a quiz's
+        // existence never leaks. Publish is the first and only writer of the window and attempt
+        // limit, and the take path already reads them, so nothing on the take side changes.
+        [HttpPost("quizzes/{quizId}/publish")]
+        public async Task<IActionResult> Publish(Guid quizId, [FromBody] PublishQuizDto request)
+        {
+            var result = await _quizService.PublishAsync(quizId, GetCurrentUserId(), request);
+            return result.Outcome switch
+            {
+                PublishOutcome.NotFound => NotFound(),
+                PublishOutcome.NoQuestions => BadRequest(new { error = "Add at least one question before publishing." }),
+                PublishOutcome.InvalidWindow => BadRequest(new { error = "The 'available from' time must be before the 'available to' time." }),
+                PublishOutcome.InvalidMaxAttempts => BadRequest(new { error = "A quiz must allow at least one attempt." }),
+                _ => Ok(result.Quiz)
+            };
+        }
+
+        // POST /api/quizzes/{quizId}/unpublish — take it back off the available list. Owner only.
+        [HttpPost("quizzes/{quizId}/unpublish")]
+        public async Task<IActionResult> Unpublish(Guid quizId)
+        {
+            var result = await _quizService.UnpublishAsync(quizId, GetCurrentUserId());
+            return result.Outcome == PublishOutcome.NotFound ? NotFound() : Ok(result.Quiz);
         }
 
         [HttpGet("quizzes/{quizId}")]

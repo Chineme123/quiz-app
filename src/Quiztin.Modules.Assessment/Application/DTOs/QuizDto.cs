@@ -10,6 +10,15 @@ namespace Quiztin.Modules.Assessment.Application.DTOs
         public int DurationMinutes { get; set; }
         public Guid ClassroomId { get; set; }
         public Guid TeacherId { get; set; }
+
+        // Publish state (spec 0009). Publish is the only writer of these; the take path
+        // already reads them, so surfacing them here lets the authoring side see what a
+        // publish did without a second round trip.
+        public bool IsPublished { get; set; }
+        public DateTime? AvailableFrom { get; set; }
+        public DateTime? AvailableTo { get; set; }
+        public int MaxAttempts { get; set; }
+
         public List<QuestionDto> Questions { get; set; }
     }
 

@@ -61,6 +61,13 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Persistence
             modelBuilder.Entity<Question>(entity =>
             {
                 entity.HasKey(e => e.Id);
+                // The Id is a client generated Guid (set in the constructor). Without this, EF
+                // treats the key as store generated, so a new question discovered in a tracked
+                // quiz's Questions collection (AddQuestion, Generate) is assumed to be an
+                // existing row and UPDATEd (0 rows) instead of INSERTed, throwing a phantom
+                // concurrency conflict against a real database. Same fix, and same reason, as
+                // QuizAnswer.Id below.
+                entity.Property(e => e.Id).ValueGeneratedNever();
                 entity.HasDiscriminator<string>("QuestionType")
                       .HasValue<MultipleChoiceQuestion>(nameof(MultipleChoiceQuestion))
                       .HasValue<TrueFalseQuestion>(nameof(TrueFalseQuestion))
