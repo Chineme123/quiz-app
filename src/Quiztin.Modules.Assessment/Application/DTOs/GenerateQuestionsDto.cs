@@ -10,5 +10,9 @@ namespace Quiztin.Modules.Assessment.Application.DTOs
         public string? Topic { get; set; }
         public string? Difficulty { get; set; }
         public int Count { get; set; }
+
+        /// <summary>Optional pasted source material (spec 0009, AC-7). Combined with any text
+        /// extracted from an uploaded file, then capped, before it reaches the model.</summary>
+        public string? SourceText { get; set; }
     }
 }

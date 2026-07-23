@@ -15,6 +15,7 @@ using Quiztin.Modules.Assessment.Infrastructure.Configuration;
 using Quiztin.Modules.Assessment.Infrastructure.Factories;
 using Quiztin.Modules.Assessment.Infrastructure.Feedback;
 using Quiztin.Modules.Assessment.Infrastructure.Observers;
+using Quiztin.Modules.Assessment.Infrastructure.Parsing;
 using Quiztin.Modules.Assessment.Infrastructure.Persistence;
 using Quiztin.Modules.Assessment.Infrastructure.Strategies;
 
@@ -42,6 +43,7 @@ public static class AssessmentModule
         services.AddScoped<IQuizRepository, QuizRepository>();
         services.AddScoped<IQuizAppService, QuizAppService>();
         services.AddScoped<IGeneratedQuestionDraftRepository, GeneratedQuestionDraftRepository>();
+        services.AddScoped<ISourceMaterialExtractor, SourceMaterialExtractor>();
 
         // UC2/UC3 Registrations (classroom create, join, and management; spec 0008)
         services.AddScoped<IClassroomRepository, ClassroomRepository>();

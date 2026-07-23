@@ -44,4 +44,24 @@ _Steps derived from spec 0009 acceptance criteria. `/check verify` runs these; `
 - **AC-5** data minimization: only topic, difficulty, and count are sent; confirm no identifiers in a live run's request payload.
 - **AC-6** untrusted output validated per candidate: the parser step (a mixed valid/invalid array keeps only the good ones).
 - **AC-8** drafts persist, one batch per quiz, accept and discard clear it: the generate, regenerate, accept, and discard steps.
-- **AC-9** lock on attempt covers generate and accept: the attempt-then-409 step. Task 4 (source material) and tasks 5 to 6 (UI) append their AC-7/AC-10/AC-11 steps.
+- **AC-9** lock on attempt covers generate and accept: the attempt-then-409 step.
+
+## API / manual (task 4: source material)
+- [ ] `POST /api/quizzes/{quizId}/generate` as `multipart/form-data` with fields topic, difficulty, count and `sourceText` (pasted) → 200, and the questions reflect the pasted material → AC-7
+- [ ] The same call with a `file` part that is a real **docx** → 200, and the questions reflect the document's text → AC-7
+- [ ] The same call with a real **PDF** → 200, and the questions reflect the PDF's text → AC-7
+- [ ] A file whose bytes are neither PDF nor docx (a .txt renamed to .pdf, or a PNG) → **415**, whatever the declared content type or extension says → AC-7
+- [ ] A file over the 5 MB cap → **413**, rejected at the request pipeline before the action runs (the body is never buffered) → AC-7
+- [ ] A corrupt PDF or docx (right magic bytes, damaged content) → **400** with a clear message, no crash → AC-7
+- [ ] A zip bomb docx (small file, huge `word/document.xml`) → **400**, and the server stays responsive: no memory spike, no hang → AC-7
+- [ ] Nothing is stored: after a generate with a file, no file row or blob exists and the container holds no copy → AC-7
+- [ ] Only task necessary content leaves: the outbound model request carries topic, difficulty, count, and the source text, and no identifiers → AC-5
+
+## Commands (task 4)
+- [ ] `dotnet test tests/Quiztin.Modules.Assessment.Tests` → 94 pass (includes SourceMaterialExtractorTests) → AC-7
+
+## Acceptance-criteria coverage (task 4)
+- **AC-7** (pasted or uploaded source, magic-byte type check, pipeline size cap, bounded extraction, nothing stored): the pasted, docx, PDF, wrong type, oversized, corrupt, and bomb steps.
+- **AC-5** data minimization now also covers the extracted source text: the outbound payload step.
+
+Tasks 5 to 6 (UI) append their AC-10 and AC-11 steps.

@@ -16,7 +16,9 @@ namespace Quiztin.Modules.Assessment.Application.Results
         Ok,
         NotFound,
         Invalid,
-        Locked
+        Locked,
+        /// <summary>An uploaded file whose real content is neither PDF nor docx (AC-7). Maps to 415.</summary>
+        UnsupportedType
     }
 
     public class GenerationResult
@@ -29,5 +31,6 @@ namespace Quiztin.Modules.Assessment.Application.Results
         public static GenerationResult NotFound() => new() { Outcome = GenerationOutcome.NotFound };
         public static GenerationResult Invalid(string error) => new() { Outcome = GenerationOutcome.Invalid, Error = error };
         public static GenerationResult Locked() => new() { Outcome = GenerationOutcome.Locked };
+        public static GenerationResult UnsupportedType(string error) => new() { Outcome = GenerationOutcome.UnsupportedType, Error = error };
     }
 }

@@ -46,11 +46,11 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Strategies
             _client = new AnthropicClient(new APIAuthentication(anthropicOptions.Value.ApiKey), httpClient);
         }
 
-        public async Task<IReadOnlyList<GeneratedCandidate>> GenerateAsync(string topic, string difficulty, int count)
+        public async Task<IReadOnlyList<GeneratedCandidate>> GenerateAsync(string topic, string difficulty, int count, string? sourceText = null)
         {
             var capped = Math.Clamp(count, 1, Math.Max(1, _options.MaxCount));
 
-            var raw = await TryCallAsync(topic, difficulty, capped);
+            var raw = await TryCallAsync(topic, difficulty, capped, sourceText);
             if (raw is null)
             {
                 // Unavailable, timeout, or error after one retry: empty editable templates (AC-4).
@@ -65,14 +65,14 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Strategies
             return candidates;
         }
 
-        private async Task<string?> TryCallAsync(string topic, string difficulty, int count)
+        private async Task<string?> TryCallAsync(string topic, string difficulty, int count, string? sourceText)
         {
             // One retry: a transient blip should not drop the whole request to templates.
             for (var attemptNo = 0; attemptNo < 2; attemptNo++)
             {
                 try
                 {
-                    return await CallClaudeAsync(topic, difficulty, count);
+                    return await CallClaudeAsync(topic, difficulty, count, sourceText);
                 }
                 catch (Exception ex) when (attemptNo == 0)
                 {
@@ -86,10 +86,17 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Strategies
             return null;
         }
 
-        private async Task<string> CallClaudeAsync(string topic, string difficulty, int count)
+        private async Task<string> CallClaudeAsync(string topic, string difficulty, int count, string? sourceText)
         {
             // Only task necessary content, no identity (security.md section 2).
             var userMessage = $"Topic: {topic}\nDifficulty: {difficulty}\nGenerate exactly {count} questions.";
+            if (!string.IsNullOrWhiteSpace(sourceText))
+            {
+                var capped = sourceText.Length > _options.MaxSourceChars
+                    ? sourceText.Substring(0, _options.MaxSourceChars)
+                    : sourceText;
+                userMessage += "\n\nBase the questions on this source material:\n" + capped;
+            }
             var parameters = new MessageParameters
             {
                 Model = _options.Model,

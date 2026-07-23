@@ -11,6 +11,7 @@ using Microsoft.Extensions.Options;
 using Quiztin.Modules.Assessment.Application.Services;
 using Quiztin.Modules.Assessment.Domain.Entities;
 using Quiztin.Modules.Assessment.Infrastructure.Configuration;
+using Quiztin.Modules.Assessment.Infrastructure.Parsing;
 using Quiztin.Modules.Assessment.Infrastructure.Persistence;
 using Quiztin.Modules.Assessment.Infrastructure.Strategies;
 
@@ -273,6 +274,7 @@ namespace Quiztin.Modules.Assessment.Tests
         private static QuizAppService NewService(QuizDbContext ctx) =>
             new(new QuizRepository(ctx), new QuizAttemptRepository(ctx),
                 new GeneratedQuestionDraftRepository(ctx),
-                new TemplateQuestionGenerationStrategy(Options.Create(new GenerationOptions())));
+                new TemplateQuestionGenerationStrategy(Options.Create(new GenerationOptions())),
+                new SourceMaterialExtractor(Options.Create(new GenerationOptions())));
     }
 }

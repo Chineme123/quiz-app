@@ -22,9 +22,17 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Configuration
         /// so it cannot blow up the token spend.</summary>
         public int MaxCount { get; set; } = 20;
 
-        /// <summary>The cap on attached source text length (task 4). Defined here with the rest
-        /// of the generation config so both live in one place.</summary>
+        /// <summary>The cap on attached source text length (spec 0009, AC-7): extraction stops
+        /// here, and pasted plus extracted text is trimmed to it before it reaches the model.</summary>
         public int MaxSourceChars { get; set; } = 10000;
+
+        /// <summary>The largest source file accepted, enforced at the request pipeline level so
+        /// the framework never buffers a huge body before the check runs (AC-7). Default 5 MB.</summary>
+        public long MaxUploadBytes { get; set; } = 5 * 1024 * 1024;
+
+        /// <summary>The wall-clock limit on parsing one file, so a decompression bomb cannot hang
+        /// the extractor (AC-7).</summary>
+        public int ExtractionTimeoutSeconds { get; set; } = 10;
 
         /// <summary>Per call timeout before the deterministic template fallback takes over.</summary>
         public int TimeoutSeconds { get; set; } = 30;

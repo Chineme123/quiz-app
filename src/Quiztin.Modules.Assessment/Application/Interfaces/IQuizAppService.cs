@@ -54,7 +54,7 @@ namespace Quiztin.Modules.Assessment.Application.Interfaces
         /// way the result is a batch the teacher reviews, never questions on the quiz. NotFound
         /// for a non owner, Locked (409) once the quiz has an attempt, Invalid for a blank topic.
         /// </summary>
-        Task<GenerationResult> GenerateQuestionsAsync(Guid quizId, Guid teacherId, GenerateQuestionsDto input);
+        Task<GenerationResult> GenerateQuestionsAsync(Guid quizId, Guid teacherId, GenerateQuestionsDto input, byte[]? fileBytes = null);
 
         /// <summary>The quiz's pending batch, or an empty batch if it has none. Null (404) for a
         /// non owner.</summary>

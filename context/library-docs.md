@@ -90,6 +90,12 @@
 - **How used:** `renderToString` from `react-dom/server` (already present through react-dom, so no new package) renders the same app tree the client hydrates, with a memory router pinned to `/` (`src/prerender.tsx`, built by `vite build --ssr`). A postbuild script (`scripts/prerender.mjs`) injects that markup plus the SEO head (`features/landing/seo.ts`) into the built `index.html` and writes a separate `index.prerender.html`. The neutral `index.html` stays the SPA fallback. The gateway serves `index.prerender.html` only at exact `/` and the neutral bootstrap everywhere else (AC-14). `main.tsx` hydrates when `#root` has prerendered markup, else mounts fresh.
 - **Gotchas:** the route table lives in `routes.tsx` (no `createBrowserRouter`), so the prerender can import it in Node without touching the History API. Keep every provider above the routes identical between `main.tsx` and `prerender.tsx` or `useId` and hydration drift. `vite-react-ssg` is not used; if this script path is ever abandoned, add it here first.
 
+### Source material extraction (`Docnet.Core` + built-in zip) — ✅ built (spec 0009 task 4)
+- **Why:** authoring lets a teacher attach a PDF or docx as generation source material (AC-7).
+- **How used:** `SourceMaterialExtractor` (Assessment Infrastructure/Parsing) decides the format by **magic bytes** (`%PDF-`, `PK\x03\x04`), never the client content type or extension. **PDF** goes through `Docnet.Core` (native pdfium). **docx** is read with the **built-in** `System.IO.Compression.ZipArchive` plus a bounded, XXE-safe `XmlReader` over `word/document.xml`, so no extra dependency and full control of the bounds. Extraction is bounded four ways: the request-pipeline size cap (`[RequestSizeLimit]` plus `[RequestFormLimits]` on the generate endpoint, so an oversized body is 413 before buffering), a text cap (`Generation:MaxSourceChars`), a decompressed-byte cap (a bounded stream trips a decompression bomb), and a wall-clock time limit (`Generation:ExtractionTimeoutSeconds`). The file is parsed to text and **never stored**.
+- **Why Docnet (native) and not a managed PDF library:** the obvious managed choice, `UglyToad.PdfPig`, has **no stable release** on NuGet (only prerelease/custom builds); iText is AGPL and PDFsharp's text extraction is weak. `Docnet.Core` bundles pdfium for linux/osx/win, so it works on the Railway Linux deploy and locally. Chosen by the engineer over accepting a PdfPig prerelease.
+- **Gotchas:** `DocLib.Instance` is a process-wide native singleton, so dispose the `DocReader` and `PageReader`, never the instance. docx body text lives in `<w:t>` elements; the reader accumulates those. Any parse error or overrun returns a clean "could not read" rather than throwing (security.md section 1: validate and bound untrusted input).
+
 ## Approved dependencies
 
 Do not install anything outside this list without adding it here first (with a why + how-used).
@@ -106,6 +112,7 @@ Do not install anything outside this list without adding it here first (with a w
 | Yarp.ReverseProxy (2.x) | API gateway | ✅ (new) |
 | Swashbuckle.AspNetCore (10.x) | Swagger UI (dev) | ✅ |
 | `Anthropic.SDK` (5.x) | AI feedback (spec 0005) + question generation (spec 0009) | ✅ both built |
+| `Docnet.Core` (2.6.0) | PDF text extraction for generation source material (spec 0009 task 4); native pdfium bundled for linux/osx/win. docx needs no library (built-in zip) | ✅ (spec 0009) |
 | xUnit, Moq, coverlet | Testing | ✅ |
 | React 19, Vite 8, TypeScript | Frontend SPA | ✅ (spec 0001) |
 | tailwindcss 4 + @tailwindcss/vite | Styling, bound to design tokens | ✅ (spec 0001) |

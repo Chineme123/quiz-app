@@ -12,6 +12,7 @@ using Quiztin.Modules.Assessment.Application.Services;
 using Quiztin.Modules.Assessment.Domain.Entities;
 using Quiztin.Modules.Assessment.Domain.Interfaces;
 using Quiztin.Modules.Assessment.Infrastructure.Configuration;
+using Quiztin.Modules.Assessment.Infrastructure.Parsing;
 using Quiztin.Modules.Assessment.Infrastructure.Persistence;
 using Quiztin.Modules.Assessment.Infrastructure.Strategies;
 
@@ -163,6 +164,29 @@ namespace Quiztin.Modules.Assessment.Tests
             Assert.Single(await NewContext().GeneratedQuestionDrafts.Where(d => d.QuizId == quizId).ToListAsync());
         }
 
+        [Fact]
+        public async Task Generating_with_a_docx_file_feeds_its_extracted_text_to_the_strategy()
+        {
+            var quizId = await SeedQuizAsync();
+            var capture = new CapturingStrategy(ValidTrueFalse("Q"));
+            var docx = TestDocx.Build("The mitochondria is the powerhouse of the cell.");
+
+            var result = await Service(NewContext(), capture).GenerateQuestionsAsync(quizId, _teacherId,
+                new GenerateQuestionsDto { Topic = "Biology", Count = 1 }, docx);
+
+            Assert.Equal(GenerationOutcome.Ok, result.Outcome);
+            Assert.Contains("mitochondria", capture.LastSourceText ?? "");
+        }
+
+        [Fact]
+        public async Task Generating_with_an_unsupported_file_returns_unsupported_type()
+        {
+            var quizId = await SeedQuizAsync();
+            var result = await Service(NewContext(), Templates()).GenerateQuestionsAsync(quizId, _teacherId,
+                new GenerateQuestionsDto { Topic = "X", Count = 1 }, new byte[] { 1, 2, 3, 4, 5 });
+            Assert.Equal(GenerationOutcome.UnsupportedType, result.Outcome);
+        }
+
         // ---- helpers ----
 
         private static GenerateQuestionsDto Request() => new() { Topic = "Topic", Difficulty = "medium", Count = 1 };
@@ -210,7 +234,8 @@ namespace Quiztin.Modules.Assessment.Tests
 
         private static QuizAppService Service(QuizDbContext ctx, IQuestionGenerationStrategy strategy) =>
             new(new QuizRepository(ctx), new QuizAttemptRepository(ctx),
-                new GeneratedQuestionDraftRepository(ctx), strategy);
+                new GeneratedQuestionDraftRepository(ctx), strategy,
+                new SourceMaterialExtractor(Options.Create(new GenerationOptions())));
 
         private static IQuestionGenerationStrategy Templates() =>
             new TemplateQuestionGenerationStrategy(Options.Create(new GenerationOptions()));
@@ -222,8 +247,20 @@ namespace Quiztin.Modules.Assessment.Tests
         {
             private readonly IReadOnlyList<GeneratedCandidate> _candidates;
             public FakeStrategy(IReadOnlyList<GeneratedCandidate> candidates) => _candidates = candidates;
-            public Task<IReadOnlyList<GeneratedCandidate>> GenerateAsync(string topic, string difficulty, int count)
+            public Task<IReadOnlyList<GeneratedCandidate>> GenerateAsync(string topic, string difficulty, int count, string? sourceText = null)
                 => Task.FromResult(_candidates);
+        }
+
+        private sealed class CapturingStrategy : IQuestionGenerationStrategy
+        {
+            private readonly IReadOnlyList<GeneratedCandidate> _candidates;
+            public string? LastSourceText { get; private set; }
+            public CapturingStrategy(params GeneratedCandidate[] candidates) => _candidates = candidates;
+            public Task<IReadOnlyList<GeneratedCandidate>> GenerateAsync(string topic, string difficulty, int count, string? sourceText = null)
+            {
+                LastSourceText = sourceText;
+                return Task.FromResult<IReadOnlyList<GeneratedCandidate>>(_candidates);
+            }
         }
     }
 }

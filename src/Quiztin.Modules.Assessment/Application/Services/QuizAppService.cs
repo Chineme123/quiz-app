@@ -17,17 +17,20 @@ namespace Quiztin.Modules.Assessment.Application.Services
         private readonly IQuizAttemptRepository _attemptRepository;
         private readonly IGeneratedQuestionDraftRepository _draftRepository;
         private readonly IQuestionGenerationStrategy _generationStrategy;
+        private readonly ISourceMaterialExtractor _sourceExtractor;
 
         public QuizAppService(
             IQuizRepository quizRepository,
             IQuizAttemptRepository attemptRepository,
             IGeneratedQuestionDraftRepository draftRepository,
-            IQuestionGenerationStrategy generationStrategy)
+            IQuestionGenerationStrategy generationStrategy,
+            ISourceMaterialExtractor sourceExtractor)
         {
             _quizRepository = quizRepository;
             _attemptRepository = attemptRepository;
             _draftRepository = draftRepository;
             _generationStrategy = generationStrategy;
+            _sourceExtractor = sourceExtractor;
         }
 
         public async Task<AuthoringResult> CreateQuizAsync(Guid classroomId, Guid teacherId, CreateQuizDto input)
@@ -155,7 +158,7 @@ namespace Quiztin.Modules.Assessment.Application.Services
             }).ToList();
         }
 
-        public async Task<GenerationResult> GenerateQuestionsAsync(Guid quizId, Guid teacherId, GenerateQuestionsDto input)
+        public async Task<GenerationResult> GenerateQuestionsAsync(Guid quizId, Guid teacherId, GenerateQuestionsDto input, byte[]? fileBytes = null)
         {
             var quiz = await _quizRepository.GetByIdAsync(quizId);
             if (quiz == null || quiz.CreatedByTeacherId != teacherId)
@@ -170,12 +173,38 @@ namespace Quiztin.Modules.Assessment.Application.Services
             if (input.Count < 1)
                 return GenerationResult.Invalid("Ask for at least one question.");
 
+            // Source material (AC-7): pasted text, plus text extracted from an uploaded PDF or
+            // docx. A file is parsed to text and never stored; an unreadable or wrong type file
+            // is refused here.
+            string? source;
+            if (fileBytes is { Length: > 0 })
+            {
+                var extraction = _sourceExtractor.Extract(fileBytes);
+                if (extraction.Status == SourceExtractionStatus.UnsupportedType)
+                    return GenerationResult.UnsupportedType(extraction.Error ?? "Only PDF and Word (docx) files are supported.");
+                if (extraction.Status == SourceExtractionStatus.ParseFailed)
+                    return GenerationResult.Invalid(extraction.Error ?? "The uploaded file could not be read.");
+                source = CombineSource(input.SourceText, extraction.Text);
+            }
+            else
+            {
+                source = string.IsNullOrWhiteSpace(input.SourceText) ? null : input.SourceText.Trim();
+            }
+
             var difficulty = string.IsNullOrWhiteSpace(input.Difficulty) ? "medium" : input.Difficulty.Trim();
-            var candidates = await _generationStrategy.GenerateAsync(input.Topic.Trim(), difficulty, input.Count);
+            var candidates = await _generationStrategy.GenerateAsync(input.Topic.Trim(), difficulty, input.Count, source);
 
             // Upsert the one pending batch per quiz, replacing any prior one (AC-8).
             var draft = await _draftRepository.UpsertAsync(quizId, candidates.ToList());
             return GenerationResult.Ok(MapDraftToDto(draft));
+        }
+
+        private static string? CombineSource(string? pasted, string extracted)
+        {
+            var parts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(pasted)) parts.Add(pasted.Trim());
+            if (!string.IsNullOrWhiteSpace(extracted)) parts.Add(extracted.Trim());
+            return parts.Count == 0 ? null : string.Join("\n\n", parts);
         }
 
         public async Task<GeneratedDraftDto?> GetDraftsAsync(Guid quizId, Guid teacherId)

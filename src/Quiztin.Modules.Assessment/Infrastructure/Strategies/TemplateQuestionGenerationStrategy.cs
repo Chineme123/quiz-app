@@ -23,8 +23,9 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Strategies
             _options = options.Value;
         }
 
-        public Task<IReadOnlyList<GeneratedCandidate>> GenerateAsync(string topic, string difficulty, int count)
+        public Task<IReadOnlyList<GeneratedCandidate>> GenerateAsync(string topic, string difficulty, int count, string? sourceText = null)
         {
+            // Source material has no effect on empty templates; the teacher fills them in.
             var capped = Math.Clamp(count, 1, Math.Max(1, _options.MaxCount));
             var candidates = new List<GeneratedCandidate>(capped);
             for (var i = 0; i < capped; i++)

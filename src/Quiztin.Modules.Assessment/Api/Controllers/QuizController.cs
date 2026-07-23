@@ -1,5 +1,7 @@
 using System;
+using System.IO;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Quiztin.Modules.Assessment.Application.DTOs;
 using Quiztin.Modules.Assessment.Application.Facades;
@@ -16,6 +18,11 @@ namespace Quiztin.Modules.Assessment.Api.Controllers
     {
         private readonly IQuizAppService _quizService;
         private readonly TakeQuizFacade _takeQuizFacade;
+
+        // The source upload size cap (spec 0009, AC-7), enforced at the pipeline level by the
+        // attributes on the generate endpoint so an oversized body is rejected (413) before the
+        // action buffers it. Kept in step with GenerationOptions.MaxUploadBytes.
+        private const long SourceUploadByteCap = 5 * 1024 * 1024;
 
         public QuizController(IQuizAppService quizService, TakeQuizFacade takeQuizFacade)
         {
@@ -72,19 +79,32 @@ namespace Quiztin.Modules.Assessment.Api.Controllers
             return MapAuthoring(result, () => NoContent());
         }
 
-        // POST /api/quizzes/{quizId}/generate — generate a pending review batch (spec 0009).
-        // Owner only (404); refused 409 once the quiz has an attempt; 400 for a blank topic. The
-        // batch is real claude-opus-4-8 output when generation is on and a key is present, else
-        // empty editable templates (AC-4). (Task 4 switches this to multipart/form-data to carry
-        // pasted or uploaded source material.)
+        // POST /api/quizzes/{quizId}/generate — multipart/form-data (spec 0009, AC-4, AC-7). Form
+        // fields topic, difficulty, count, and optional sourceText, plus an optional file part
+        // (PDF or docx). The request size is capped at the pipeline level by the two attributes
+        // below, so an oversized body is rejected with 413 before the action buffers it. The batch
+        // is real claude-opus-4-8 output when generation is on and a key is present, else empty
+        // editable templates. Owner only (404); 409 once attempted; 400 for a blank topic or an
+        // unreadable file; 415 for a file whose real content is not PDF or docx.
         [HttpPost("quizzes/{quizId}/generate")]
-        public async Task<IActionResult> GenerateQuestions(Guid quizId, [FromBody] GenerateQuestionsDto request)
+        [RequestSizeLimit(SourceUploadByteCap)]
+        [RequestFormLimits(MultipartBodyLengthLimit = SourceUploadByteCap)]
+        public async Task<IActionResult> GenerateQuestions(Guid quizId, [FromForm] GenerateQuestionsDto request, IFormFile? file)
         {
-            var result = await _quizService.GenerateQuestionsAsync(quizId, GetCurrentUserId(), request);
+            byte[]? fileBytes = null;
+            if (file is { Length: > 0 })
+            {
+                using var ms = new MemoryStream();
+                await file.CopyToAsync(ms);
+                fileBytes = ms.ToArray();
+            }
+
+            var result = await _quizService.GenerateQuestionsAsync(quizId, GetCurrentUserId(), request, fileBytes);
             return result.Outcome switch
             {
                 GenerationOutcome.NotFound => NotFound(),
                 GenerationOutcome.Locked => Conflict(new { error = "This quiz has been attempted, so its questions can no longer be changed." }),
+                GenerationOutcome.UnsupportedType => StatusCode(StatusCodes.Status415UnsupportedMediaType, new { error = result.Error }),
                 GenerationOutcome.Invalid => BadRequest(new { error = result.Error }),
                 _ => Ok(result.Draft)
             };

@@ -13,6 +13,6 @@ namespace Quiztin.Modules.Assessment.Domain.Interfaces
     /// </summary>
     public interface IQuestionGenerationStrategy
     {
-        Task<IReadOnlyList<GeneratedCandidate>> GenerateAsync(string topic, string difficulty, int count);
+        Task<IReadOnlyList<GeneratedCandidate>> GenerateAsync(string topic, string difficulty, int count, string? sourceText = null);
     }
 }
