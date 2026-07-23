@@ -72,19 +72,48 @@ namespace Quiztin.Modules.Assessment.Api.Controllers
             return MapAuthoring(result, () => NoContent());
         }
 
+        // POST /api/quizzes/{quizId}/generate — generate a pending review batch (spec 0009).
+        // Owner only (404); refused 409 once the quiz has an attempt; 400 for a blank topic. The
+        // batch is real claude-opus-4-8 output when generation is on and a key is present, else
+        // empty editable templates (AC-4). (Task 4 switches this to multipart/form-data to carry
+        // pasted or uploaded source material.)
         [HttpPost("quizzes/{quizId}/generate")]
         public async Task<IActionResult> GenerateQuestions(Guid quizId, [FromBody] GenerateQuestionsDto request)
         {
-            var teacherId = GetCurrentUserId();
-             try
+            var result = await _quizService.GenerateQuestionsAsync(quizId, GetCurrentUserId(), request);
+            return result.Outcome switch
             {
-                var result = await _quizService.GenerateQuestionsAsync(quizId, teacherId, request);
-                return Ok(result);
-            }
-             catch (System.Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+                GenerationOutcome.NotFound => NotFound(),
+                GenerationOutcome.Locked => Conflict(new { error = "This quiz has been attempted, so its questions can no longer be changed." }),
+                GenerationOutcome.Invalid => BadRequest(new { error = result.Error }),
+                _ => Ok(result.Draft)
+            };
+        }
+
+        // GET /api/quizzes/{quizId}/drafts — the pending review batch, or an empty batch. Owner only.
+        [HttpGet("quizzes/{quizId}/drafts")]
+        public async Task<IActionResult> GetDrafts(Guid quizId)
+        {
+            var draft = await _quizService.GetDraftsAsync(quizId, GetCurrentUserId());
+            return draft is null ? NotFound() : Ok(draft);
+        }
+
+        // POST /api/quizzes/{quizId}/drafts/accept — promote the chosen candidates onto the quiz
+        // and clear the batch (spec 0009, AC-8). Owner only; 409 once attempted; 400 if a chosen
+        // candidate is not a valid question (for example an unfilled template).
+        [HttpPost("quizzes/{quizId}/drafts/accept")]
+        public async Task<IActionResult> AcceptDrafts(Guid quizId, [FromBody] AcceptDraftsDto request)
+        {
+            var result = await _quizService.AcceptDraftsAsync(quizId, GetCurrentUserId(), request);
+            return MapAuthoring(result, () => Ok(result.Quiz));
+        }
+
+        // POST /api/quizzes/{quizId}/drafts/discard — throw the pending batch away. Owner only.
+        [HttpPost("quizzes/{quizId}/drafts/discard")]
+        public async Task<IActionResult> DiscardDrafts(Guid quizId)
+        {
+            var result = await _quizService.DiscardDraftsAsync(quizId, GetCurrentUserId());
+            return MapAuthoring(result, () => NoContent());
         }
 
         // GET /api/quizzes/available — the quizzes the caller may take (spec 0006, AC-1, AC-2).

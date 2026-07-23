@@ -15,16 +15,19 @@ namespace Quiztin.Modules.Assessment.Application.Services
     {
         private readonly IQuizRepository _quizRepository;
         private readonly IQuizAttemptRepository _attemptRepository;
-        private readonly IEnumerable<IQuestionGenerationStrategy> _strategies;
+        private readonly IGeneratedQuestionDraftRepository _draftRepository;
+        private readonly IQuestionGenerationStrategy _generationStrategy;
 
         public QuizAppService(
             IQuizRepository quizRepository,
             IQuizAttemptRepository attemptRepository,
-            IEnumerable<IQuestionGenerationStrategy> strategies)
+            IGeneratedQuestionDraftRepository draftRepository,
+            IQuestionGenerationStrategy generationStrategy)
         {
             _quizRepository = quizRepository;
             _attemptRepository = attemptRepository;
-            _strategies = strategies;
+            _draftRepository = draftRepository;
+            _generationStrategy = generationStrategy;
         }
 
         public async Task<AuthoringResult> CreateQuizAsync(Guid classroomId, Guid teacherId, CreateQuizDto input)
@@ -152,31 +155,98 @@ namespace Quiztin.Modules.Assessment.Application.Services
             }).ToList();
         }
 
-        public async Task<QuizDto> GenerateQuestionsAsync(Guid quizId, Guid teacherId, GenerateQuestionsDto input)
+        public async Task<GenerationResult> GenerateQuestionsAsync(Guid quizId, Guid teacherId, GenerateQuestionsDto input)
         {
             var quiz = await _quizRepository.GetByIdAsync(quizId);
-            if (quiz == null) throw new KeyNotFoundException("Quiz not found.");
-            if (quiz.CreatedByTeacherId != teacherId) throw new UnauthorizedAccessException("Not authorized.");
+            if (quiz == null || quiz.CreatedByTeacherId != teacherId)
+                return GenerationResult.NotFound();
 
-            var strategy = _strategies.FirstOrDefault(s => s.ModeName.Equals(input.Mode, StringComparison.OrdinalIgnoreCase));
-            if (strategy == null)
+            // No point generating for a quiz whose question set is frozen (AC-9).
+            if (await _attemptRepository.HasAnyAttemptAsync(quizId))
+                return GenerationResult.Locked();
+
+            if (string.IsNullOrWhiteSpace(input.Topic))
+                return GenerationResult.Invalid("A topic is required to generate questions.");
+            if (input.Count < 1)
+                return GenerationResult.Invalid("Ask for at least one question.");
+
+            var difficulty = string.IsNullOrWhiteSpace(input.Difficulty) ? "medium" : input.Difficulty.Trim();
+            var candidates = await _generationStrategy.GenerateAsync(input.Topic.Trim(), difficulty, input.Count);
+
+            // Upsert the one pending batch per quiz, replacing any prior one (AC-8).
+            var draft = await _draftRepository.UpsertAsync(quizId, candidates.ToList());
+            return GenerationResult.Ok(MapDraftToDto(draft));
+        }
+
+        public async Task<GeneratedDraftDto?> GetDraftsAsync(Guid quizId, Guid teacherId)
+        {
+            var quiz = await _quizRepository.GetByIdAsync(quizId);
+            if (quiz == null || quiz.CreatedByTeacherId != teacherId)
+                return null;
+
+            var draft = await _draftRepository.GetByQuizAsync(quizId);
+            // Owner with no pending batch reads as an empty batch (200), not a 404.
+            return draft is null
+                ? new GeneratedDraftDto { QuizId = quizId }
+                : MapDraftToDto(draft);
+        }
+
+        public async Task<AuthoringResult> AcceptDraftsAsync(Guid quizId, Guid teacherId, AcceptDraftsDto input)
+        {
+            var quiz = await _quizRepository.GetByIdAsync(quizId);
+            if (quiz == null || quiz.CreatedByTeacherId != teacherId)
+                return AuthoringResult.NotFound();
+
+            if (await _attemptRepository.HasAnyAttemptAsync(quizId))
+                return AuthoringResult.Locked();
+
+            var draft = await _draftRepository.GetByQuizAsync(quizId);
+            if (draft is null)
+                return AuthoringResult.NotFound();
+
+            var chosenIds = input.DraftIds is null ? new HashSet<Guid>() : input.DraftIds.ToHashSet();
+            var chosen = draft.Candidates.Where(c => chosenIds.Contains(c.Id)).ToList();
+            if (chosen.Count == 0)
+                return AuthoringResult.Invalid("Choose at least one candidate to accept.");
+
+            // Validate every chosen candidate first through the same rules a manual add uses
+            // (AC-8). If any is invalid, for example an unfilled template, promote none and keep
+            // the batch so the teacher can fix it.
+            var built = new List<Question>();
+            foreach (var candidate in chosen)
             {
-                throw new ArgumentException($"Strategy '{input.Mode}' not found.");
+                var result = BuildQuestion(
+                    candidate.QuestionType, candidate.Prompt, candidate.Points, candidate.Options,
+                    candidate.CorrectOptionIndex ?? 0, candidate.CorrectAnswerBool ?? false, candidate.CorrectAnswerText);
+                if (result.Question is not { } question)
+                    return AuthoringResult.Invalid(string.Join(" ", result.Errors));
+                built.Add(question);
             }
 
-            var generatedQuestions = await strategy.GenerateQuestionsAsync(input.Topic, input.Count, input.Difficulty);
-
-            foreach (var q in generatedQuestions)
+            foreach (var question in built)
             {
-                q.QuizId = quizId;
-                quiz.Questions.Add(q);
+                question.QuizId = quiz.Id;
+                quiz.Questions.Add(question);
             }
+            // One save: quiz and draft are tracked on the same scoped context, so the promoted
+            // questions and the batch deletion commit together (accept leaves no pending drafts
+            // behind, AC-8).
+            await _draftRepository.DeleteAsync(draft);
 
-            await _quizRepository.UpdateAsync(quiz);
-            // Task 3 replaces this stub append with the real draft flow (and gates it on the lock);
-            // for now the echo still reports the honest lock state.
-            var isLocked = await _attemptRepository.HasAnyAttemptAsync(quizId);
-            return MapToDto(quiz, isLocked);
+            return AuthoringResult.Ok(MapToDto(quiz, isLocked: false));
+        }
+
+        public async Task<AuthoringResult> DiscardDraftsAsync(Guid quizId, Guid teacherId)
+        {
+            var quiz = await _quizRepository.GetByIdAsync(quizId);
+            if (quiz == null || quiz.CreatedByTeacherId != teacherId)
+                return AuthoringResult.NotFound();
+
+            var draft = await _draftRepository.GetByQuizAsync(quizId);
+            if (draft is not null)
+                await _draftRepository.DeleteAsync(draft);
+
+            return AuthoringResult.Deleted();
         }
 
         public async Task<PublishResult> PublishAsync(Guid quizId, Guid teacherId, PublishQuizDto input)
@@ -221,17 +291,43 @@ namespace Quiztin.Modules.Assessment.Application.Services
             return PublishResult.Ok(MapToDto(quiz, await _attemptRepository.HasAnyAttemptAsync(quiz.Id)));
         }
 
-        // One validation and construction path for a question, shared by add, edit, and (via the
-        // strategy) generation, so the three cannot drift on what a valid question is (spec 0009).
+        // One validation and construction path for a question, shared by manual add, edit, and
+        // draft accept, so they cannot drift on what a valid question is (spec 0009).
         private static QuestionCreationResult BuildQuestion(AddQuestionDto input) =>
-            input.QuestionType switch
+            BuildQuestion(input.QuestionType, input.Prompt, input.Points, input.Options,
+                input.CorrectOptionIndex, input.CorrectAnswerBool, input.CorrectAnswerText);
+
+        private static QuestionCreationResult BuildQuestion(
+            string? questionType, string? prompt, int points, List<string>? options,
+            int correctOptionIndex, bool correctAnswerBool, string? correctAnswerText) =>
+            questionType switch
             {
-                "MultipleChoice" => QuestionFactory.TryCreateMultipleChoice(input.Prompt, input.Points, input.Options, input.CorrectOptionIndex),
-                "TrueFalse" => QuestionFactory.TryCreateTrueFalse(input.Prompt, input.Points, input.CorrectAnswerBool),
-                "ShortAnswer" => QuestionFactory.TryCreateShortAnswer(input.Prompt, input.Points, input.CorrectAnswerText),
+                "MultipleChoice" => QuestionFactory.TryCreateMultipleChoice(prompt, points, options, correctOptionIndex),
+                "TrueFalse" => QuestionFactory.TryCreateTrueFalse(prompt, points, correctAnswerBool),
+                "ShortAnswer" => QuestionFactory.TryCreateShortAnswer(prompt, points, correctAnswerText),
                 _ => QuestionCreationResult.Failure(
-                        $"Unknown question type '{input.QuestionType}'. Use MultipleChoice, TrueFalse, or ShortAnswer.")
+                        $"Unknown question type '{questionType}'. Use MultipleChoice, TrueFalse, or ShortAnswer.")
             };
+
+        private static GeneratedDraftDto MapDraftToDto(GeneratedQuestionDraft draft)
+        {
+            return new GeneratedDraftDto
+            {
+                QuizId = draft.QuizId,
+                CreatedAt = draft.CreatedAt,
+                Candidates = draft.Candidates.Select(c => new DraftCandidateDto
+                {
+                    Id = c.Id,
+                    QuestionType = c.QuestionType,
+                    Prompt = c.Prompt,
+                    Points = c.Points,
+                    Options = c.Options,
+                    CorrectOptionIndex = c.CorrectOptionIndex,
+                    CorrectAnswerBool = c.CorrectAnswerBool,
+                    CorrectAnswerText = c.CorrectAnswerText
+                }).ToList()
+            };
+        }
 
         // Copies the validated content from a freshly built (transient) question onto the existing
         // tracked one, preserving its Id. Called only when the two are the same concrete type, so

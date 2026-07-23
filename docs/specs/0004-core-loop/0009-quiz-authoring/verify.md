@@ -22,3 +22,26 @@ _Steps derived from spec 0009 acceptance criteria. `/check verify` runs these; `
 - **AC-3** (create + add/edit/delete each type, one validation rule set, non owner 404): the create, per type add, invalid add, edit, delete, and non owner steps.
 - **AC-9** (question set locks once attempted; publish settings still change): the attempt then 409 step, and the publish while locked step.
 - **AC-10** (authoring is owner scoped by the JWT UserId, non owner 404): the non owner step, the owner scoped detail read, and the class list step. The SPA half of AC-10 is task 5.
+
+## API / manual (task 3: generation + review drafts)
+- [ ] `POST /api/quizzes/{quizId}/generate` `{topic, difficulty, count}` with AI off → 200 with `count` empty template candidates; `GET /api/quizzes/{quizId}/drafts` reads the same batch back → AC-4, AC-8
+- [ ] With `Generation:AiEnabled=true` and a key set, the same call returns candidates from `claude-opus-4-8`; a malformed element in the model's array is dropped, not fatal (the valid ones still land) → AC-4, AC-6
+- [ ] Generate again → the one batch is replaced (exactly one draft row per quiz), and `GET .../drafts` shows only the new candidates → AC-8
+- [ ] `POST /api/quizzes/{quizId}/drafts/accept` `{draftIds}` for chosen candidates → 200, they become questions on the quiz, and `GET .../drafts` is empty afterward → AC-8
+- [ ] Accept a draftId whose candidate is an unfilled template → 400, no question added, batch still present → AC-8
+- [ ] `POST /api/quizzes/{quizId}/drafts/discard` → 204, batch gone; discarding again → 204 → AC-8
+- [ ] An enrolled student starts an attempt, then the teacher generates and accepts → 409 each → AC-9
+- [ ] Generate with a blank topic → 400 → AC-4
+- [ ] As a non owner: generate, `GET .../drafts`, accept, discard → 404 each → AC-10
+- [ ] The student sees and can start a quiz built entirely from accepted candidates, no seed → AC-11
+
+## Commands (task 3)
+- [ ] `dotnet ef database update --context QuizDbContext --connection <throwaway postgres>` → `quiz.GeneratedQuestionDrafts` exists with a unique `QuizId` index and a FK to `quiz.Quizzes` → AC-8
+- [ ] `dotnet test tests/Quiztin.Modules.Assessment.Tests` → 85 pass (includes GeneratedCandidateParserTests and QuizGenerationTests) → AC-4, AC-6, AC-8, AC-9
+
+## Acceptance-criteria coverage (task 3)
+- **AC-4** generation fallback: the AI-off generate step and the malformed-element step.
+- **AC-5** data minimization: only topic, difficulty, and count are sent; confirm no identifiers in a live run's request payload.
+- **AC-6** untrusted output validated per candidate: the parser step (a mixed valid/invalid array keeps only the good ones).
+- **AC-8** drafts persist, one batch per quiz, accept and discard clear it: the generate, regenerate, accept, and discard steps.
+- **AC-9** lock on attempt covers generate and accept: the attempt-then-409 step. Task 4 (source material) and tasks 5 to 6 (UI) append their AC-7/AC-10/AC-11 steps.

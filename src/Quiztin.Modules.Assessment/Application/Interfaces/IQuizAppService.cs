@@ -48,7 +48,29 @@ namespace Quiztin.Modules.Assessment.Application.Interfaces
         /// </summary>
         Task<IReadOnlyList<QuizSummaryDto>?> GetQuizzesForClassroomAsync(Guid classroomId, Guid teacherId);
 
-        Task<QuizDto> GenerateQuestionsAsync(Guid quizId, Guid teacherId, GenerateQuestionsDto input);
+        /// <summary>
+        /// Generates a pending review batch for a quiz the teacher owns (spec 0009). Real
+        /// generation when AI is on and a key is present, else empty editable templates; either
+        /// way the result is a batch the teacher reviews, never questions on the quiz. NotFound
+        /// for a non owner, Locked (409) once the quiz has an attempt, Invalid for a blank topic.
+        /// </summary>
+        Task<GenerationResult> GenerateQuestionsAsync(Guid quizId, Guid teacherId, GenerateQuestionsDto input);
+
+        /// <summary>The quiz's pending batch, or an empty batch if it has none. Null (404) for a
+        /// non owner.</summary>
+        Task<GeneratedDraftDto?> GetDraftsAsync(Guid quizId, Guid teacherId);
+
+        /// <summary>
+        /// Promotes the chosen candidates onto the quiz through the same validation a manual add
+        /// uses, then clears the whole batch (spec 0009, AC-8). NotFound for a non owner or no
+        /// batch, Locked (409) once the quiz has an attempt, Invalid if a chosen candidate is not
+        /// a valid question (for example an unfilled template).
+        /// </summary>
+        Task<AuthoringResult> AcceptDraftsAsync(Guid quizId, Guid teacherId, AcceptDraftsDto input);
+
+        /// <summary>Discards the pending batch (spec 0009). Idempotent; NotFound only for a non
+        /// owner.</summary>
+        Task<AuthoringResult> DiscardDraftsAsync(Guid quizId, Guid teacherId);
 
         /// <summary>
         /// Publishes a quiz the teacher owns (spec 0009): validates ownership, at least one

@@ -7,10 +7,12 @@ using Testcontainers.PostgreSql;
 using Xunit;
 using Quiztin.Modules.Assessment.Application.DTOs;
 using Quiztin.Modules.Assessment.Application.Results;
+using Microsoft.Extensions.Options;
 using Quiztin.Modules.Assessment.Application.Services;
 using Quiztin.Modules.Assessment.Domain.Entities;
-using Quiztin.Modules.Assessment.Domain.Interfaces;
+using Quiztin.Modules.Assessment.Infrastructure.Configuration;
 using Quiztin.Modules.Assessment.Infrastructure.Persistence;
+using Quiztin.Modules.Assessment.Infrastructure.Strategies;
 
 namespace Quiztin.Modules.Assessment.Tests
 {
@@ -269,6 +271,8 @@ namespace Quiztin.Modules.Assessment.Tests
                 .UseNpgsql(_postgres.GetConnectionString()).Options);
 
         private static QuizAppService NewService(QuizDbContext ctx) =>
-            new(new QuizRepository(ctx), new QuizAttemptRepository(ctx), Array.Empty<IQuestionGenerationStrategy>());
+            new(new QuizRepository(ctx), new QuizAttemptRepository(ctx),
+                new GeneratedQuestionDraftRepository(ctx),
+                new TemplateQuestionGenerationStrategy(Options.Create(new GenerationOptions())));
     }
 }
