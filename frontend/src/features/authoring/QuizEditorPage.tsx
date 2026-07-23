@@ -2,7 +2,9 @@ import { useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router';
 import { Button, Card, Dialog, TextField, useToast } from '@/components/ui';
 import { toUserMessage } from '@/lib/api/errorMessage';
+import { GenerationSection } from './GenerationSection';
 import { QuestionForm } from './QuestionForm';
+import { TYPE_LABEL, answerSummary, pointsLabel } from './questionDisplay';
 import type { QuestionInput } from './authoring.api';
 import type { AuthoredQuestion } from './authoring.schemas';
 import {
@@ -14,27 +16,9 @@ import {
   useUnpublishQuiz,
 } from './useAuthoringQueries';
 
-const TYPE_LABEL: Record<string, string> = {
-  MultipleChoice: 'Multiple choice',
-  TrueFalse: 'True or false',
-  ShortAnswer: 'Short answer',
-};
-
 /** An ISO instant trimmed to what a datetime-local input understands. */
 function toInputValue(iso: string | null): string {
   return iso === null ? '' : iso.slice(0, 16);
-}
-
-/** The answer, written the way the teacher will recognise it. */
-function answerSummary(question: AuthoredQuestion): string {
-  if (question.questionType === 'MultipleChoice') {
-    const index = question.correctOptionIndex ?? 0;
-    return question.options?.[index] ?? `Choice ${index + 1}`;
-  }
-  if (question.questionType === 'TrueFalse') {
-    return question.correctAnswerBool === true ? 'True' : 'False';
-  }
-  return question.correctAnswerText ?? '';
 }
 
 type DialogState =
@@ -235,7 +219,14 @@ export function QuizEditorPage() {
         </Card>
       )}
 
-      <Card padding="lg" className="mb-6 mt-6">
+      {/* Generating is a change to the question set, so it is not offered once the quiz is locked. */}
+      {!quiz.isLocked && (
+        <div className="mt-6">
+          <GenerationSection quizId={quiz.id} classroomId={quiz.classroomId} />
+        </div>
+      )}
+
+      <Card padding="lg" className={quiz.isLocked ? 'mb-6 mt-6' : 'mb-6'}>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-lg text-text-strong">Questions</h2>
           {!quiz.isLocked && (
@@ -264,9 +255,8 @@ export function QuizEditorPage() {
                       {index + 1}. {question.prompt}
                     </p>
                     <p className="mt-1 font-body text-sm text-text-muted">
-                      {TYPE_LABEL[question.questionType] ?? question.questionType} ·{' '}
-                      {question.points === 1 ? '1 point' : `${question.points} points`} · Answer:{' '}
-                      {answerSummary(question)}
+                      {TYPE_LABEL[question.questionType]} · {pointsLabel(question.points)} ·
+                      Answer: {answerSummary(question)}
                     </p>
                   </div>
                   {!quiz.isLocked && (

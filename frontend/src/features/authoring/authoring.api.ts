@@ -2,8 +2,10 @@ import { apiFetch } from '@/lib/api/client';
 import { ApiError } from '@/lib/api/errors';
 import {
   authoredQuizSchema,
+  generatedDraftSchema,
   quizSummariesSchema,
   type AuthoredQuiz,
+  type GeneratedDraft,
   type QuestionType,
   type QuizSummary,
 } from './authoring.schemas';
@@ -99,4 +101,58 @@ export function unpublishQuiz(quizId: string): Promise<AuthoredQuiz> {
     method: 'POST',
     schema: authoredQuizSchema,
   });
+}
+
+/** What a teacher gives Quiztin to work from. Source material is optional, both parts of it. */
+export interface GenerateInput {
+  topic: string;
+  difficulty: string;
+  count: number;
+  sourceText?: string;
+  file?: File | null;
+}
+
+/**
+ * Ask for a batch of candidate questions. Always multipart, because the request may carry a file;
+ * the browser sets the boundary, so no Content-Type is set here. A file over the cap is refused by
+ * the request pipeline (413) and a file that is not really a PDF or docx by its content (415).
+ */
+export function generateQuestions(quizId: string, input: GenerateInput): Promise<GeneratedDraft> {
+  const form = new FormData();
+  form.append('topic', input.topic);
+  form.append('difficulty', input.difficulty);
+  form.append('count', String(input.count));
+  if (input.sourceText !== undefined && input.sourceText !== '') {
+    form.append('sourceText', input.sourceText);
+  }
+  if (input.file) form.append('file', input.file);
+
+  return apiFetch(`/api/quizzes/${quizId}/generate`, {
+    method: 'POST',
+    body: form,
+    schema: generatedDraftSchema,
+  });
+}
+
+/** The pending batch, or null when the quiz is not yours (404). */
+export async function getDrafts(quizId: string): Promise<GeneratedDraft | null> {
+  try {
+    return await apiFetch(`/api/quizzes/${quizId}/drafts`, { schema: generatedDraftSchema });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
+/** Promote the chosen candidates onto the quiz. The whole batch is cleared either way. */
+export function acceptDrafts(quizId: string, draftIds: string[]): Promise<AuthoredQuiz> {
+  return apiFetch(`/api/quizzes/${quizId}/drafts/accept`, {
+    method: 'POST',
+    json: { draftIds },
+    schema: authoredQuizSchema,
+  });
+}
+
+export async function discardDrafts(quizId: string): Promise<void> {
+  await apiFetch(`/api/quizzes/${quizId}/drafts/discard`, { method: 'POST' });
 }

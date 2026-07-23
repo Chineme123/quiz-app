@@ -53,3 +53,24 @@ export const quizSummarySchema = z.object({
 export type QuizSummary = z.infer<typeof quizSummarySchema>;
 
 export const quizSummariesSchema = z.array(quizSummarySchema);
+
+/** One candidate waiting in the review batch. Its id is what an accept request names. */
+export const draftCandidateSchema = z.object({
+  id: guid,
+  questionType: questionTypeSchema,
+  prompt: z.string(),
+  points: z.number(),
+  options: z.array(z.string()).nullable(),
+  correctOptionIndex: z.number().nullable(),
+  correctAnswerBool: z.boolean().nullable(),
+  correctAnswerText: z.string().nullable(),
+});
+export type DraftCandidate = z.infer<typeof draftCandidateSchema>;
+
+/** The quiz's pending batch. An empty candidate list means there is nothing waiting. */
+export const generatedDraftSchema = z.object({
+  quizId: guid,
+  createdAt: z.string().nullable(),
+  candidates: z.array(draftCandidateSchema),
+});
+export type GeneratedDraft = z.infer<typeof generatedDraftSchema>;

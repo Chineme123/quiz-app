@@ -14,4 +14,6 @@ export const qk = {
   classroomQuizzes: (classroomId: string) => ['classroomQuizzes', classroomId] as const,
   /** One quiz as its owner edits it. */
   quiz: (quizId: string) => ['quiz', quizId] as const,
+  /** The quiz's pending batch of generated candidates awaiting review. */
+  quizDrafts: (quizId: string) => ['quizDrafts', quizId] as const,
 };

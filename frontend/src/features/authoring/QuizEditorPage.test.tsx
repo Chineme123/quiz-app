@@ -68,6 +68,8 @@ describe('QuizEditorPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(api.getQuiz).mockResolvedValue(quiz());
+    // The editor also carries the generation panel; no batch waiting by default.
+    vi.mocked(api.getDrafts).mockResolvedValue(null);
   });
 
   it('shows each question with its type, points, and correct answer', async () => {
@@ -90,6 +92,8 @@ describe('QuizEditorPage', () => {
     expect(screen.queryByRole('button', { name: 'Remove' })).not.toBeInTheDocument();
     // The settings still change while locked.
     expect(screen.getByRole('button', { name: /publish/i })).toBeInTheDocument();
+    // Generating would change the question set too, so it is not offered either.
+    expect(screen.queryByRole('button', { name: /draft questions/i })).not.toBeInTheDocument();
   });
 
   it('adds a question', async () => {

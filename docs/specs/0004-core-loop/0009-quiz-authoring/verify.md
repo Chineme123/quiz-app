@@ -64,4 +64,42 @@ _Steps derived from spec 0009 acceptance criteria. `/check verify` runs these; `
 - **AC-7** (pasted or uploaded source, magic-byte type check, pipeline size cap, bounded extraction, nothing stored): the pasted, docx, PDF, wrong type, oversized, corrupt, and bomb steps.
 - **AC-5** data minimization now also covers the extracted source text: the outbound payload step.
 
-Tasks 5 to 6 (UI) append their AC-10 and AC-11 steps.
+## In the browser (task 5: authoring UI)
+Signed in as a teacher who owns the class.
+- [ ] Open a class, follow **Manage quizzes** → the quizzes for that class, with each one's state and counts → AC-10
+- [ ] Create a quiz (title plus minutes) → it appears in the list and the editor opens on it → AC-10
+- [ ] Add one of each type (multiple choice, true or false, short answer) → each appears with its type, points, and **correct answer** → AC-3
+- [ ] Edit a question → the change sticks, and the type is shown read only (changing type is a remove then add) → AC-3
+- [ ] Remove a question → it confirms first, then the question goes → AC-3
+- [ ] Publish with an availability window and an attempt limit → a student in that class can see and start it → AC-10
+- [ ] Unpublish → it confirms first, and a student can no longer start it → AC-10
+- [ ] Put another teacher's quiz id in the `/quizzes/{id}/edit` URL → "We couldn't find that quiz", the same as an id that does not exist → AC-1
+- [ ] After a student has an attempt, reopen the editor → the add, edit, and remove controls are **not shown** and a line explains why; the availability and attempt settings still work → AC-9
+- [ ] Keyboard only: reach and operate create, add, edit, remove, and publish, with a visible focus ring throughout → AC-3
+
+## In the browser (task 6: generation and review UI)
+- [ ] Draft questions from a topic alone → candidates appear **for review** and the quiz itself is unchanged → AC-4, AC-8
+- [ ] Draft again → the waiting batch is replaced, not added to (one batch per quiz) → AC-8
+- [ ] Skip some candidates, add the rest → only the kept ones land on the quiz, and the batch is cleared → AC-8
+- [ ] Clear a batch → it confirms first, and the quiz is untouched → AC-8
+- [ ] Add a candidate, then edit it like any other question → it edits normally (editing happens after accepting, not before) → AC-3
+- [ ] Paste source material → the candidates reflect it → AC-7
+- [ ] Attach a real docx, then a real PDF → the candidates reflect the document → AC-7
+- [ ] Attach a file over 5 MB → refused in the page with a sentence, and **no request is sent** → AC-7
+- [ ] With `Generation:AiEnabled=false` → the requested number of empty editable templates, never an error → AC-4
+- [ ] With the model returning nothing usable → a plain line saying so, and the quiz is unchanged → AC-4
+- [ ] A student takes a quiz built **entirely** from accepted candidates, with no seed data → it plays and scores normally → AC-11
+- [ ] Keyboard only: move through the review list, toggle a candidate between kept and skipped, and confirm the toggle announces its pressed state to a screen reader → AC-8
+
+## Commands (tasks 5 and 6)
+- [ ] `npm run test` in `frontend/` → 143 pass, 21 of them in `src/features/authoring` → AC-3, AC-4, AC-8, AC-10
+- [ ] `npm run build` in `frontend/` → green, and `dist/index.prerender.html` matches the same file built from the previous commit (compare the two files, not an absolute byte count: the `vite build` step is not byte deterministic between runs) → spec 0003 landing safety
+
+## Acceptance-criteria coverage (tasks 5 and 6)
+- **AC-3** author by hand: the add, edit, and remove steps, plus editing an accepted candidate.
+- **AC-4** generation with a deterministic fallback: the topic only, AI off, and nothing usable steps.
+- **AC-7** source material: the paste, docx, PDF, and oversized file steps.
+- **AC-8** one batch per quiz, reviewed before anything is kept: the draft, redraft, partial accept, and clear steps.
+- **AC-9** lock on attempt reaches the UI: the reopened editor step.
+- **AC-10** the surface is driveable end to end: the manage quizzes, create, publish, and unpublish steps.
+- **AC-11** a fully generated quiz is takeable: the student step.
