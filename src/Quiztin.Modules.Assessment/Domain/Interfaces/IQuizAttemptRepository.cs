@@ -29,6 +29,22 @@ namespace Quiztin.Modules.Assessment.Domain.Interfaces
         /// can show the right action per quiz without a query each (spec 0006, AC-2).
         /// </summary>
         Task<IReadOnlyList<QuizAttempt>> GetAttemptsForQuizzesAsync(Guid studentId, IReadOnlyList<Guid> quizIds);
+
+        /// <summary>
+        /// Whether this quiz has any attempt at all (spec 0009, AC-9). One attempt in any state is
+        /// enough: it means a student has already seen this question set, so authoring locks and
+        /// the set can never change under them. A quiz wide check, unlike the student scoped counts
+        /// above.
+        /// </summary>
+        Task<bool> HasAnyAttemptAsync(Guid quizId);
+
+        /// <summary>
+        /// How many attempts each of the given quizzes has, for a teacher's quiz list (spec 0009,
+        /// AC-10). Batched so the list does not run a count per quiz. A quiz with no attempts is
+        /// absent from the map, so callers default it to zero.
+        /// </summary>
+        Task<IReadOnlyDictionary<Guid, int>> GetAttemptCountsByQuizAsync(IReadOnlyList<Guid> quizIds);
+
         Task<bool> HasCommandBeenProcessedAsync(Guid commandId);
         Task MarkCommandAsProcessedAsync(Guid commandId, string type);
         

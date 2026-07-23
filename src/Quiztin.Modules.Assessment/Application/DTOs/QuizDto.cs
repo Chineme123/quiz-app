@@ -19,6 +19,11 @@ namespace Quiztin.Modules.Assessment.Application.DTOs
         public DateTime? AvailableTo { get; set; }
         public int MaxAttempts { get; set; }
 
+        // True once the quiz has any attempt (spec 0009, AC-9): its question set is frozen, so the
+        // authoring UI shows the add, edit, and delete controls as locked. The publish settings
+        // (window, attempts) may still change even when this is true.
+        public bool IsLocked { get; set; }
+
         public List<QuestionDto> Questions { get; set; }
     }
 

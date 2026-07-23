@@ -80,5 +80,14 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Persistence
 
             return (items, total);
         }
+
+        public async Task<IReadOnlyList<Quiz>> GetByClassroomAsync(Guid classroomId)
+        {
+            return await _context.Quizzes
+                .Where(q => q.ClassroomId == classroomId)
+                .OrderBy(q => q.Title)
+                .Include(q => q.Questions)
+                .ToListAsync();
+        }
     }
 }
