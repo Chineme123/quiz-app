@@ -399,10 +399,24 @@ namespace Quiztin.Modules.Assessment.Application.Services
                     Id = q.Id,
                     Prompt = q.Prompt,
                     Points = q.Points,
-                    QuestionType = q.QuestionType,
-                    Options = (q as MultipleChoiceQuestion)?.Options
+                    QuestionType = ToWireType(q.QuestionType),
+                    Options = (q as MultipleChoiceQuestion)?.Options,
+                    // Owner only surface, so the editor can show and change the right answer (AC-3).
+                    CorrectOptionIndex = (q as MultipleChoiceQuestion)?.CorrectOptionIndex,
+                    CorrectAnswerBool = (q as TrueFalseQuestion)?.CorrectAnswer,
+                    CorrectAnswerText = (q as ShortAnswerQuestion)?.CorrectAnswerText
                 }).ToList()
             };
         }
+
+        // The stored discriminator is the CLR type name; the wire uses the same short names an add
+        // or edit request sends, so a client never has to translate between two vocabularies.
+        private static string ToWireType(string discriminator) => discriminator switch
+        {
+            nameof(MultipleChoiceQuestion) => "MultipleChoice",
+            nameof(TrueFalseQuestion) => "TrueFalse",
+            nameof(ShortAnswerQuestion) => "ShortAnswer",
+            _ => discriminator
+        };
     }
 }

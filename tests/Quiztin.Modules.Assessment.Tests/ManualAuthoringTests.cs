@@ -135,6 +135,22 @@ namespace Quiztin.Modules.Assessment.Tests
         }
 
         [Fact]
+        public async Task The_detail_read_gives_the_owner_the_correct_answers_and_short_type_names()
+        {
+            var (_, quizId) = await SeedQuizAsync(); // one MultipleChoice question, correct index 1
+
+            var quiz = await NewService(NewContext()).GetQuizForEditingAsync(quizId, _teacherId);
+
+            Assert.NotNull(quiz);
+            var question = quiz!.Questions.Single();
+            // The wire uses the same names an add request sends, not the storage discriminator.
+            Assert.Equal("MultipleChoice", question.QuestionType);
+            // The owner's editor cannot edit a question without seeing which answer is right (AC-3).
+            Assert.Equal(1, question.CorrectOptionIndex);
+            Assert.Equal(new List<string> { "3", "4", "5" }, question.Options);
+        }
+
+        [Fact]
         public async Task The_class_quiz_list_carries_counts_and_is_owner_scoped()
         {
             var (classroomId, quizId) = await SeedQuizAsync(withAttempt: true); // one question, one attempt

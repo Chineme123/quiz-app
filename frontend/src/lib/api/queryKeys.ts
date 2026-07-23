@@ -10,4 +10,8 @@ export const qk = {
   classroom: (classroomId: string) => ['classroom', classroomId] as const,
   classroomRoster: (classroomId: string, page: number) =>
     ['classroomRoster', classroomId, page] as const,
+  /** The teacher's quizzes in one class (spec 0009 authoring). */
+  classroomQuizzes: (classroomId: string) => ['classroomQuizzes', classroomId] as const,
+  /** One quiz as its owner edits it. */
+  quiz: (quizId: string) => ['quiz', quizId] as const,
 };

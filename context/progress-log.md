@@ -20,6 +20,20 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [feature] Teacher authoring UI built (spec 0009 task 5, AC-3, AC-9, AC-10)
+- **Date:** 2026-07-23
+- **Area:** apps/frontend / backend
+- **What:** Built **task 5** of [spec 0009](../docs/specs/0004-core-loop/0009-quiz-authoring/index.md): the authoring surface a teacher actually drives.
+  1. New `features/authoring/` slice, flat and mirroring `classrooms/`: `authoring.schemas.ts` (zod on the shared `guid`, never `z.uuid()`), `authoring.api.ts` (404 reads as `null`, the house "not yours" convention), `useAuthoringQueries.ts` (a write that answers with the whole quiz primes the cache with `setQueryData` rather than refetching, and invalidates the class list whose counts it changed).
+  2. **`ClassQuizListPage`** at `/classrooms/:classroomId/quizzes`: create a quiz (title plus minutes), then every quiz with its state and counts and a way into the editor. Reachable from a new "Manage quizzes" link on the class page, which is what makes the surface driveable (AC-10).
+  3. **`QuizEditorPage`** at `/quizzes/:quizId/edit`: the question list showing each question's type, points, and **correct answer**; add, edit, and remove by hand; the availability window and attempt limit; publish and unpublish. Every scope changing action confirms in a `Dialog` first (ui-rules section 1). When the quiz is locked the question controls are **not rendered at all** and a calm line explains why, rather than offering an action the server would refuse with 409 (AC-9).
+  4. **`QuestionForm`**: type aware fields (choices plus which is right, true or false, or a short answer). A question's type is fixed once it exists, so editing shows it read only.
+- **Two backend gaps this surfaced, and fixed:** (a) `QuestionDto` carried no correct answer, so the "full quiz for editing" could not actually be edited; added `correctOptionIndex`, `correctAnswerBool`, and `correctAnswerText`, which is safe because `QuizDto` is returned only from owner scoped authoring endpoints (the student take path uses `AttemptQuestionsDto`, which never carries an answer). (b) Responses spoke the storage discriminator (`MultipleChoiceQuestion`) while requests took `MultipleChoice`; the response is now normalised so the wire has one vocabulary. Nothing consumed that field yet, so it cost nothing.
+- **A real bug the tests caught:** `TextField` **drops `value` and `onChange` when `multiline`** (they are typed as input props and only spread onto the `<input>`; the textarea takes `textareaProps`). The question prompt was therefore silently uncontrolled: it looked right on screen and would have submitted an empty prompt. Fixed to the component's intended API. The prop types make this a silent footgun, which is worth a follow up on `TextField` itself.
+- **Tests:** frontend 122 → **135** (+13); backend 94 → **95** (+1 pinning the DTO fix). `ClassQuizListPage.test.tsx` covers the list, the empty state, create then open the editor, the title being required, a class that is not yours, and axe. `QuizEditorPage.test.tsx` covers a question with its answer, locked hiding the controls, adding a question, publish confirming first, publish disabled with no questions, a quiz that is not yours, and axe. `tsc` clean, `eslint` clean, `npm run build` green, and the landing prerender is **27315 bytes, byte identical** to the recorded baseline, so the new routes did not disturb hydration.
+- **Verified running:** the stack boots (Postgres, the API on :8080, Vite on :5173), the new routes resolve and sit correctly behind `RequireAuth`, and the browser console is clean. The signed in visual walk is not done here; `verify.md` carries those steps.
+- **Notes / deferred:** no endpoint updates a quiz's title or duration after creation, so the editor sets duration at create time and the window and attempts at publish; changing duration later needs a new endpoint (follow up). Remaining: task 6 (generation and review UI) and task 7 (end to end verify).
+
 ### [feature] File backed source material for generation built (spec 0009 task 4, AC-7)
 - **Date:** 2026-07-23
 - **Area:** backend
