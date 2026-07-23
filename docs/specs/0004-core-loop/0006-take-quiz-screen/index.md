@@ -1,6 +1,7 @@
 # 0006. Take quiz screen (the student take experience)
 
 **Date**: 2026-07-16
+**Status**: Accepted
 
 ## Summary
 

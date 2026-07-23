@@ -1,7 +1,7 @@
 # 0002. Production platform: gateway, containerised local dev, CI, and deploys to Railway
 
 **Date**: 2026-07-13
-**Status**: Proposed
+**Status**: Accepted
 
 ## Summary
 

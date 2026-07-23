@@ -1,6 +1,7 @@
 # 0005. AI feedback and student results (thinnest end to end thread)
 
 **Date**: 2026-07-14
+**Status**: Accepted
 
 ## Summary
 
@@ -121,4 +122,4 @@ The order is a thin vertical thread through every layer, then thicken. This is a
 
 ## Rationale
 
-Reasoning and the options weighed live in the umbrella [rationale.md](rationale.md).
+Reasoning and the options weighed live in the umbrella [rationale.md](../rationale.md).

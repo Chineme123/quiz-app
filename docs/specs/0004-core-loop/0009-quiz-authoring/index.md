@@ -1,6 +1,7 @@
 # 0009. Quiz authoring, AI generation, and publish
 
 **Date**: 2026-07-20
+**Status**: In Progress
 
 ## Summary
 

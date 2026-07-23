@@ -15,10 +15,22 @@ Treat the core loop as an umbrella of the five children listed below, and build 
 
 Children of this umbrella. Each is a separate spec; each is designed in its own `/architect` pass and gets its number then.
 
-- [0005 AI feedback and student results](0005-ai-feedback-and-results.md): the wedge, built as the thinnest end to end thread. Real Claude feedback on the wrong answers of a graded attempt, shown on a student results screen (supports UC8 feedback and the UC9 student read). **Built and merged.**
-- [0006 Take quiz screen](0006-take-quiz-screen.md): the student take experience in the SPA, so a human drives the attempt rather than the API or the seeder (UC8 UI). Adds a list of available quizzes, a one question at a time screen with a navigator and a countdown, and answers saved to the server as they are picked. Overrides two locked foundation decisions (section 8 auto save, section 69 trigger 1); both carry follow ups to reconcile it. **Designed, ready to build.**
-- [0008 Classroom create and join](0008-classroom-create-join.md): teacher creates a classroom and shares a code or link, any signed in user joins, which makes enrolment gating (FR7) real through the product (UC2, UC3). The dependency root for real, not seeded, preconditions. Adds role aware dashboards and full class management (rename, archive, regenerate code, leave). **Designed, ready to build.**
-- [0009 Quiz authoring, AI generation, and publish](0009-quiz-authoring/index.md): the authoring side of the loop (UC6 real). Publish (the missing link that lets a quiz reach a student), manual question editing, real `claude-opus-4-8` generation behind the existing seam with the empty template fallback, file backed source material, server saved review drafts, and the full authoring UI. Kept as one large child at the engineer's direction; the heaviest child so far. **Designed, ready to build.**
+**Where each child stands** (the one place to look; `progress-log.md` has the detail):
+
+| Child | Status | Built | Independently verified |
+|---|---|---|---|
+| 0005 AI feedback and student results | Accepted | yes, merged | yes — `/check verify`, which found real defects |
+| 0006 Take quiz screen | Accepted | yes, merged | yes — `/check verify`, which caught two defects 82 green tests missed |
+| 0008 Classroom create and join | Accepted | yes, merged | **no** — a live walk during the build, never an independent pass |
+| 0009 Quiz authoring, generation, publish | In Progress | tasks 1 to 6 of 7; task 1 merged, the rest on a local branch | **no** — task 7 *is* the verify |
+| (planned) Teacher classroom results, UC10 | not designed | no | no |
+
+The loop is walkable end to end by real people once 0009 lands. UC10 is the last child.
+
+- [0005 AI feedback and student results](0005-ai-feedback-and-results/index.md): the wedge, built as the thinnest end to end thread. Real Claude feedback on the wrong answers of a graded attempt, shown on a student results screen (supports UC8 feedback and the UC9 student read). **Built and merged.**
+- [0006 Take quiz screen](0006-take-quiz-screen/index.md): the student take experience in the SPA, so a human drives the attempt rather than the API or the seeder (UC8 UI). Adds a list of available quizzes, a one question at a time screen with a navigator and a countdown, and answers saved to the server as they are picked. Overrides two locked foundation decisions (section 8 auto save, section 69 trigger 1); both carry follow ups to reconcile it. **Built and merged.**
+- [0008 Classroom create and join](0008-classroom-create-join/index.md): teacher creates a classroom and shares a code or link, any signed in user joins, which makes enrolment gating (FR7) real through the product (UC2, UC3). The dependency root for real, not seeded, preconditions. Adds role aware dashboards and full class management (rename, archive, regenerate code, leave). **Built and merged.**
+- [0009 Quiz authoring, AI generation, and publish](0009-quiz-authoring/index.md): the authoring side of the loop (UC6 real). Publish (the missing link that lets a quiz reach a student), manual question editing, real `claude-opus-4-8` generation behind the existing seam with the empty template fallback, file backed source material, server saved review drafts, and the full authoring UI. Kept as one large child at the engineer's direction; the heaviest child so far. **Building: tasks 1 to 6 of 7 done.**
 - (planned) Teacher classroom results (UC10): the classroom-wide results read. **Note (spec 0007):** there is no separate ResultService or `resultdb` any more — results live in the Assessment module (UC9 is already served there), so this is a read within Assessment, not a cross-service projection. The "grading feeds results" shared contract keeps the in-process graded event; the cross-service framing is dropped.
 
 ## Shared contracts

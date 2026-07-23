@@ -1,6 +1,7 @@
 # 0008. Classroom create and join (the dependency root)
 
 **Date**: 2026-07-19
+**Status**: Accepted
 
 ## Summary
 
