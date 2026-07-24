@@ -99,8 +99,8 @@ The heart of the file. Numbered so other files cite `foundation.md §7 #N`. Rows
 
 | # | Decision | Reasoning | Rejected alternative |
 |---|----------|-----------|----------------------|
-| 1 | **Monorepo: `frontend/` + `src/Services/` + `docs/` + `quiz-trash/`, one repo** *(this session)* | One place for the whole product; frontend and backend version together | Split repos (more overhead for a solo dev) |
-| 2 | **Move legacy/scaffold into `quiz-trash/`** (deferred cleanup) *(this session)* | Keep the tree clean without deleting history | Delete outright (loses reference) |
+| 1 | **Monorepo, one repo** *(this session)* — originally `frontend/` + `src/Services/` + `docs/` + `quiz-trash/`; **now** `frontend/` + `src/` (the one host + two modules, spec 0007) + `docs/`, with `quiz-trash/` removed 2026-07-24 | One place for the whole product; frontend and backend version together | Split repos (more overhead for a solo dev) |
+| 2 | **Move legacy/scaffold into `quiz-trash/`** *(this session)* — **done and retired:** the cleanup pass ran on 2026-07-24 and `quiz-trash/` (with the original `.docx` corpus and the cut scaffolds) was deleted | Kept the tree clean during the build without deleting history early; removed once nothing referenced it | Delete outright at the start (would have lost the reference mid-build) |
 | 3 | **Real product built via coursework** framing *(this session)* | The demoable loop is the bar; AUM docs are the design ledger | Coursework-only; portfolio-only |
 | 4 | **Product name = "Quiztin"**; code identifiers keep current names for now *(this session)* | Brand locked; renaming code is an optional refactor, not v1 work | Keep "QuizApp"; rename all code now (churn for no v1 value) |
 | 5 | **React + Vite SPA** for the frontend *(this session)* | Cleanest pairing with a REST/.NET API; largest ecosystem; matches the Figma/Claude-Design handoff | Blazor (worse design-handoff fit); Next.js (no SSR/SEO need) |
@@ -158,13 +158,13 @@ The heart of the file. Numbered so other files cite `foundation.md §7 #N`. Rows
 - ⚠️ **Pin the framework** (`global.json`) and reconcile every `.csproj` to .NET 10 (§7 #13).
 - ⚠️ **Fix identity + auth** to §7 #14/#15 (remove hardcoded IDs, unify JWT audience, uncomment `[Authorize]`).
 
-### Out / cut (→ `quiz-trash/` in the final cleanup pass)
+### Out / cut (removed 2026-07-24 with the `quiz-trash/` cleanup)
 - WeatherForecast scaffolding (QuizService.API + all three stub services).
 - Empty `UnitTest1.cs` placeholders.
-- The three empty stub services **as scaffolds** — Auth/Result get *rebuilt* for v1; Notification stays out (below).
+- The three empty stub services **as scaffolds** — superseded wholesale by the spec 0007 modular monolith (Auth+User became the Identity module, Quiz became Assessment; Result folded into Assessment; Notification stays out, below).
 
 ### Deferred (designed, later phase)
-- **`quiz-trash/` cleanup pass itself** — [LOCKED as the final step].
+- ~~**`quiz-trash/` cleanup pass itself** — [LOCKED as the final step].~~ **Done 2026-07-24:** `quiz-trash/` deleted along with the converted UC corpus in `docs/`; the context system and the specs are now the single design record.
 - **NotificationService** — no v1 loop step needs it.
 - UC7 Assign Quiz; UC11 Quiz Metrics; UC12 Configure Grading Style; UC13 Export Results.
 - UC15 View/Update Profile (full); UC16 Account Status/Admin; UC17 Roles & Permissions; UC18 Notification Preferences; UC19 Activity Summary.
@@ -202,7 +202,7 @@ Honest "not scaling yet, and here's what replaces it":
 
 ## §11 The deepest risk
 
-**The design-first brain lives in the repo — bus factor now low.** As of 2026-07-09 the design corpus was **converted to markdown and consolidated in `docs/`** (originals archived in `quiz-trash/`), and this context system is in `context/` — so the AUM rationale, pattern choices, FR mappings, and UC catalog are readable and in the repo tree rather than trapped in binary Word files. The working tree is now **pushed to a public GitHub remote with CI + branch protection** (§7 #32), so losing the machine no longer loses the project — the earlier local-only bus-factor risk is resolved. Only the `.env` secrets stay local (gitignored, by design).
+**The design-first brain lives in the repo — bus factor now low.** The original AUM corpus (binary Word files) was converted to markdown on 2026-07-09, then **fully retired on 2026-07-24** once its intent had been absorbed: the pattern choices, FR mappings, and UC intent now live in `context/` (this system) and in `docs/specs/`, which are the single design record. The rationale is no longer trapped in Word files, and it is no longer duplicated in a parallel corpus either. The working tree is **pushed to a public GitHub remote with CI + branch protection** (§7 #32), so losing the machine no longer loses the project. Only the `.env` secrets stay local (gitignored, by design). *(A record of how faithfully the build tracked those original UCs is kept in `progress-log.md`, 2026-07-24, so retiring the corpus did not lose that assessment.)*
 
 **Runner-up (now mitigated by design):** the product's wedge is AI, and AI is 100% stubbed. v1 makes it real (§7 #6) — and because a **deterministic fallback** is locked, a Claude outage degrades the experience instead of breaking the loop. The "AI" promise never blocks a working demo.
 

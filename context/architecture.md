@@ -55,22 +55,20 @@ quiz-app/                       repo root (product: Quiztin)
 ├── README.md                   context-system front door
 ├── CLAUDE.md                   mandatory per-session rules (⬜)
 ├── context/                    the context system (this folder)
-├── docs/                       the AUM design corpus, converted to markdown (✅, was "Quiz Application/")
-├── frontend/                   React + Vite SPA (✅ built — spec 0001)
-├── src/
-│   ├── Gateway/                YARP gateway, serves the SPA + routes /api (✅ built + deployed — spec 0002)
-│   └── Services/
-│       ├── AuthService/        API/Application/Domain/Infrastructure + Tests (register/login/refresh/logout built)
-│       ├── UserService/        (UC14 built)
-│       ├── QuizService/        (UC6 + UC8 built; grading authority)
-│       ├── ResultService/      (rebuild for v1: UC9/UC10 read side)
-│       └── NotificationService/(deferred)
-├── quiz-trash/                 cut scaffolds, final cleanup step (⬜)
-├── QuizApp.sln
-└── docker-compose.yml          Postgres + services
+├── docs/                       specs (docs/specs/), project docs, diagrams (the original AUM corpus was retired 2026-07-24)
+├── frontend/                   React + Vite SPA (✅ built — specs 0001, 0003, 0006, 0008, 0009)
+├── src/                        one host + two modules (✅ modular monolith — spec 0007, folded the microservices in)
+│   ├── Quiztin.Api/            the single host: serves the SPA at / and routes /api (was the Gateway + all services)
+│   ├── Quiztin.Modules.Identity/    Auth + User merged: register/login/refresh/logout + UC14 profile
+│   └── Quiztin.Modules.Assessment/  classrooms, quizzes, attempts, grading, AI feedback + generation (UC2/3/6/8/9)
+├── tests/                      Quiztin.Api.Tests + one test project per module
+├── Quiztin.sln
+├── docker/  ·  docker-compose.yml   Postgres + the one app
 ```
 
-**Divisibility:** each service is an independently buildable/deployable 4-project Clean Architecture unit (`*.API` / `*.Application` / `*.Domain` / `*.Infrastructure`).
+**Divisibility:** the boundary is now the **module**, not a deployable service. Each module (`Identity`, `Assessment`) is a Clean/Onion unit with `Domain` / `Application` / `Infrastructure` / `Api` layers, compiled into the one `Quiztin.Api` host and isolated by a Postgres schema (`identity`, `quiz`) rather than by process. (Pre-0007 this was five independently deployable services behind a YARP gateway; see the §7 supersede notice in `foundation.md`.)
+
+> Note: untracked pre-0007 directories (`src/Gateway/`, `src/Services/`) may still sit on disk from before the refactor. They are not in `Quiztin.sln` and not tracked by git, so they are dead weight, not part of the build.
 
 ## Boundaries / modules
 

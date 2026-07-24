@@ -34,7 +34,7 @@ The loop the product lives or dies on:
 Create classroom (UC2) + join classroom (UC3); create quiz with real AI generation (UC6); take quiz with real scoring + real AI feedback and the attempt-limit/abandon rules (UC8); view my results (UC9); view classroom results (UC10); user profile (UC14); a minimal AuthService issuing real JWTs with end-to-end auth; a YARP API gateway; and the React SPA covering these screens. Plus the Layer-0 repairs the loop depends on (Postgres migration, real scoring contract, framework pin, identity/auth fix). *Reasoning for each lives in `foundation.md` §7–§8.*
 
 ## Features out of scope (deferred)
-NotificationService; assign-quiz (UC7); quiz metrics/grading-style/export (UC11–13); full profile/account/admin/roles/preferences/activity (UC15–19); practice mode (UC4/UC5); the 4th & 5th question types; full multiple-attempt history/analytics; save-draft; auto-save; a background abandon-sweeper; an event outbox. The final `quiz-trash/` cleanup pass is the last deferred step.
+NotificationService; assign-quiz (UC7); quiz metrics/grading-style/export (UC11–13); full profile/account/admin/roles/preferences/activity (UC15–19); practice mode (UC4/UC5); the 4th & 5th question types (multi-selection, long answer); full multiple-attempt history/analytics; save-draft; auto-save; a background abandon-sweeper; an event outbox. *(The `quiz-trash/` cleanup that used to close this list was done 2026-07-24.)*
 
 ## Target users
 Teachers (own classrooms, author quizzes, view class results) and students (enrol, take quizzes, review feedback) in an academic classroom setting. One instructor per classroom. Admin is designed but out of v1.
