@@ -20,6 +20,14 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [fix] Found the real CD root cause: the Dockerfile never copied Directory.Packages.props (NU1015)
+- **Date:** 2026-07-24
+- **Area:** infra / deploy
+- **What:** Ran an authorised `railway redeploy` of `main` to un-stale production. It **failed** (deployment `f1f4211c`) — but the fresh build log finally gave the real error, which the two earlier stale logs had hidden: **`NU1015`, version-less `PackageReference`s** for EF Core, Npgsql, the JWT libs, `Anthropic.SDK`, and more. **Root cause:** Central Package Management was adopted in `6ae0d3a` (2026-07-20), moving every package version into `Directory.Packages.props` at the repo root — but **`src/Quiztin.Api/Dockerfile` copies each `.csproj` and runs `dotnet restore` without ever copying `Directory.Packages.props`**, so restore fails on every build. The last green deploy (`1d5228b1`, 07-20 13:34) was the last build *before* CPM; the very first failure (`6ae0d3a`) **is** the CPM-adoption commit. So CD has been dead since the moment CPM landed, and `dotnet build`/CI never caught it because they run with the props file present.
+- **The fix (`0c3d403`):** one line — `COPY ["Directory.Packages.props", "./"]` before the csproj copies in the Dockerfile. Verified by inspection: the props file carries all six erroring packages, `ManagePackageVersionsCentrally=true`, and `.dockerignore` does not exclude it. A local `docker build` to prove it end-to-end was blocked only because **Docker Desktop went down mid-session**; Railway builds on its own builders, so the deploy itself will confirm it.
+- **Correcting myself, again:** my first 0002 pass said "production is down" (wrong — it's live at the `quiztin` URL), then this turn I said the CD break was a "transient builder failure, just redeploy" (also wrong — it's this deterministic Dockerfile/CPM bug). The redeploy that disproved "transient" is what surfaced the real error. The 0002 `verify.md` CD section is corrected to match.
+- **Still open:** the fix (`0c3d403`) is on the local branch, not on `main`, so `main` still can't deploy. It needs to reach `main` (PR/merge → `deploy.yml` deploys and now succeeds), or a manual `railway up` from a checkout that includes it. Production stays on the healthy 07-20 build until then. **Deferred to the user's call on how to ship** (this branch carries a large body of unmerged work).
+
 ### [fix] Verify 0008 (pass), and correct the 0002 deployment finding — production is live, not down
 - **Date:** 2026-07-24
 - **Area:** backend / infra / docs
