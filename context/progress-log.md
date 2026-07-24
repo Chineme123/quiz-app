@@ -20,6 +20,14 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [fix] Landing page touch targets meet 44px; spec 0003 now Accepted
+- **Date:** 2026-07-24
+- **Area:** apps/frontend / docs
+- **What:** Closed the one finding from yesterday's independent verify of the landing page (spec 0003): several secondary interactive targets were under the design system's 44px minimum on their smallest side. Gave a 44px `min-height` (with `inline-flex` + `align-items: center` where the element was a plain text link) to `.qz-toggle__btn` (was 40px), `.qz-footer__link` (32px), `.qz-wordmark` and `.qz-footer__brand-mark` (26–33px), `.qz-nav__link` (32px, visible ≥860px so a tablet touch target), and `.qz-skip` (42px) in `landing.css`.
+- **Verified live:** re-measured every visible `a`/`button` at 360px and 1280px — **0 targets under 44px** at either width (was 11 short at mobile plus the desktop nav links), no horizontal scroll, and the header/hero render unchanged (the min-heights only enlarge the tap box where the row already exceeded 44px, so nothing moved visually). The six footer links now measure exactly 44px. `tsc`, `eslint`, the 30 landing tests, and the full `npm run build` (prerender still 27315 bytes — a CSS min-height does not touch the prerendered markup) all stay green.
+- **Status:** with the gap closed and the rest of the criteria confirmed on 2026-07-23’s pass, **spec 0003 advances In Progress → Accepted** — its own follow-up said acceptance follows an independent verify pass, and now one has completed cleanly. The only step proven by code rather than a live session is AC-5's *logged-in* nav branch (the `signedIn` conditional in `LandingNav.tsx`), noted in `verify.md`.
+- **`/check` debt:** unchanged count — 3 of 6 slices independently verified (0005, 0006, and now a fully-clean 0003). Next cheapest is 0007 (re-run its run-log).
+
 ### [chore] First independent verify of the landing page (spec 0003), and the dead pre-0007 dirs removed
 - **Date:** 2026-07-24
 - **Area:** apps/frontend / docs / context
