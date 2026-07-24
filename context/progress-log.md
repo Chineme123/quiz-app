@@ -20,6 +20,19 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [chore] First independent verify of the landing page (spec 0003), and the dead pre-0007 dirs removed
+- **Date:** 2026-07-24
+- **Area:** apps/frontend / docs / context
+- **What:** Paid down the cheapest item on the `/check` debt map and finished the pre-0007 cleanup.
+  1. **Deleted the untracked, dead `src/Gateway/` and `src/Services/` directories** (486 MB, 0 files tracked, 0 references in `Quiztin.sln`, not git-ignored — plain leftover from before the spec 0007 fold). Confirmed dead before removing; git status stayed clean because none of it was tracked. `src/` is now exactly the three real projects: `Quiztin.Api`, `Quiztin.Modules.Identity`, `Quiztin.Modules.Assessment`.
+  2. **Ran the first independent `/check verify` pass on spec 0003 (the landing page)** — the cheapest slice to check because it is fully public (no credentials) and mostly automatable. Driven live in the browser plus the build output and the test suite. **Result: pass, with one minor finding.**
+     - Confirmed live: renders logged out with no redirect (AC-1); the hero segmented control switches all four content pieces, defaults to students, does not auto-rotate, and is a real ARIA `tablist` (AC-2); section order exact (AC-3); role-hinted CTA routes (AC-4); Fredoka/Nunito, the token-bound colours (`--primary` #4453D6, `--accent` #DD5530, the CTA computing to `rgb(221,85,48)`), and exactly one gradient (AC-6); the token-built AI-feedback vignette with no testimonials (AC-9); the "people pictured are illustrative and were generated" disclosure (AC-15).
+     - Confirmed via build: the prerender carries the full SEO head + hero copy with no JS (AC-11); the `LandingPage-*` chunk is split from the `index-*` entry (AC-13); two documents emit and the neutral bootstrap is landing-free (AC-14). **The AC-14 prerender-serving `MapGet("/")` survived the 0007 fold** — it now lives in `src/Quiztin.Api/Program.cs`, so deleting the old gateway lost nothing.
+     - Confirmed via the passing suite (143 tests): the motion layer incl. the reduced-motion path, the scroll progress bar, and the FAQ; the axe assertions (AC-7 contrast, AC-12).
+  3. **The one finding (minor, AC-12 / AC-15 target size):** at 360px the primary targets are fine (Sign in, Get started, and every hero CTA are 44–52px), but several **secondary** targets measure under 44px on their smallest side — the hero toggle tabs (40px), the footer link list (32px), and the wordmark (26–33px). The green suite missed it because the axe target-size rule was never exercised. This is a real gap against the design system's "44px min touch targets," and it is exactly the kind of thing an independent verify exists to catch (cf. the two defects 0006's `/check` pass found that 82 green tests missed).
+- **Status held honestly:** spec 0003 stays **In Progress**, not **Accepted** — its own follow-up said Accepted comes after an independent verify pass, and the pass surfaced a stated-AC gap. A `min-height` on the toggle tabs and footer links closes it; then it Accepts cleanly. AC-5's *logged-in* nav state was the only step not checkable on a credential-free pass. The results are recorded at the top of `docs/specs/0003-landing-page/verify.md`, and its one stale path (`src/Gateway/Program.cs` → `src/Quiztin.Api/Program.cs`) was fixed.
+- **`/check` debt now:** 3 of 6 have had an independent pass (0005, 0006, 0003). Remaining: 0007 (re-run its run-log), 0002 (much is already true in production), 0008 (backend automatable, UI needs a session), 0001 (verify now runnable after the rewrite), 0009 (biggest; needs a live Claude key + a session).
+
 ### [docs] Audit the /check debt and UC fidelity, retire the original corpus, and rewrite the pre-0007 specs
 - **Date:** 2026-07-24
 - **Area:** context / docs
