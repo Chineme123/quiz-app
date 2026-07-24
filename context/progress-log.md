@@ -20,6 +20,16 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [chore] Independent verify of the modular monolith (spec 0007) — pass
+- **Date:** 2026-07-24
+- **Area:** backend / db / docs
+- **What:** Ran the first independent `/check verify` pass on [spec 0007](../docs/specs/0007-modular-monolith/index.md), the next-cheapest item on the `/check` debt map (its verify was already a passing run-log; this re-ran it against current code).
+  - **Build:** `dotnet build Quiztin.sln -c Release` → **0 errors** (38 pre-existing nullable-reference warnings in the Assessment persistence layer, none new).
+  - **Tests:** `dotnet test Quiztin.sln -c Release` → **142 pass, 0 failed** (Identity 36, Api 11, Assessment 95). The Assessment run took 28s because it includes the Testcontainers real-Postgres integration tests, which migrate a fresh `quiz` schema from scratch on every run — so "fresh-Postgres migrate works" is proven there, not just asserted. `npm run build` clean.
+  - **Runtime, actual fresh boot:** booted the single `Quiztin.Api` host in Development against a **brand-new** database `quiztin_v7` (migrate-on-startup). The log showed migrate → seed → `Now listening`, incl. `Seeded the core loop: … student … enrolled`. Introspected the fresh DB: `\dn` = `identity` + `quiz`; the FK that used to 500 (`FK_Profiles_AuthUsers_UserId`) is present; both seeded users exist; and the loop is populated (student enrolled in a classroom with a published 3-question quiz). Torn down after (host killed, `quiztin_v7` dropped, port freed).
+- **On the one thing not re-driven:** the live register→profile→login **curl** flow authors auth credentials, which I don't do; those exact paths are covered by the passing Identity (`UpdateProfile_ValidRequest_ReturnsOk` + strategy tests) and Assessment integration tests, and the FK fix is additionally proven structurally (FK present + registration creates the `AuthUsers` row). Recorded at the top of `docs/specs/0007-modular-monolith/verify.md`; spec was already **Accepted** and stays so.
+- **`/check` debt: 4 of 6 now** (0005, 0006, 0003, 0007). Remaining: 0002 (much is already true in production — confirmable by inspection), 0008 (backend automatable, UI needs a session), 0001 (verify now runnable after the rewrite; the rotation races need the live app), 0009 (biggest — needs a live Claude key + a session).
+
 ### [fix] Landing page touch targets meet 44px; spec 0003 now Accepted
 - **Date:** 2026-07-24
 - **Area:** apps/frontend / docs
