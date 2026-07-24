@@ -20,6 +20,17 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [fix] Independent verify of the production platform (spec 0002) — found the live deployment is down
+- **Date:** 2026-07-24
+- **Area:** infra / ci / docs
+- **What:** Ran the first independent `/check verify` pass on [spec 0002](../docs/specs/0002-production-platform/index.md). **Mixed result: the platform is sound, but the live deployment is broken — and had been, silently, for two weeks.**
+  - **Passing (by inspection):** the single-origin routing + SPA serving + `/health` (`Program.cs`: `MapControllers`, `MapGet("/")`, `MapFallbackToFile`), the multi-stage image that bakes the SPA into `wwwroot` (`src/Quiztin.Api/Dockerfile`), Docker local dev (`.dockerignore`, health-gated compose on `:8080`), CI **green in practice** on `main` (`build-and-test` + drift check, `frontend`, `codeql`, `commitlint`), governance (branch protection with `enforce_admins`, required checks matching the jobs, force-push off; `CODEOWNERS` / PR template / `dependabot.yml`), migrate-on-startup, one `quiztin` DB, and the context citations. All good.
+  - **The finding (AC-7, AC-10 — FAIL):** the **Deploy workflow has failed on every merge to `main` since ~2026-07-20** (last green `b1f1565`; the last three runs all `failure`), and the public URL this spec shipped, `https://gateway-production-02f8.up.railway.app`, now returns **404 "Application not found."** `railway up --service quiztin` fails in ~9s.
+  - **Root cause:** spec 0007 (2026-07-18) folded the five services into one `quiztin` host and updated the **repo** to match (`deploy.yml` → `--service quiztin`, `railway.json` → `src/Quiztin.Api/Dockerfile`, both correct), but the **Railway project was never reconciled** — no working `quiztin` service exists, and the old public `gateway-production` service is gone. `Deploy` is not a required status check, so red deploys never blocked a merge; CD shipped nothing while every PR still showed green. This is exactly the kind of gap an independent verify exists to catch — green CI + docs claiming "deployed live" hid a two-week production outage.
+- **What I fixed here (docs honesty):** corrected the **`README.md` Status block** — it advertised the 404ing URL as "deployed live"; it now says the deployment is down, why, and that local dev is unaffected. Recorded the full result at the top of `docs/specs/0002-production-platform/verify.md`, and flagged AC-7/AC-10 as regressed on the 0002 `index.md`.
+- **What needs the user (cannot be fixed from the repo):** the Railway-dashboard work — stand up a `quiztin` service pointed at `src/Quiztin.Api/Dockerfile`, set its Production env (connection string → managed `quiztin` DB, `JwtSettings__Secret`, `AuthTokens__Cookie__Secure=true`, `RUN_MIGRATIONS_ON_STARTUP=true`), confirm `RAILWAY_TOKEN` scopes to that project, redeploy, then update the README URL. The repo side is ready; only the Railway config is missing.
+- **Status:** 0002 stays **Accepted** — it was correctly delivered and live through 2026-07-20; the deployment regressed afterward via 0007, which is an operational break, not a spec defect. `/check` debt: **5 of 6** independently verified (0005, 0006, 0003, 0007, 0002). Only 0008 (backend automatable; UI needs a session) and 0001 (rotation races need the live app) remain — and 0009, still mid-build.
+
 ### [chore] Independent verify of the modular monolith (spec 0007) — pass
 - **Date:** 2026-07-24
 - **Area:** backend / db / docs
