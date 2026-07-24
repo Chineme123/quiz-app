@@ -19,5 +19,12 @@ namespace Quiztin.Modules.Assessment.Domain.Interfaces
         /// student's own id from the token, so it can never surface another classroom's work.
         /// </summary>
         Task<(IReadOnlyList<Quiz> Items, int Total)> GetAvailableForStudentAsync(Guid studentId, int skip, int take);
+
+        /// <summary>
+        /// Every quiz in a classroom, for the teacher's authoring list (spec 0009, AC-10). Ordered
+        /// by title and carrying its questions so the list can show a question count. The classroom
+        /// ownership check runs in the application layer before this does.
+        /// </summary>
+        Task<IReadOnlyList<Quiz>> GetByClassroomAsync(Guid classroomId);
     }
 }

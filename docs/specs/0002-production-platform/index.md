@@ -1,7 +1,11 @@
 # 0002. Production platform: gateway, containerised local dev, CI, and deploys to Railway
 
 **Date**: 2026-07-13
-**Status**: Proposed
+**Status**: Accepted
+
+> **⚠️ Topology superseded by [spec 0007](../0007-modular-monolith/index.md) (2026-07-18); the platform it built still stands.** This spec built the production platform for the five-microservice backend, so its acceptance criteria name a YARP **gateway**, the services `AuthService` / `UserService` / `QuizService`, and **four databases** (`authdb`, `userdb`, `quizdb`, `resultdb`). Spec 0007 folded the services and the gateway into **one `Quiztin.Api` host**, and the four databases into **one `quiztin` database** with a schema per module (`identity`, `quiz`). What this spec actually delivered — `docker compose` local dev, the expanded CI (backend on real Postgres, frontend, CodeQL, commitlint), the CI-gated Railway deploy with migrate-on-startup, and the GitHub governance — is all still in place and still how the project ships; only the count of processes and databases collapsed. Read the ACs with that substitution: the gateway is the one host, a service is its module, and the four databases are schemas (now `identity` + `quiz`) on one instance. `verify.md` has been rewritten to the current single-host shape.
+
+> **⚠️ AC-7 regressed; live URL moved (found + partly corrected 2026-07-24).** The app is **live and healthy** at **`https://quiztin-production.up.railway.app`** (the README's old `gateway-production-…` URL was the pre-0007 gateway and 404s — now corrected). But **CD has failed on the ~3 merges to `main` since 07-20**, so the live app is a few commits stale (AC-7 regressed). Repo-side deploy config is correct; the break is Railway-project-side and is now reachable via the local Railway CLI. Details at the top of [verify.md](verify.md). The spec stays Accepted (correctly delivered and still live); the stale CD is the regression.
 
 ## Summary
 

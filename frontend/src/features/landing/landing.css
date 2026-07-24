@@ -50,6 +50,9 @@
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-button);
   padding: var(--space-2) var(--space-4);
+  min-height: 2.75rem; /* 44px min touch target */
+  display: inline-flex;
+  align-items: center;
   font-family: var(--font-body);
   font-weight: var(--weight-bold);
   transition: transform var(--duration-fast) var(--ease-out);
@@ -133,6 +136,9 @@
   gap: var(--space-5);
 }
 .qz-wordmark {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem; /* 44px min touch target */
   font-family: var(--font-display);
   font-weight: 600;
   font-size: var(--text-xl);
@@ -149,6 +155,9 @@
   margin-inline-start: var(--space-4);
 }
 .qz-nav__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem; /* 44px min touch target (visible >=860px, e.g. tablets) */
   font-family: var(--font-body);
   font-weight: var(--weight-semibold, 600);
   color: var(--text-muted);
@@ -233,7 +242,7 @@
   background: transparent;
   border-radius: var(--radius-pill);
   padding: var(--space-2) var(--space-4);
-  min-height: 2.5rem;
+  min-height: 2.75rem; /* 44px min touch target */
   font-family: var(--font-display);
   font-weight: 600;
   font-size: var(--text-sm);
@@ -326,6 +335,9 @@
   grid-template-columns: 1fr;
 }
 .qz-footer__brand-mark {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem; /* 44px min touch target */
   font-family: var(--font-display);
   font-weight: 600;
   font-size: var(--text-xl);
@@ -350,8 +362,9 @@
   margin-bottom: var(--space-3);
 }
 .qz-footer__link {
-  display: block;
-  padding-block: var(--space-1);
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem; /* 44px min touch target */
   color: var(--text-muted);
   text-decoration: none;
   border-radius: var(--radius-chip);

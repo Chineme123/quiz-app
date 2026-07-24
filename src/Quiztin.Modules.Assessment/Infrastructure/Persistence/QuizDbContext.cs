@@ -19,6 +19,7 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Persistence
         public DbSet<QuizAnswer> QuizAnswers { get; set; }
         public DbSet<Enrollment> Enrollments { get; set; }
         public DbSet<ProcessedCommand> ProcessedCommands { get; set; }
+        public DbSet<GeneratedQuestionDraft> GeneratedQuestionDrafts { get; set; }
 
         public QuizDbContext(DbContextOptions<QuizDbContext> options) : base(options) { }
 
@@ -161,6 +162,38 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Persistence
                 entity.HasOne<Classroom>()
                       .WithMany()
                       .HasForeignKey(e => e.ClassroomId);
+            });
+
+            // The candidate lives only inside the draft's jsonb column, never as its own table.
+            modelBuilder.Ignore<GeneratedCandidate>();
+
+            modelBuilder.Entity<GeneratedQuestionDraft>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                // Client generated Guid key, same reason as Question/QuizAnswer above.
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                // At most one pending batch per quiz is a database invariant, not a
+                // delete-then-insert race (spec 0009).
+                entity.HasIndex(e => e.QuizId).IsUnique();
+
+                // Within-module FK; deleting a quiz clears its pending batch.
+                entity.HasOne<Quiz>()
+                      .WithMany()
+                      .HasForeignKey(e => e.QuizId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // The candidate list as one jsonb column, following the Options/DraftAnswers
+                // precedent. The candidates are complex objects, so the comparer works off the
+                // serialized form (SequenceEqual would compare references, not values).
+                entity.Property(e => e.Candidates).HasColumnType("jsonb").HasConversion(
+                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                    v => JsonSerializer.Deserialize<List<GeneratedCandidate>>(v, (JsonSerializerOptions)null) ?? new List<GeneratedCandidate>()
+                ).Metadata.SetValueComparer(
+                    new ValueComparer<List<GeneratedCandidate>>(
+                        (c1, c2) => JsonSerializer.Serialize(c1, (JsonSerializerOptions)null) == JsonSerializer.Serialize(c2, (JsonSerializerOptions)null),
+                        c => JsonSerializer.Serialize(c, (JsonSerializerOptions)null).GetHashCode(),
+                        c => JsonSerializer.Deserialize<List<GeneratedCandidate>>(JsonSerializer.Serialize(c, (JsonSerializerOptions)null), (JsonSerializerOptions)null) ?? new List<GeneratedCandidate>()));
             });
         }
     }

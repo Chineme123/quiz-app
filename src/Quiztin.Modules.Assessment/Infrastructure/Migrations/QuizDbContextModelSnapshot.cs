@@ -81,6 +81,29 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Migrations
                     b.ToTable("Enrollments", "quiz");
                 });
 
+            modelBuilder.Entity("Quiztin.Modules.Assessment.Domain.Entities.GeneratedQuestionDraft", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Candidates")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("QuizId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuizId")
+                        .IsUnique();
+
+                    b.ToTable("GeneratedQuestionDrafts", "quiz");
+                });
+
             modelBuilder.Entity("Quiztin.Modules.Assessment.Domain.Entities.ProcessedCommand", b =>
                 {
                     b.Property<Guid>("Id")
@@ -105,7 +128,6 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Migrations
             modelBuilder.Entity("Quiztin.Modules.Assessment.Domain.Entities.Question", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<int>("Points")
@@ -305,6 +327,15 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Migrations
                     b.HasOne("Quiztin.Modules.Assessment.Domain.Entities.Classroom", null)
                         .WithMany()
                         .HasForeignKey("ClassroomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Quiztin.Modules.Assessment.Domain.Entities.GeneratedQuestionDraft", b =>
+                {
+                    b.HasOne("Quiztin.Modules.Assessment.Domain.Entities.Quiz", null)
+                        .WithMany()
+                        .HasForeignKey("QuizId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

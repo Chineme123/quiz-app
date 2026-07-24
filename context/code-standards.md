@@ -50,7 +50,7 @@ The React SPA styles from **design tokens only — no raw hex, no off-palette va
 
 ## §10 Testing posture
 - **xUnit + Moq** (already in the repo). Cover the load-bearing domain first: the QuizAttempt **state-machine transitions** (legal + illegal), the **scoring** contract once redesigned, and **enrolment/ownership** gating.
-- ⚠️ Delete the empty `UnitTest1.cs` placeholders (→ `quiz-trash/`). Integration tests that need a DB use a real Postgres (Testcontainers) rather than a provider that hides Npgsql-specific behavior — don't test on a different provider than you ship.
+- Integration tests that need a DB use a real Postgres (Testcontainers) rather than a provider that hides Npgsql-specific behavior — don't test on a different provider than you ship. (The empty `UnitTest1.cs` scaffolds are long gone; the modules carry real suites.)
 
 ## §11 Naming, imports, comments
 - `nameof(...)` for discriminators and anything that must track a rename (as `QuizDbContext` already does). ✅

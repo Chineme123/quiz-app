@@ -13,7 +13,7 @@ Fill this into Claude Design's "Set up your design system" screen. Only the firs
 
 **Examples of your design system and products (all optional — attach if you have them):**
 - Link the repo (or attach the `frontend/` folder) once the SPA is scaffolded.
-- The drawio diagrams (`docs/diagrams/`) and the per-UC UI/UX briefs (`docs/uc0*-ui-ux-brief.md`), if useful as flow references.
+- The drawio diagrams (`docs/diagrams/`), if useful as flow references. (The per-UC UI/UX briefs that once lived in `docs/` were retired with the original corpus on 2026-07-24; the design intent they carried now lives in the specs and in the built screens.)
 - Any fonts / logo / assets you want to use.
 
 **Any other notes? (aesthetic direction + brand voice)** — ✅ decided 2026-07-09: **friendly & approachable**

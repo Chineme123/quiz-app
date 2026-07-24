@@ -1,7 +1,12 @@
 # 0003. Quiztin marketing landing page
 
 **Date**: 2026-07-13
-**Status**: In Progress
+**Status**: Accepted
+<!-- In Progress → Accepted 2026-07-24 after the first independent /check verify pass; the one finding (a sub-44px target-size gap) was fixed and re-verified the same day. See verify.md. -->
+
+<!-- Note: this spec's build predates spec 0007. Its one architecture-touching criterion, AC-14 (the prerender serving), was built in the then-gateway and now lives in src/Quiztin.Api/Program.cs after 0007 folded the gateway into the single host; the 2026-07-24 verify confirmed it survived the fold. -->
+
+
 
 ## Summary
 

@@ -90,7 +90,7 @@ The Tailwind binding was chosen for a reason that has nothing to do with Tailwin
 
 The proxy follows directly from the second exploration finding. There is no CORS anywhere, and adding it to five services would be five places to get it wrong, then a sixth when the gateway lands. Making the app same origin instead means CORS is never a concept the app has to know about, in development or in production, and it means the move to the gateway changes a configuration file rather than a client.
 
-Restricting scope to auth and Manage Profile is the developer's own instruction, and exploration confirmed it was the right one. There is no endpoint that lists a classroom, a quiz, or a result. Option 4's mocks would have papered over that, and the papering is worse than the gap, because a mock that drifts from the backend is discovered late and trusted until then. Manage Profile is also the only screen in scope with an actual design brief, `docs/uc14-ui-ux-brief.md`, which means it can be built to a specification rather than to taste.
+Restricting scope to auth and Manage Profile is the developer's own instruction, and exploration confirmed it was the right one. There is no endpoint that lists a classroom, a quiz, or a result. Option 4's mocks would have papered over that, and the papering is worse than the gap, because a mock that drifts from the backend is discovered late and trusted until then. Manage Profile is also the only screen in scope with an actual design brief (the UC14 UI/UX brief, since retired with the corpus on 2026-07-24), which means it could be built to a specification rather than to taste.
 
 ## Supporting evidence
 
@@ -118,7 +118,7 @@ A search for existing agent skills or MCP servers covering Tailwind v4, React Ro
 - `context/security.md`: student academic data is the protected asset, and secrets never enter git or logs
 - `context/ui-rules.md`: semantic tokens only, the eight required interactive states, accessibility to WCAG AA
 - `context/ui-registry.md`: the 18 components, all currently planned
-- `docs/uc14-ui-ux-brief.md`: the Manage Profile layout, role aware fields, and validation behaviour
+- the UC14 UI/UX brief (retired with the corpus 2026-07-24): the Manage Profile layout, role aware fields, and validation behaviour
 - `context/code-standards.md`: framework types stay out of the domain and application layers
 - `CLAUDE.md`: tenant scope comes from the authenticated `Guid UserId`, never the client
 

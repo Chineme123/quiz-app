@@ -15,6 +15,10 @@ RUN cd frontend && npm run build
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+# Central Package Management (adopted 2026-07-20): the .csproj files carry version-less
+# PackageReferences and the versions live in Directory.Packages.props at the repo root.
+# It MUST be restored alongside the csprojs, or `dotnet restore` fails with NU1015.
+COPY ["Directory.Packages.props", "./"]
 COPY ["src/Quiztin.Api/Quiztin.Api.csproj", "src/Quiztin.Api/"]
 COPY ["src/Quiztin.Modules.Identity/Quiztin.Modules.Identity.csproj", "src/Quiztin.Modules.Identity/"]
 COPY ["src/Quiztin.Modules.Assessment/Quiztin.Modules.Assessment.csproj", "src/Quiztin.Modules.Assessment/"]

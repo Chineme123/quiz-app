@@ -15,6 +15,7 @@ using Quiztin.Modules.Assessment.Infrastructure.Configuration;
 using Quiztin.Modules.Assessment.Infrastructure.Factories;
 using Quiztin.Modules.Assessment.Infrastructure.Feedback;
 using Quiztin.Modules.Assessment.Infrastructure.Observers;
+using Quiztin.Modules.Assessment.Infrastructure.Parsing;
 using Quiztin.Modules.Assessment.Infrastructure.Persistence;
 using Quiztin.Modules.Assessment.Infrastructure.Strategies;
 
@@ -41,7 +42,8 @@ public static class AssessmentModule
         // DI Registrations
         services.AddScoped<IQuizRepository, QuizRepository>();
         services.AddScoped<IQuizAppService, QuizAppService>();
-        services.AddScoped<IQuestionGenerationStrategy, StubLLMQuestionGenerationStrategy>();
+        services.AddScoped<IGeneratedQuestionDraftRepository, GeneratedQuestionDraftRepository>();
+        services.AddScoped<ISourceMaterialExtractor, SourceMaterialExtractor>();
 
         // UC2/UC3 Registrations (classroom create, join, and management; spec 0008)
         services.AddScoped<IClassroomRepository, ClassroomRepository>();
@@ -61,6 +63,7 @@ public static class AssessmentModule
         // worker generates feedback off the submit path so submitting stays fast (AC-1).
         services.Configure<AnthropicOptions>(configuration.GetSection(AnthropicOptions.SectionName));
         services.Configure<FeedbackOptions>(configuration.GetSection(FeedbackOptions.SectionName));
+        services.Configure<GenerationOptions>(configuration.GetSection(GenerationOptions.SectionName));
         services.AddSingleton<IFeedbackQueue, FeedbackQueue>();
         services.AddScoped<Domain.Observers.IObserver<QuizAttemptGradedEvent>, FeedbackGenerationEnqueuer>();
         services.AddHostedService<FeedbackGenerationService>();
@@ -84,6 +87,26 @@ public static class AssessmentModule
         else
         {
             services.AddScoped<IFeedbackStrategy>(sp => sp.GetRequiredService<StandardFeedbackStrategy>());
+        }
+
+        // Question generation strategy (spec 0009, AC-4): real claude-opus-4-8 when the flag is on
+        // AND a key is present, else the empty-template fallback. Mirrors the feedback gate above;
+        // the Anthropic key is shared, so no new secret. The AI strategy itself also falls back to
+        // templates on a failed or timed-out call.
+        services.AddScoped<TemplateQuestionGenerationStrategy>();
+        var generationEnabled = configuration.GetValue<bool>("Generation:AiEnabled");
+        if (generationEnabled && !string.IsNullOrWhiteSpace(anthropicKey))
+        {
+            services.AddHttpClient<AiQuestionGenerationStrategy>((sp, client) =>
+            {
+                var generationOptions = sp.GetRequiredService<IOptions<GenerationOptions>>().Value;
+                client.Timeout = TimeSpan.FromSeconds(Math.Max(1, generationOptions.TimeoutSeconds));
+            });
+            services.AddScoped<IQuestionGenerationStrategy>(sp => sp.GetRequiredService<AiQuestionGenerationStrategy>());
+        }
+        else
+        {
+            services.AddScoped<IQuestionGenerationStrategy>(sp => sp.GetRequiredService<TemplateQuestionGenerationStrategy>());
         }
 
         return services;

@@ -88,6 +88,25 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Persistence
                 .ToListAsync();
         }
 
+        public async Task<bool> HasAnyAttemptAsync(Guid quizId)
+        {
+            // Any row for this quiz, in any state, counts (spec 0009, AC-9): the moment a student
+            // has started, the question set must stop changing under them.
+            return await _context.QuizAttempts.AnyAsync(a => a.QuizId == quizId);
+        }
+
+        public async Task<IReadOnlyDictionary<Guid, int>> GetAttemptCountsByQuizAsync(IReadOnlyList<Guid> quizIds)
+        {
+            if (quizIds.Count == 0)
+                return new Dictionary<Guid, int>();
+
+            return await _context.QuizAttempts
+                .Where(a => quizIds.Contains(a.QuizId))
+                .GroupBy(a => a.QuizId)
+                .Select(g => new { QuizId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.QuizId, x => x.Count);
+        }
+
         public async Task<QuizAttempt?> GetInProgressAttemptAsync(Guid studentId, Guid quizId)
         {
             var attempt = await _context.QuizAttempts

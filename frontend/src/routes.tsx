@@ -11,6 +11,8 @@ import { TakeQuizPage } from '@/features/take/TakeQuizPage';
 import { DashboardPage } from '@/features/classrooms/DashboardPage';
 import { JoinClassroomPage } from '@/features/classrooms/JoinClassroomPage';
 import { ClassroomDetailPage } from '@/features/classrooms/ClassroomDetailPage';
+import { ClassQuizListPage } from '@/features/authoring/ClassQuizListPage';
+import { QuizEditorPage } from '@/features/authoring/QuizEditorPage';
 
 // Every route EXCEPT the public landing at "/". The landing is added separately, in
 // main.tsx and prerender.tsx, so it can be code split (spec 0003, AC-13): the client
@@ -31,6 +33,10 @@ export const otherRoutes: RouteObject[] = [
           // /sign-in and resumes here afterwards, so one link works in a single pass (AC-4).
           { path: 'join/:code', element: <JoinClassroomPage /> },
           { path: 'classrooms/:classroomId', element: <ClassroomDetailPage /> },
+          // The teacher's authoring surface (spec 0009). Nested under the class because the
+          // top level `quizzes` is already the student's take list.
+          { path: 'classrooms/:classroomId/quizzes', element: <ClassQuizListPage /> },
+          { path: 'quizzes/:quizId/edit', element: <QuizEditorPage /> },
           { path: 'profile', element: <ManageProfilePage /> },
           { path: 'quizzes', element: <QuizListPage /> },
           { path: 'attempts/:attemptId/take', element: <TakeQuizPage /> },

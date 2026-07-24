@@ -99,8 +99,8 @@ The heart of the file. Numbered so other files cite `foundation.md §7 #N`. Rows
 
 | # | Decision | Reasoning | Rejected alternative |
 |---|----------|-----------|----------------------|
-| 1 | **Monorepo: `frontend/` + `src/Services/` + `docs/` + `quiz-trash/`, one repo** *(this session)* | One place for the whole product; frontend and backend version together | Split repos (more overhead for a solo dev) |
-| 2 | **Move legacy/scaffold into `quiz-trash/`** (deferred cleanup) *(this session)* | Keep the tree clean without deleting history | Delete outright (loses reference) |
+| 1 | **Monorepo, one repo** *(this session)* — originally `frontend/` + `src/Services/` + `docs/` + `quiz-trash/`; **now** `frontend/` + `src/` (the one host + two modules, spec 0007) + `docs/`, with `quiz-trash/` removed 2026-07-24 | One place for the whole product; frontend and backend version together | Split repos (more overhead for a solo dev) |
+| 2 | **Move legacy/scaffold into `quiz-trash/`** *(this session)* — **done and retired:** the cleanup pass ran on 2026-07-24 and `quiz-trash/` (with the original `.docx` corpus and the cut scaffolds) was deleted | Kept the tree clean during the build without deleting history early; removed once nothing referenced it | Delete outright at the start (would have lost the reference mid-build) |
 | 3 | **Real product built via coursework** framing *(this session)* | The demoable loop is the bar; AUM docs are the design ledger | Coursework-only; portfolio-only |
 | 4 | **Product name = "Quiztin"**; code identifiers keep current names for now *(this session)* | Brand locked; renaming code is an optional refactor, not v1 work | Keep "QuizApp"; rename all code now (churn for no v1 value) |
 | 5 | **React + Vite SPA** for the frontend *(this session)* | Cleanest pairing with a REST/.NET API; largest ecosystem; matches the Figma/Claude-Design handoff | Blazor (worse design-handoff fit); Next.js (no SSR/SEO need) |
@@ -131,6 +131,8 @@ The heart of the file. Numbered so other files cite `foundation.md §7 #N`. Rows
 | 30 | **The YARP gateway (#16) serves the SPA same-origin and forwards `/api`; services stay JWT-authoritative, the gateway only forwards credentials** *(spec 0002; resolves the `architecture.md` gateway-auth open question)* | The in-memory-token + `HttpOnly` refresh-cookie design (#26) **requires** one origin, so the gateway hosts the app; each service still refusing an unauthenticated call is defence-in-depth around student data | Separate static host for the SPA (different origin breaks the cookie, forces CORS); gateway-only auth (network position as the security boundary) |
 | 31 | **CD via GitHub Actions gated on CI (Railway CLI + `RAILWAY_TOKEN`); migrate-on-startup, env-gated (`RUN_MIGRATIONS_ON_STARTUP`), decoupled from the Dev seeder; one Railway Postgres with 4 DBs (auth/user/quiz/result)** *(spec 0002; resolves the `architecture.md` DB-topology question)* | A deploy that can outrun the checks makes the checks theatre; one managed instance with four databases mirrors the local `postgres-init.sql` and costs one instance, not four | Railway-native auto-deploy (ships independent of CI); one managed DB per service (4–5× cost); migrate-in-seeder (couples schema to demo data) |
 | 32 | **GitHub governance as code: branch protection refined (require a PR, `enforce_admins`, required CI checks), plus Dependabot / CODEOWNERS / PR template** *(spec 0002)* | The client-side hooks become real server-side rules a contributor can't skip; dependency + code scanning run automatically | Client-side hooks only (unenforced); manual settings drift |
+| 33 | **Enrolment is self-service: a 6-character join code, with the `/join/{code}` link wrapping that same code; strict create, open join (the `Teacher` role to create a classroom, any authenticated user to join); and delete modelled as a reversible archive** *(spec 0008)* | One secret to rotate rather than two, and no server-side base URL to configure since the link is composed client-side; the code **is** the capability, so gating join on a role as well would only stop a teacher joining a peer's class; archiving keeps graded student history, which a delete would destroy — FR7 enforcement is now created by a real person rather than the seeder | Teacher-issued invites per student (an admin burden that scales with the class); a separate link token (two secrets, two rotation paths); hard delete (loses attempts and results) |
+| 34 | **A quiz reaches students only through an explicit publish step (which sets the availability window and the attempt limit), and generated questions land in a reviewed draft batch, one per quiz, that never joins the quiz until the teacher accepts; any attempt locks the question set** *(spec 0009)* | Authoring is messy and half-finished by nature, so "saved" must not mean "live"; the model is untrusted and a teacher is accountable for what their class is asked, so review is the product, not a nicety; and changing questions under a student who has already answered them makes their score meaningless, so the lock is a correctness rule rather than a convenience | Auto-publish on create (a half-written quiz reaches students); generated questions written straight onto the quiz (the teacher edits after the fact, or does not); editing a live quiz freely (silently invalidates attempts already taken) |
 
 **Approved-dependency detail and per-library gotchas live in `library-docs.md`; the numbered reasoning lives here.**
 
@@ -146,8 +148,8 @@ The heart of the file. Numbered so other files cite `foundation.md §7 #N`. Rows
 - **UC10** View Classroom Results (teacher) — ResultService read. ⬜
 - **UC14** Create/Update User Profile — role-aware. ✅ built (needs `Users`-row + partial-update fixes, §10).
 - **Minimal AuthService** issuing JWTs; end-to-end auth + `[Authorize]` enforcement. ✅ built (Layer-0).
-- **API gateway (YARP)** as the single origin. 🟡 in progress (spec 0002); CORS is deliberately absent (§7 #27, same-origin).
-- **React + Vite SPA** covering the loop screens. ✅ built — spec 0001 (auth + Manage Profile; dashboard slice next).
+- **Single origin serving the SPA and `/api`.** ✅ built, and no longer a gateway: spec 0002 shipped the YARP gateway, then **spec 0007 folded it into the one `Quiztin.Api` host** (see the supersede notice at the top of §7). CORS stays deliberately absent (§7 #27, same-origin).
+- **React + Vite SPA** covering the loop screens. ✅ built and still widening — spec 0001 (auth, Manage Profile), 0006 (available quizzes, the take screen), 0008 (role-aware dashboards, classroom management), 0009 (quiz authoring, generation, publish; the last child in flight).
 
 ### Must-fix before/inside v1 (repairs the loop depends on — not new features; these are Layer 0)
 > ✅ **All Layer-0 must-fixes are complete** (framework pin, PostgreSQL migration, real scoring, identity/auth) — see `progress-log.md` (2026-07-10). The bullets below are kept as the historical record of what Layer-0 covered.
@@ -156,13 +158,13 @@ The heart of the file. Numbered so other files cite `foundation.md §7 #N`. Rows
 - ⚠️ **Pin the framework** (`global.json`) and reconcile every `.csproj` to .NET 10 (§7 #13).
 - ⚠️ **Fix identity + auth** to §7 #14/#15 (remove hardcoded IDs, unify JWT audience, uncomment `[Authorize]`).
 
-### Out / cut (→ `quiz-trash/` in the final cleanup pass)
+### Out / cut (removed 2026-07-24 with the `quiz-trash/` cleanup)
 - WeatherForecast scaffolding (QuizService.API + all three stub services).
 - Empty `UnitTest1.cs` placeholders.
-- The three empty stub services **as scaffolds** — Auth/Result get *rebuilt* for v1; Notification stays out (below).
+- The three empty stub services **as scaffolds** — superseded wholesale by the spec 0007 modular monolith (Auth+User became the Identity module, Quiz became Assessment; Result folded into Assessment; Notification stays out, below).
 
 ### Deferred (designed, later phase)
-- **`quiz-trash/` cleanup pass itself** — [LOCKED as the final step].
+- ~~**`quiz-trash/` cleanup pass itself** — [LOCKED as the final step].~~ **Done 2026-07-24:** `quiz-trash/` deleted along with the converted UC corpus in `docs/`; the context system and the specs are now the single design record.
 - **NotificationService** — no v1 loop step needs it.
 - UC7 Assign Quiz; UC11 Quiz Metrics; UC12 Configure Grading Style; UC13 Export Results.
 - UC15 View/Update Profile (full); UC16 Account Status/Admin; UC17 Roles & Permissions; UC18 Notification Preferences; UC19 Activity Summary.
@@ -200,7 +202,7 @@ Honest "not scaling yet, and here's what replaces it":
 
 ## §11 The deepest risk
 
-**The design-first brain lives in the repo — bus factor now low.** As of 2026-07-09 the design corpus was **converted to markdown and consolidated in `docs/`** (originals archived in `quiz-trash/`), and this context system is in `context/` — so the AUM rationale, pattern choices, FR mappings, and UC catalog are readable and in the repo tree rather than trapped in binary Word files. The working tree is now **pushed to a public GitHub remote with CI + branch protection** (§7 #32), so losing the machine no longer loses the project — the earlier local-only bus-factor risk is resolved. Only the `.env` secrets stay local (gitignored, by design).
+**The design-first brain lives in the repo — bus factor now low.** The original AUM corpus (binary Word files) was converted to markdown on 2026-07-09, then **fully retired on 2026-07-24** once its intent had been absorbed: the pattern choices, FR mappings, and UC intent now live in `context/` (this system) and in `docs/specs/`, which are the single design record. The rationale is no longer trapped in Word files, and it is no longer duplicated in a parallel corpus either. The working tree is **pushed to a public GitHub remote with CI + branch protection** (§7 #32), so losing the machine no longer loses the project. Only the `.env` secrets stay local (gitignored, by design). *(A record of how faithfully the build tracked those original UCs is kept in `progress-log.md`, 2026-07-24, so retiring the corpus did not lose that assessment.)*
 
 **Runner-up (now mitigated by design):** the product's wedge is AI, and AI is 100% stubbed. v1 makes it real (§7 #6) — and because a **deterministic fallback** is locked, a Claude outage degrades the experience instead of breaking the loop. The "AI" promise never blocks a working demo.
 

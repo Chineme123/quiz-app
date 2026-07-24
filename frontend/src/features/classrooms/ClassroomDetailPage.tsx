@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 import { Archive, ArrowCounterClockwise, UserMinus } from '@phosphor-icons/react';
 import { Button, Card, Dialog, Icon, TextField, useToast } from '@/components/ui';
 import { toUserMessage } from '@/lib/api/errorMessage';
@@ -101,6 +101,13 @@ export function ClassroomDetailPage() {
           {classroom.quizCount ?? 0} {classroom.quizCount === 1 ? 'quiz' : 'quizzes'}
           {isArchived && ' · archived'}
         </p>
+        {/* The way in to authoring for this class (spec 0009, AC-10). */}
+        <Link
+          to={`/classrooms/${classroomId}/quizzes`}
+          className="mt-2 inline-block font-body text-text-link"
+        >
+          Manage quizzes
+        </Link>
       </header>
 
       {isArchived && (
