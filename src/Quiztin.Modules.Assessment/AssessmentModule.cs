@@ -49,6 +49,12 @@ public static class AssessmentModule
         services.AddScoped<IClassroomRepository, ClassroomRepository>();
         services.AddScoped<IClassroomAppService, ClassroomAppService>();
 
+        // UC10 Registrations (teacher classroom results; spec 0010). Read-only aggregate views
+        // over the attempt data; the app service also consumes Identity's IUserDirectory (wired
+        // by AddIdentityModule) to resolve student names.
+        services.AddScoped<IResultsReadRepository, ResultsReadRepository>();
+        services.AddScoped<IClassroomResultsAppService, ClassroomResultsAppService>();
+
         // UC8 Registrations
         services.AddScoped<IQuizAttemptRepository, QuizAttemptRepository>();
         services.AddScoped<IStrategyFactory, StrategyFactory>();

@@ -117,6 +117,20 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Persistence
             return attempt;
         }
 
+        public async Task<QuizAttempt?> GetLatestSubmittedByStudentAndQuizAsync(Guid studentId, Guid quizId)
+        {
+            // Submitted, greatest SubmittedAt: the attempt AC-7 says counts, even if the student has
+            // a newer still-open one. Answers are loaded for the per-question breakdown.
+            var attempt = await _context.QuizAttempts
+                .Include(a => a.Answers)
+                .Where(a => a.StudentId == studentId && a.QuizId == quizId && a.SubmittedAt != null)
+                .OrderByDescending(a => a.SubmittedAt)
+                .FirstOrDefaultAsync();
+
+            attempt?.LoadState();
+            return attempt;
+        }
+
         public async Task<bool> HasCommandBeenProcessedAsync(Guid commandId)
         {
             return await _context.ProcessedCommands.AnyAsync(c => c.CommandId == commandId);

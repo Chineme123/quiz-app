@@ -16,4 +16,11 @@ export const qk = {
   quiz: (quizId: string) => ['quiz', quizId] as const,
   /** The quiz's pending batch of generated candidates awaiting review. */
   quizDrafts: (quizId: string) => ['quizDrafts', quizId] as const,
+  /** Teacher classroom results (spec 0010). */
+  classroomResults: (classroomId: string) => ['classroomResults', classroomId] as const,
+  quizResults: (quizId: string, page: number) => ['quizResults', quizId, page] as const,
+  studentRollup: (classroomId: string, page: number) =>
+    ['studentRollup', classroomId, page] as const,
+  studentAttempt: (quizId: string, studentId: string) =>
+    ['studentAttempt', quizId, studentId] as const,
 };

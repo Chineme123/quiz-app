@@ -25,6 +25,15 @@ namespace Quiztin.Modules.Assessment.Domain.Interfaces
         Task<QuizAttempt?> GetInProgressAttemptAsync(Guid studentId, Guid quizId);
 
         /// <summary>
+        /// The student's latest submitted attempt on this quiz (SubmittedAt set, greatest
+        /// SubmittedAt), with its answers loaded, for the teacher's drill-down (spec 0010, AC-6,
+        /// AC-7). Null when the student has no submitted attempt. Unlike GetInProgressAttemptAsync
+        /// and FindByStudentAndQuizAsync (latest started, which may be an open attempt), this is
+        /// the submitted result AC-7 says counts. Ownership is the caller's to check first.
+        /// </summary>
+        Task<QuizAttempt?> GetLatestSubmittedByStudentAndQuizAsync(Guid studentId, Guid quizId);
+
+        /// <summary>
         /// The student's attempts across the given quizzes, newest first, so the available list
         /// can show the right action per quiz without a query each (spec 0006, AC-2).
         /// </summary>

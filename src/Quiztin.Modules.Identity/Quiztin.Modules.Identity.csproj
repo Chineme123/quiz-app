@@ -24,5 +24,8 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Quiztin.Modules.Identity.Contracts\Quiztin.Modules.Identity.Contracts.csproj" />
+  </ItemGroup>
 
 </Project>

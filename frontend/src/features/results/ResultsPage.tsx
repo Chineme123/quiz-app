@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
 import { useParams } from 'react-router';
-import { Button, Card } from '@/components/ui';
+import { Button } from '@/components/ui';
+import { AttemptAnswerReview } from './AttemptAnswerReview';
 import { useAttemptResult } from './useAttemptResult';
-import type { AnswerResult, AttemptResult } from './results.schemas';
+import type { AttemptResult } from './results.schemas';
 
 /**
  * The student results screen (spec 0005, AC-12). The score and per question breakdown
@@ -59,89 +60,10 @@ function Results({ result }: { result: AttemptResult }) {
       <ol className="mt-8 flex flex-col gap-5">
         {result.answers.map((answer, index) => (
           <li key={answer.questionId}>
-            <AnswerReview index={index + 1} answer={answer} generating={generating} />
+            <AttemptAnswerReview index={index + 1} answer={answer} generating={generating} />
           </li>
         ))}
       </ol>
-    </div>
-  );
-}
-
-function AnswerReview({
-  index,
-  answer,
-  generating,
-}: {
-  index: number;
-  answer: AnswerResult;
-  generating: boolean;
-}) {
-  const correct = answer.isCorrect;
-  return (
-    <Card padding="lg" className={correct ? 'border-l-4 border-l-success' : 'border-l-4 border-l-danger'}>
-      <div className="flex items-center justify-between gap-3">
-        <span className="font-body text-sm text-text-muted">Question {index}</span>
-        <StatusPill correct={correct} />
-      </div>
-
-      <p className="mt-2 font-display text-lg text-text-strong">{answer.questionText}</p>
-
-      <dl className="mt-3 flex flex-col gap-1 text-sm">
-        <div className="flex flex-wrap gap-x-2">
-          <dt className="text-text-muted">Your answer:</dt>
-          <dd className={`font-semibold ${correct ? 'text-success-text' : 'text-danger-text'}`}>
-            {/* A skipped question now has a graded row with a blank answer (spec 0006), so say
-                "Not answered" rather than render an empty value that reads like a bug. */}
-            {answer.providedAnswer || 'Not answered'}
-          </dd>
-        </div>
-        {!correct && (
-          <div className="flex flex-wrap gap-x-2">
-            <dt className="text-text-muted">Correct answer:</dt>
-            <dd className="font-semibold text-text-strong">{answer.correctAnswer}</dd>
-          </div>
-        )}
-      </dl>
-
-      <FeedbackBlock feedback={answer.feedback ?? null} generating={generating} />
-    </Card>
-  );
-}
-
-function StatusPill({ correct }: { correct: boolean }) {
-  const classes = correct
-    ? 'bg-success-soft text-success-text'
-    : 'bg-danger-soft text-danger-text';
-  return (
-    <span className={`rounded-full px-3 py-1 text-xs font-bold ${classes}`}>
-      {correct ? 'Correct' : 'To review'}
-    </span>
-  );
-}
-
-/** Quiztin's AI voice. AI and deterministic feedback render identically (AC-12). The
- *  live region announces the change from the generating state to the written feedback. */
-function FeedbackBlock({ feedback, generating }: { feedback: string | null; generating: boolean }) {
-  const waiting = generating || feedback === null;
-  return (
-    <div
-      className="mt-4 rounded-[var(--radius-tile)] border border-ai-border bg-ai-surface p-4"
-      aria-live="polite"
-    >
-      <div className="flex items-center gap-2">
-        <span
-          className="grid size-6 place-items-center rounded-full bg-accent text-xs font-bold text-text-on-accent"
-          aria-hidden="true"
-        >
-          Q
-        </span>
-        <span className="text-xs font-bold uppercase tracking-wide text-ai-accent">Quiztin</span>
-      </div>
-      {waiting ? (
-        <p className="mt-2 text-sm text-text-muted">Quiztin is writing your feedback…</p>
-      ) : (
-        <p className="mt-2 text-sm text-text-body">{feedback}</p>
-      )}
     </div>
   );
 }

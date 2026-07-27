@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The Identity module's published cross-module surface: contracts only (an interface
+       and a DTO record), no entities, no EF, no ASP.NET. This is what another module is
+       allowed to reference, so a consumer (Assessment, spec 0010) depends on the contract
+       without gaining visibility into Identity's entities (code-standards §3). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Quiztin.Modules.Identity.Contracts</RootNamespace>
+  </PropertyGroup>
+
+</Project>

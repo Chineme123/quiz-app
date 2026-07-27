@@ -13,6 +13,10 @@ import { JoinClassroomPage } from '@/features/classrooms/JoinClassroomPage';
 import { ClassroomDetailPage } from '@/features/classrooms/ClassroomDetailPage';
 import { ClassQuizListPage } from '@/features/authoring/ClassQuizListPage';
 import { QuizEditorPage } from '@/features/authoring/QuizEditorPage';
+import { ClassroomResultsPage } from '@/features/classroom-results/ClassroomResultsPage';
+import { QuizResultsPage } from '@/features/classroom-results/QuizResultsPage';
+import { StudentRollupPage } from '@/features/classroom-results/StudentRollupPage';
+import { StudentAttemptPage } from '@/features/classroom-results/StudentAttemptPage';
 
 // Every route EXCEPT the public landing at "/". The landing is added separately, in
 // main.tsx and prerender.tsx, so it can be code split (spec 0003, AC-13): the client
@@ -37,6 +41,13 @@ export const otherRoutes: RouteObject[] = [
           // top level `quizzes` is already the student's take list.
           { path: 'classrooms/:classroomId/quizzes', element: <ClassQuizListPage /> },
           { path: 'quizzes/:quizId/edit', element: <QuizEditorPage /> },
+          // Teacher classroom results (spec 0010): the summary, the per-student roll-up, one
+          // quiz's results, and the drill-down into a student's attempt. Owner scoped; a student
+          // reaching any of these gets the calm not-found state (the 404 reads as null).
+          { path: 'classrooms/:classroomId/results', element: <ClassroomResultsPage /> },
+          { path: 'classrooms/:classroomId/results/students', element: <StudentRollupPage /> },
+          { path: 'quizzes/:quizId/results', element: <QuizResultsPage /> },
+          { path: 'quizzes/:quizId/results/students/:studentId', element: <StudentAttemptPage /> },
           { path: 'profile', element: <ManageProfilePage /> },
           { path: 'quizzes', element: <QuizListPage /> },
           { path: 'attempts/:attemptId/take', element: <TakeQuizPage /> },
