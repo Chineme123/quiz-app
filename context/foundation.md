@@ -44,7 +44,7 @@ The core loop is **create quiz → take quiz → see results → review feedback
 ## §3 Success & stage
 
 - **Framing (governing):** **Real product, built via coursework.** [LOCKED] "Done" means the **core loop ships and demos end-to-end**, not merely that a PDF is accepted. The AUM design docs become the *tracked design ledger* (§7 #19), not the deliverable.
-- **Stage:** early-foundation brownfield. Active development is a ~13-day sprint (2026-02-04 → 2026-02-17) after a long gap. Built so far: **UC6** (create quiz), **UC8** (take quiz), **UC14** (create profile). Two of five services are real (Quiz, User); three are scaffolds (§8).
+- **Stage:** *(updated 2026-07-24 — the line below was the original brownfield snapshot; current state follows it.)* The project began as a brownfield sprint of ~13 days (**2026-02-04 → 2026-02-17**, the original UC6/UC8/UC14 code on five microservices, two real: Quiz, User; three scaffolds). **Current state:** the full core loop is built and shipped across **specs 0001–0009** — auth + Manage Profile, classrooms (create/join), take-quiz, AI feedback + student results, and quiz authoring/AI-generation/publish — all on the **spec 0007 modular monolith** (one `Quiztin.Api` host + two modules, not five services), **deployed live on Railway**. Outstanding: the end-to-end verify of the last child (0009 task 7) and the teacher classroom-results child (UC10, not yet designed).
 - **Success criteria (v1):** a student can log in, join/be-enrolled in a classroom, take a published quiz there, get a real score, and review per-question AI feedback; a teacher can create a classroom, author (optionally AI-assisted) and publish a quiz, and see classroom results.
 
 ---

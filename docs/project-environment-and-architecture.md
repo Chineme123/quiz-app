@@ -1,8 +1,8 @@
 # Project Environment & Architecture
 
-> Converted from the original Word design doc (AUM corpus). Faithful extraction; original preserved in `quiz-trash/`.
+> Converted from the original Word design doc (AUM corpus, retired 2026-07-24). Faithful extraction.
 >
-> ⚠️ **ARCHIVAL — historical, do not follow for setup.** This describes the *original* environment (SQL Server 2022 + GitHub Codespaces), both since replaced (PostgreSQL; local Docker on macOS, no Codespaces). For how to run the project today, see the root `README.md` → **Getting started** and `docs/specs/0002-production-platform/`.
+> ⚠️ **ARCHIVAL — historical, do not follow for setup or workflow.** This describes the *original* environment, all since replaced: **SQL Server 2022 → PostgreSQL**; **GitHub Codespaces → local Docker on macOS**; and the **five microservices → one `Quiztin.Api` host** (spec 0007 modular monolith), so the `src/Services/QuizService/…` paths and per-service commands below no longer exist. The "Final Git Push Note" (`git push origin main`) also predates branch protection — the workflow now is push a branch and open a PR, never push to `main`. For how to run the project today, see the root `README.md` → **Getting started** and `docs/specs/0002-production-platform/`.
 
 ### 🛠 Project Environment & Architecture
 
