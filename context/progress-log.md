@@ -20,6 +20,16 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [fix] CD resolved and shipped (PR #84 green); reconciled the docs that still said it was broken
+- **Date:** 2026-07-24
+- **Area:** infra / docs / context
+- **What:** Closed out the CD incident and the doc drift it left behind.
+  1. **The resolution the log was missing.** The previous entry ended at "the fix is on a local branch, `main` can't deploy." What actually happened next: **PR #84** (the whole reconciliation branch — spec 0009 authoring, the spec-tree reconciliation, four `/check` verify passes, the landing fix, and the CPM Dockerfile fix `0c3d403`) was pushed, CI went green, and it **auto-merged to `main`** as merge commit `b0b0ab6`. `deploy.yml` then ran on the merge and **succeeded — the first green deploy since 07-20** — and Railway's latest deployment is `SUCCESS`. **CD is unblocked and production is current** at `https://quiztin-production.up.railway.app` (`/health` 200, landing served, `/api` 401). The `COPY Directory.Packages.props` fix was the whole story, exactly as diagnosed. (A Dependabot bump, PR #85, has since merged on top.)
+  2. **Reconciled the now-stale "CD is broken" docs** — a self-inflicted gap: the incident docs were written while CD was down, then never updated when it came back. Corrected the current-state claims in `README.md` (deployment note), the 0002 `index.md` banner and `verify.md` (AC-7 "FAIL/regressed" → "was failing 07-20→07-24, now resolved"; the follow-ups marked done), and the core-loop umbrella's status table + 0009 bullet ("tasks 1–6 on a local branch" → "built and merged, PR #80/#84; only the task-7 verify remains"). The detailed CD root-cause analysis in `verify.md` is kept as the incident record.
+  3. **Fixed an unrelated drift the gap audit turned up:** `foundation.md` §3 "Stage" had frozen at the original brownfield snapshot ("UC6/UC8/UC14 built; two of five services real, three scaffolds"). Git confirmed the `2026-02-04 → 2026-02-17` sprint is real history (the first UC6 commit is 2026-02-04), so it is kept as the *original* sprint and the line now also states current reality: the full loop built across specs 0001–0009 on the 0007 modular monolith, deployed live.
+- **Audit result (what was consistent):** spec statuses, `ui-registry` (Dialog + the 8 primitives, correct paths), `library-docs` (Docnet.Core, Anthropic.SDK, CPM), and the `foundation` §7 #33/#34 citations were all already correct — the gaps were concentrated in the deployment/CD claims and the one frozen Stage line.
+- **Note:** these fixes are on branch `docs/reconcile-cd-resolution` off the current `main` (`e128e8f`), since the prior branch was already merged.
+
 ### [fix] Found the real CD root cause: the Dockerfile never copied Directory.Packages.props (NU1015)
 - **Date:** 2026-07-24
 - **Area:** infra / deploy
