@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [decision] Teacher classroom results designed (spec 0010, the last core-loop child)
+- **Date:** 2026-07-24
+- **Area:** docs / context
+- **What:** Ran `/architect` (via `/build-flow`) for **UC10**, the last child of the core-loop umbrella (0004). Wrote [spec 0010](../docs/specs/0004-core-loop/0010-teacher-classroom-results/index.md): a teacher's read only view of their classroom's quiz results (per quiz completion and average, per question difficulty, a per student roll up, and drill down into an attempt). **Decisions:** aggregate on read (no projection, no new table, no migration); the **latest submitted** attempt counts (gated on `SubmittedAt.HasValue`, not a state name); non takers and in progress excluded from averages; per student roll up with a **percentage normalized** overall standing; archived classrooms still served; owner scoped (non owner and not found both 404). It introduces the **first cross module read** (Assessment reads student names from Identity in process), which also resolves spec 0008's deferred teacher name gap. 13 ACs, a 7 task build plan.
+- **Notes:** Cross checked on a second model (Sonnet), which caught a **material issue** now fixed and verified against the code. Three must fixes: (1) the `SubmittedAt.HasValue` predicate — an attempt moves `Submitted → Graded → Reviewable` within seconds, so a state name gate would have silently excluded nearly every finished attempt from every average; (2) the cross module student name lookup — `Enrollment` carries only a Guid, so rows would have shown bare ids; (3) per student dedup and percentage normalization for the aggregates — a retried student would have skewed the average, and averaging raw point totals across differently sized quizzes is meaningless. Plus minors (concurrent submitted + open attempt, the real `CreatedByTeacherId` ownership field, a `features/classroom-results/` slice to avoid colliding with UC9's `features/results/`). Spec is **Proposed**; `/develop` advances it. **The core-loop umbrella (0004) is now fully specced; building 0010 closes it.** Next: `/develop 0010`.
+
 ### [fix] CD resolved and shipped (PR #84 green); reconciled the docs that still said it was broken
 - **Date:** 2026-07-24
 - **Area:** infra / docs / context
