@@ -1,6 +1,8 @@
 # Project Phases (Roadmap)
 
-> Converted from the original Word design doc (AUM corpus). Faithful extraction; original preserved in `quiz-trash/`.
+> Converted from the original Word design doc (AUM corpus, retired 2026-07-24). Faithful extraction of the *original* roadmap.
+>
+> ⚠️ **ARCHIVAL — historical, superseded. This is not the plan.** This is the original UC-catalog roadmap from before the context system existed, and the actual build did **not** follow it. Real delivery went spec-driven — `docs/specs/0001-frontend-foundation` through `0009-quiz-authoring` — on the **spec 0007 modular monolith** (one `Quiztin.Api` host + two modules), not the five-microservice `UserService` / `NotificationService` structure implied below; and the "Phase 2" UC15–19 items here are all deferred (`foundation.md` §8). **The live roadmap is `context/build-graph.md` (the dependency map), the specs in `docs/specs/`, and `context/progress-log.md` (what's actually built).**
 
 #### Phase 1 — Get the core loop working (highest ROI)
 
