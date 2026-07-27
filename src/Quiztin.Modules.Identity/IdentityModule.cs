@@ -5,6 +5,7 @@ using Quiztin.Modules.Identity.Application.Configuration;
 using Quiztin.Modules.Identity.Application.Interfaces;
 using Quiztin.Modules.Identity.Application.Services;
 using Quiztin.Modules.Identity.Application.Strategies;
+using Quiztin.Modules.Identity.Contracts;
 using Quiztin.Modules.Identity.Domain.Interfaces;
 using Quiztin.Modules.Identity.Infrastructure.Persistence;
 using Quiztin.Modules.Identity.Infrastructure.Security;
@@ -47,6 +48,11 @@ public static class IdentityModule
         services.AddScoped<IProfileRepository, ProfileRepository>();
         services.AddScoped<IProfileUpdateStrategy, StudentProfileUpdateStrategy>();
         services.AddScoped<IProfileUpdateStrategy, TeacherProfileUpdateStrategy>();
+
+        // The cross-module user directory (spec 0010): Identity owns and implements this
+        // contract; Assessment consumes it in process to resolve student ids to display names
+        // for classroom results (AC-13), and later the teacher name spec 0008 deferred.
+        services.AddScoped<IUserDirectory, UserDirectory>();
 
         return services;
     }

@@ -1,7 +1,7 @@
 # 0010. Teacher classroom results
 
 **Date**: 2026-07-24
-**Status**: Proposed
+**Status**: In Progress
 
 ## Summary
 

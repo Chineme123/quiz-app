@@ -27,5 +27,8 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Quiztin.Modules.Identity.Contracts\Quiztin.Modules.Identity.Contracts.csproj" />
+  </ItemGroup>
 
 </Project>

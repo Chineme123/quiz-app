@@ -101,13 +101,16 @@ export function ClassroomDetailPage() {
           {classroom.quizCount ?? 0} {classroom.quizCount === 1 ? 'quiz' : 'quizzes'}
           {isArchived && ' · archived'}
         </p>
-        {/* The way in to authoring for this class (spec 0009, AC-10). */}
-        <Link
-          to={`/classrooms/${classroomId}/quizzes`}
-          className="mt-2 inline-block font-body text-text-link"
-        >
-          Manage quizzes
-        </Link>
+        {/* The way in to authoring for this class (spec 0009, AC-10), and to its results
+            (spec 0010, AC-12). */}
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+          <Link to={`/classrooms/${classroomId}/quizzes`} className="inline-block font-body text-text-link">
+            Manage quizzes
+          </Link>
+          <Link to={`/classrooms/${classroomId}/results`} className="inline-block font-body text-text-link">
+            View results
+          </Link>
+        </div>
       </header>
 
       {isArchived && (

@@ -1,32 +1,38 @@
 # Verify: Teacher classroom results · spec 0010
 
-_Steps derived from spec 0010's twelve acceptance criteria. Seeded at design time; `/check verify` runs these after the build, `/test` locks the durable ones. Not yet built._
+_Steps derived from spec 0010's thirteen acceptance criteria. **Built.** The backend path was driven live end-to-end with minted JWTs (see "Live drive result" below); the signed-in UI walk is what remains for `/check verify`. `/test` locks the durable ones._
+
+## Automated coverage (green as of the build)
+- **Backend integration tests** — `tests/Quiztin.Modules.Assessment.Tests/ClassroomResultsTests.cs` (7 tests, real Postgres via Testcontainers): the dedup to one attempt per student and the "latest submitted" rule (AC-7), the class average and completion count (AC-2), per-question fraction over one-per-student (AC-4), the submitted-score-stands-over-a-newer-open-attempt rule and In progress / Not taken (AC-8), percentage-normalized overall standing (AC-5), archived served (AC-9), owner-scoped 404 across all three aggregate endpoints (AC-1), the drill-down's latest-submitted selection and owner scoping (AC-6), and the display-name / email-fallback resolution (AC-13). Run: `dotnet test --filter FullyQualifiedName~ClassroomResultsTests`.
+- **Frontend tests** — `frontend/src/features/classroom-results/*.test.tsx` (5 files: the summary, per-quiz, roll-up, drill-down pages, plus a schema test) and the shared `features/results/ResultsPage.test.tsx` (guards the extracted `AttemptAnswerReview`). Each page test includes an axe pass (AC-12). Run: `npx vitest run src/features/classroom-results src/features/results`.
 
 ## Setup
-- [ ] Postgres up and the API in Development, so the seeder creates the teacher, the student, the classroom (`SEED23`), and the published quiz. Add a second student and a couple more submitted attempts (including a second attempt for one student, and one in progress attempt) so the aggregates have something to show.
-- [ ] Mint JWTs directly (no passwords): the seed teacher (`11111111-...1`, role Teacher) and a non owner teacher, plus a student token, to prove scoping.
+- [ ] Postgres up and the API in Development. **The seeder now creates the results demo data automatically** (spec 0010): the teacher (`11111111-…1`), the classroom (`33333333-…3`, code `SEED23`), the published 3-question quiz (`44444444-…4`, "Networking Basics (Dev)", 3 points), and three students — **Sam Carter** (`22222222-…2`, submitted 2/3), **Alex Rivera** (`22222222-…5`, submitted 3/3), and **Jordan Lee** (`22222222-…6`, enrolled, not taken). So the summary reads completion 2 of 3, average 2.5/3 (83.3%).
+- [ ] Mint JWTs directly (no passwords, the house convention): the seed teacher, a non-owner teacher (any other Guid), and a student token, to prove scoping. HS256 over `JwtSettings__Secret`, claim `nameid` = the user Guid, `iss`/`aud` = `quiztin`.
+- [ ] The retried-attempt and in-progress edge cases (AC-7 dedup, AC-8) are not in the seed (they are transient); they are locked by `ClassroomResultsTests`, or create them by hand for the UI.
 
-## API (owner scoped; bearer token per step)
-- [ ] `GET /api/classrooms/{classroomId}/results` as the **owning teacher** → 200 with a row per published or attempted quiz, each carrying the title, the completion count (distinct enrolled students with a submitted attempt), and the class average over those submitted attempts. Never published drafts are absent. → AC-2
-- [ ] The same call as a **non owner teacher** and as a **student** → 404 both times; a made up `classroomId` → 404 as well (not owned and not found are indistinguishable). → AC-1
-- [ ] `GET /api/quizzes/{quizId}/results` as the owner → per question fraction correct, plus a paginated per student list where each row is the student's latest submitted score, or "Not taken", or "In progress". → AC-3, AC-4
-- [ ] Give one student two submitted attempts with different scores → the results show the **latest** submitted one everywhere, **and the earlier attempt does not skew the class average or the per question fraction** (aggregates are one row per student, not per attempt). → AC-7, AC-4
-- [ ] Give a student a submitted score **and** a newer still open attempt → the submitted score shows (not "In progress"). A student with only an in progress attempt shows "In progress"; a student with no attempt shows "Not taken"; both are excluded from the average. → AC-8
-- [ ] Every student row shows a **display name** (or the email fallback for a student with no profile name), never a bare Guid; the name comes from the Identity module in process. → AC-13
-- [ ] Confirm the "submitted" filter uses `SubmittedAt` being set, not a state name: an attempt that has moved on to `Graded`/`Reviewable` (which happens within seconds) still counts. → AC-2, AC-3
-- [ ] `GET /api/classrooms/{classroomId}/results/students` → paginated (default 20, hard max 50), each student with a score per quiz and an overall standing (average over taken quizzes). → AC-5, AC-10
-- [ ] `GET /api/quizzes/{quizId}/results/students/{studentId}` as the owner → that student's latest submitted attempt with its per question detail (the same breakdown the student sees). As a non owner → 404. → AC-6
-- [ ] Archive the classroom, then repeat the summary call as the owner → still 200 with the results. → AC-9
-- [ ] Confirm no migration was added for this feature and no results table exists; the figures come from the existing attempt tables. → AC-11
+## API (owner scoped; bearer token per step) — confirmed on the live drive
+- [x] `GET /api/classrooms/{classroomId}/results` as the **owning teacher** → 200, a row per published or attempted quiz with title, completion count, and class average. → AC-2
+- [x] The same call as a **non owner** (and a made-up `classroomId`) → 404, indistinguishable. A student token → 404 too (the calm not-found, not a 403). → AC-1
+- [x] `GET /api/quizzes/{quizId}/results` as the owner → per-question fraction correct, plus a paginated per-student list (latest submitted score, or "Not taken" / "In progress"). Confirmed: fractions 100% / 100% / 50%, and the three student rows by name. → AC-3, AC-4
+- [ ] Give one student two submitted attempts with different scores → the **latest** shows everywhere, and the earlier does not skew the average or the per-question fraction (locked by `ClassroomResultsTests`). → AC-7, AC-4
+- [ ] Give a student a submitted score **and** a newer still-open attempt → the submitted score shows, not "In progress" (locked by `ClassroomResultsTests`). → AC-8
+- [x] Every student row shows a **display name** (Sam Carter, Alex Rivera, Jordan Lee), resolved from Identity in process; the email fallback covers a student with no profile name. Never a bare Guid. → AC-13
+- [x] `GET /api/classrooms/{classroomId}/results/students` → paginated (default 20, max 50), each student a score per quiz plus an overall standing (Sam 66.7%, Alex 100%, Jordan null). → AC-5, AC-10
+- [x] `GET /api/quizzes/{quizId}/results/students/{studentId}` as the owner → the student's latest submitted attempt with its per-question detail. A non-owner, and a student with no submitted attempt (Jordan), → 404. → AC-6
+- [ ] Archive the classroom, then repeat the summary as the owner → still 200 (locked by `ClassroomResultsTests`). → AC-9
+- [x] No migration was added and no results table exists (`git status`, and the read layer queries the existing attempt tables). → AC-11
 
-## UI / manual (signed in as the seed teacher)
-- [ ] From the class page, reach the classroom results screen → the per quiz summary renders (completion and average per quiz), with a way into each quiz and into the per student roll up. → AC-12, AC-2
-- [ ] Open a quiz's results → per student scores (latest submitted, or Not taken / In progress) and the per question difficulty; misses are framed calmly ("to review"), per `ui-rules.md`. → AC-3, AC-4
-- [ ] Open the per student roll up → each student's arc across the quizzes plus an overall standing; who is thriving and who needs a hand is legible at a glance. → AC-5
-- [ ] Drill from a student's score into their attempt → the per question detail. → AC-6
+## UI / manual (signed in as the seed teacher — the part left for /check verify)
+- [ ] From the class page, follow "View results" → the per-quiz summary renders (completion and average per quiz), with a way into each quiz and into the per-student roll-up. → AC-12, AC-2
+- [ ] Open a quiz's results → per-student scores and per-question difficulty; misses are framed calmly ("to review" / "worth reviewing together"), per `ui-rules.md`. → AC-3, AC-4
+- [ ] Open the per-student roll-up → each student's arc across the quizzes plus an overall standing. → AC-5
+- [ ] Drill from a student's score into their attempt → the per-question detail, in the teacher voice. → AC-6
 - [ ] A classroom with no quizzes, and a quiz with no attempts, each show a calm empty state, not a blank or an error. → AC-2, AC-3
-- [ ] `npx vitest run src/features/classroom-results` → green, including an axe pass. → AC-12
-- [ ] Signed out, the results routes redirect to sign in; a student who reaches a results URL is refused. → AC-1, AC-12
+- [ ] Signed out, the results routes redirect to sign in; a signed-in student who reaches a results URL gets the calm not-found (not a 403 screen). → AC-1, AC-12
+
+## Live drive result (this build)
+Booted the host on a fresh `quiztin_v10` DB (migrate + seed), minted a teacher JWT, and drove all four endpoints: the summary (completion 2, average 2.5/3 = 83.3%), the per-quiz view (fractions 100/100/50, three named rows, one Not taken), the roll-up (Sam 66.7%, Alex 100%, Jordan null), and Sam's drill-down (score 2, three answers, TCP wrong). A non-owner got 404 on every endpoint; Jordan's drill-down (no submitted attempt) was 404. Every payload parsed clean against the frontend zod schemas (camelCase, status enum strings, nullables). The cross-module name lookup resolved live. **One bug found and fixed:** the seeder queried the quiz before its own save, so attempts seeded as zero; reordered to seed attempts after the precondition save.
 
 ## Acceptance-criteria coverage
-- **AC-1** owner only, non owner and not found both 404 · **AC-2** classroom summary (completion, average, published or attempted quizzes) · **AC-3** per quiz per student latest submitted / Not taken / In progress · **AC-4** per question fraction correct · **AC-5** per student roll up with overall standing · **AC-6** drill down to an attempt's per question detail · **AC-7** latest submitted counts · **AC-8** non takers and in progress excluded from averages · **AC-9** archived classrooms still served · **AC-10** lists paginated 20 default, 50 max · **AC-11** read only, no table, computed on read · **AC-12** the three screens behind sign in and teacher ownership · **AC-13** student rows show display names (email fallback), resolved from Identity in process.
+- **AC-1** owner only, non owner and not found both 404 · **AC-2** classroom summary · **AC-3** per quiz latest submitted / Not taken / In progress · **AC-4** per question fraction correct · **AC-5** roll-up with overall standing · **AC-6** drill down · **AC-7** latest submitted counts · **AC-8** in progress / non takers excluded · **AC-9** archived still served · **AC-10** paginated 20/50 · **AC-11** read only, no table · **AC-12** screens behind sign in and ownership · **AC-13** display names (email fallback), resolved from Identity in process.

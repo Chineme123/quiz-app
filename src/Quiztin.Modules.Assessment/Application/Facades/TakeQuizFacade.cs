@@ -308,6 +308,25 @@ namespace Quiztin.Modules.Assessment.Application.Facades
         }
 
         /// <summary>
+        /// The teacher's drill-down into one student's latest submitted attempt on a quiz they own
+        /// (spec 0010, AC-6): the same per-question breakdown the student sees on their own results
+        /// screen, reached through quiz ownership rather than the student's own id, and reusing the
+        /// one attempt -> result mapping. Returns null when the caller does not own the quiz, or the
+        /// student has no submitted attempt on it, so the controller answers 404 either way and
+        /// existence never leaks (security.md §7).
+        /// </summary>
+        public async Task<AttemptResultDto?> GetOwnedStudentResultAsync(Guid quizId, Guid studentId, Guid teacherId)
+        {
+            var quiz = await _quizRepository.GetByIdAsync(quizId);
+            if (quiz == null || quiz.CreatedByTeacherId != teacherId) return null;
+
+            var attempt = await _attemptRepository.GetLatestSubmittedByStudentAndQuizAsync(studentId, quizId);
+            if (attempt == null) return null;
+
+            return MapToResult(attempt, quiz.Questions.ToList());
+        }
+
+        /// <summary>
         /// Maps an already-owner-checked attempt to the result DTO, loading its quiz's
         /// questions for the per-question breakdown. The exact-CommandId idempotency replay
         /// uses this to hand back the existing result without re-grading. Ownership was already
