@@ -23,7 +23,7 @@ describe('classroomResults schemas', () => {
         { quizId: GUID, title: 'Untaken', isPublished: true, totalPoints: 10, completionCount: 0, averageScore: null, averagePercent: null },
       ],
     });
-    expect(parsed.quizzes[1].averageScore).toBeNull();
+    expect(parsed.quizzes[1]?.averageScore).toBeNull();
   });
 
   it('parses per-quiz results with a status enum and a nullable attempt id', () => {
@@ -45,8 +45,8 @@ describe('classroomResults schemas', () => {
       page: 1,
       pageSize: 20,
     });
-    expect(parsed.students[1].status).toBe('NotTaken');
-    expect(parsed.students[1].attemptId).toBeNull();
+    expect(parsed.students[1]?.status).toBe('NotTaken');
+    expect(parsed.students[1]?.attemptId).toBeNull();
   });
 
   it('parses a roll-up with a null overall standing', () => {
@@ -66,7 +66,7 @@ describe('classroomResults schemas', () => {
       page: 1,
       pageSize: 20,
     });
-    expect(parsed.students[0].overallStandingPercent).toBeNull();
+    expect(parsed.students[0]?.overallStandingPercent).toBeNull();
   });
 
   it('rejects an unknown status and a non-guid id', () => {

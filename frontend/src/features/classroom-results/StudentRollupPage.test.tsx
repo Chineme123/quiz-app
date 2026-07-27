@@ -5,6 +5,7 @@ import { MemoryRouter, Routes, Route } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StudentRollupPage } from './StudentRollupPage';
 import * as api from './classroomResults.api';
+import type { StudentRollup } from './classroomResults.schemas';
 
 vi.mock('./classroomResults.api');
 
@@ -28,7 +29,7 @@ function renderPage() {
   );
 }
 
-const rollup = {
+const rollup: StudentRollup = {
   classroomId: CLASS_ID,
   classroomName: 'Biology 101',
   quizzes: [
@@ -58,7 +59,7 @@ const rollup = {
   total: 2,
   page: 1,
   pageSize: 20,
-} as const;
+};
 
 describe('StudentRollupPage', () => {
   beforeEach(() => {

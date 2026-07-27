@@ -5,6 +5,7 @@ import { MemoryRouter, Routes, Route } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { QuizResultsPage } from './QuizResultsPage';
 import * as api from './classroomResults.api';
+import type { QuizResults } from './classroomResults.schemas';
 
 vi.mock('./classroomResults.api');
 
@@ -27,7 +28,7 @@ function renderPage() {
   );
 }
 
-const results = {
+const results: QuizResults = {
   quizId: QUIZ_ID,
   classroomId: CLASS_ID,
   title: 'Cells and organelles',
@@ -48,7 +49,7 @@ const results = {
   total: 4,
   page: 1,
   pageSize: 20,
-} as const;
+};
 
 describe('QuizResultsPage', () => {
   beforeEach(() => {

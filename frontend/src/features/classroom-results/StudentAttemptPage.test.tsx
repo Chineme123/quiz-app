@@ -5,6 +5,7 @@ import { MemoryRouter, Routes, Route } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StudentAttemptPage } from './StudentAttemptPage';
 import * as api from './classroomResults.api';
+import type { AttemptResult } from '@/features/results/results.schemas';
 
 vi.mock('./classroomResults.api');
 
@@ -31,7 +32,7 @@ function renderPage(withState = true) {
   );
 }
 
-const attempt = {
+const attempt: AttemptResult = {
   attemptId: '77777777-0000-0000-0000-000000000001',
   quizId: QUIZ_ID,
   totalScore: 5,
@@ -59,7 +60,7 @@ const attempt = {
       feedbackSource: 'Deterministic',
     },
   ],
-} as const;
+};
 
 describe('StudentAttemptPage', () => {
   beforeEach(() => {
