@@ -118,6 +118,17 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Persistence
                 .ToListAsync();
         }
 
+        public async Task<IReadOnlyList<Classroom>> GetEnrolledForResultsAsync(Guid userId)
+        {
+            // The same enrolment as GetEnrolledAsync, but archived classes stay (spec 0011, AC-7):
+            // the student reviews their own past work here, and archiving preserves history rather
+            // than erasing it, so an archived class keeps showing its results to the enrolled student.
+            return await _context.Classrooms
+                .Where(c => _context.Enrollments.Any(e => e.ClassroomId == c.Id && e.StudentId == userId))
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+        }
+
         public async Task<bool> IsEnrolledAsync(Guid userId, Guid classroomId)
         {
             return await _context.Enrollments

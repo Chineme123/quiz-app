@@ -33,6 +33,12 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Seeding
         public static readonly Guid SeedStudent2Id = Guid.Parse("22222222-0000-0000-0000-000000000005");
         public static readonly Guid SeedStudent3Id = Guid.Parse("22222222-0000-0000-0000-000000000006");
 
+        // A second class and quiz (spec 0011), so the seed student's own results group by class:
+        // Sam also finishes a quiz here, giving "My results" two classes with two standings.
+        public static readonly Guid SeedClassroom2Id = Guid.Parse("33333333-0000-0000-0000-000000000007");
+        public static readonly Guid SeedQuiz2Id = Guid.Parse("44444444-0000-0000-0000-000000000008");
+        public const string SeedJoinCode2 = "SEED24";
+
         // Fixed join code for the seed classroom, so joining it in dev needs no DB lookup.
         // Uses only the unambiguous alphabet the generator draws from (spec 0008).
         public const string SeedJoinCode = "SEED23";
@@ -113,6 +119,49 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Seeding
                     }
                 }
 
+                // A second classroom with its own published quiz (spec 0011), so the seed student's
+                // own results screen shows more than one class. The seed student is enrolled here too.
+                if (!await context.Classrooms.AnyAsync(c => c.Id == SeedClassroom2Id))
+                {
+                    context.Classrooms.Add(new Classroom(SeedTeacherId, "Study Group (Dev)")
+                    {
+                        Id = SeedClassroom2Id,
+                        JoinCode = SeedJoinCode2
+                    });
+                    seededAnything = true;
+                }
+
+                if (!await context.Enrollments.AnyAsync(e => e.StudentId == SeedStudentId && e.ClassroomId == SeedClassroom2Id))
+                {
+                    context.Enrollments.Add(new Enrollment(SeedStudentId, SeedClassroom2Id));
+                    seededAnything = true;
+                }
+
+                if (!await context.Quizzes.AnyAsync(q => q.Id == SeedQuiz2Id))
+                {
+                    var quiz2 = new Quiz(SeedClassroom2Id, "Study Skills (Dev)", durationMinutes: 10, teacherId: SeedTeacherId)
+                    {
+                        Id = SeedQuiz2Id,
+                        IsPublished = true,
+                        MaxAttempts = 5
+                    };
+
+                    quiz2.Questions.Add(new TrueFalseQuestion(
+                        "Spacing your study sessions out over time beats cramming.",
+                        points: 1,
+                        correctAnswer: true)
+                    { QuizId = SeedQuiz2Id });
+
+                    quiz2.Questions.Add(new ShortAnswerQuestion(
+                        "What technique tests yourself to strengthen memory?",
+                        points: 1,
+                        correctAnswerText: "Active recall")
+                    { QuizId = SeedQuiz2Id });
+
+                    context.Quizzes.Add(quiz2);
+                    seededAnything = true;
+                }
+
                 if (seededAnything)
                 {
                     await context.SaveChangesAsync();
@@ -125,23 +174,35 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Seeding
                     logger.LogInformation("Core loop seed data already present. Skipping.");
                 }
 
-                // Finished attempts, seeded only after the quiz is persisted above: they load it with
-                // its questions from the database, so this must follow the save (the quiz is merely
-                // tracked, not yet in the DB, until then). Sam got two of three, Alex all three;
-                // Jordan has no attempt (he reads as "Not taken"). Idempotent per student.
+                // Finished attempts, seeded only after the quizzes are persisted above: they load
+                // each quiz with its questions from the database, so this must follow the save (a
+                // quiz is merely tracked, not yet in the DB, until then). On the first quiz Sam got
+                // two of three and Alex all three; Jordan has no attempt (he reads as "Not taken").
+                // Sam also finishes the second class's quiz (spec 0011), so his own results group by
+                // class. Idempotent per (quiz, student).
+                var attemptsSeeded = false;
+
                 var seedQuiz = await context.Quizzes.Include(q => q.Questions)
                     .FirstOrDefaultAsync(q => q.Id == SeedQuizId);
                 if (seedQuiz != null)
                 {
                     var questions = seedQuiz.Questions.ToList();
-                    var attemptsSeeded = false;
-                    if (await EnsureGradedAttemptAsync(context, SeedStudentId, questions, correctCount: 2)) attemptsSeeded = true;
-                    if (await EnsureGradedAttemptAsync(context, SeedStudent2Id, questions, correctCount: 3)) attemptsSeeded = true;
-                    if (attemptsSeeded)
-                    {
-                        await context.SaveChangesAsync();
-                        logger.LogInformation("Seeded finished attempts for the results screens (spec 0010).");
-                    }
+                    if (await EnsureGradedAttemptAsync(context, SeedQuizId, SeedStudentId, questions, correctCount: 2)) attemptsSeeded = true;
+                    if (await EnsureGradedAttemptAsync(context, SeedQuizId, SeedStudent2Id, questions, correctCount: 3)) attemptsSeeded = true;
+                }
+
+                var seedQuiz2 = await context.Quizzes.Include(q => q.Questions)
+                    .FirstOrDefaultAsync(q => q.Id == SeedQuiz2Id);
+                if (seedQuiz2 != null)
+                {
+                    var questions2 = seedQuiz2.Questions.ToList();
+                    if (await EnsureGradedAttemptAsync(context, SeedQuiz2Id, SeedStudentId, questions2, correctCount: 1)) attemptsSeeded = true;
+                }
+
+                if (attemptsSeeded)
+                {
+                    await context.SaveChangesAsync();
+                    logger.LogInformation("Seeded finished attempts for the results screens (spec 0010, spec 0011).");
                 }
             }
             catch (Exception ex)
@@ -156,16 +217,16 @@ namespace Quiztin.Modules.Assessment.Infrastructure.Seeding
         /// exactly what a real take produces, answers and score alike. Idempotent.
         /// </summary>
         private static async Task<bool> EnsureGradedAttemptAsync(
-            QuizDbContext context, Guid studentId, IReadOnlyList<Question> questions, int correctCount)
+            QuizDbContext context, Guid quizId, Guid studentId, IReadOnlyList<Question> questions, int correctCount)
         {
-            if (await context.QuizAttempts.AnyAsync(a => a.QuizId == SeedQuizId && a.StudentId == studentId))
+            if (await context.QuizAttempts.AnyAsync(a => a.QuizId == quizId && a.StudentId == studentId))
                 return false;
 
             var answers = new Dictionary<Guid, string>();
             for (var i = 0; i < questions.Count; i++)
                 answers[questions[i].Id] = AnswerFor(questions[i], correct: i < correctCount);
 
-            var attempt = new QuizAttempt(SeedQuizId, studentId);
+            var attempt = new QuizAttempt(quizId, studentId);
             attempt.Start(durationMinutes: 15);
             attempt.SaveDraftAnswers(answers, DateTime.UtcNow);
             attempt.Submit();

@@ -2,6 +2,8 @@
 export const qk = {
   profile: ['profile'] as const,
   attemptResult: (attemptId: string) => ['attemptResult', attemptId] as const,
+  /** The signed in student's own results, grouped by class (spec 0011). */
+  myResults: ['myResults'] as const,
   availableQuizzes: ['availableQuizzes'] as const,
   attemptQuestions: (attemptId: string) => ['attemptQuestions', attemptId] as const,
   ownedClassrooms: ['ownedClassrooms'] as const,

@@ -55,6 +55,10 @@ public static class AssessmentModule
         services.AddScoped<IResultsReadRepository, ResultsReadRepository>();
         services.AddScoped<IClassroomResultsAppService, ClassroomResultsAppService>();
 
+        // UC9 Registrations (the student's own results; spec 0011). Read-only, scoped to the signed
+        // in student; reuses the same read repository as the teacher view.
+        services.AddScoped<IMyResultsAppService, MyResultsAppService>();
+
         // UC8 Registrations
         services.AddScoped<IQuizAttemptRepository, QuizAttemptRepository>();
         services.AddScoped<IStrategyFactory, StrategyFactory>();

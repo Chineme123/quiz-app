@@ -6,6 +6,7 @@ import { SignInPage } from '@/features/auth/SignInPage';
 import { RegisterPage } from '@/features/auth/RegisterPage';
 import { ManageProfilePage } from '@/features/profile/ManageProfilePage';
 import { ResultsPage } from '@/features/results/ResultsPage';
+import { MyResultsPage } from '@/features/results/MyResultsPage';
 import { QuizListPage } from '@/features/take/QuizListPage';
 import { TakeQuizPage } from '@/features/take/TakeQuizPage';
 import { DashboardPage } from '@/features/classrooms/DashboardPage';
@@ -51,6 +52,10 @@ export const otherRoutes: RouteObject[] = [
           { path: 'profile', element: <ManageProfilePage /> },
           { path: 'quizzes', element: <QuizListPage /> },
           { path: 'attempts/:attemptId/take', element: <TakeQuizPage /> },
+          // The student's own results index (spec 0011): the list of finished quizzes, grouped by
+          // class. The detail below (results/:attemptId) is the existing per attempt screen it links
+          // into. Scoped to the signed in student by the server, so there is no id in the URL.
+          { path: 'results', element: <MyResultsPage /> },
           { path: 'results/:attemptId', element: <ResultsPage /> },
         ],
       },
