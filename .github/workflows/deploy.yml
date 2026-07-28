@@ -31,5 +31,27 @@ jobs:
             exit 0
           fi
           npm i -g @railway/cli
-          # One service now: the Quiztin host serves /api and the SPA (spec 0007).
-          railway up --service quiztin --ci
+          SHA="${{ github.sha }}"
+          # Bake the deployed commit into the image (served at /version.txt), so we can confirm the
+          # new code actually went live rather than trusting `railway up`'s build-log stream.
+          echo "$SHA" > version.txt
+          # Trigger the deploy. Tolerate a nonzero exit: `railway up --ci` returns 1 when it cannot
+          # stream build logs even though the build and deploy succeed, so the version poll below is
+          # the real pass/fail, not this exit code. One service: the Quiztin host serves /api and the
+          # SPA (spec 0007).
+          railway up --service quiztin --ci || echo "railway up exited nonzero; confirming by the deployed version instead."
+          # Confirm the new code is live: poll the public URL until /version.txt reports this commit.
+          # A failed build leaves the previous deployment serving (old or no version.txt), so this
+          # times out and fails — which is the point: a stale deploy must not read as success.
+          echo "Waiting for $SHA to go live at /version.txt ..."
+          for i in $(seq 1 60); do
+            sleep 15
+            LIVE=$(curl -fsS --max-time 10 https://quiztin-production.up.railway.app/version.txt 2>/dev/null | tr -d '[:space:]' || true)
+            echo "  check $i: live version = ${LIVE:-<none>}"
+            if [ "$LIVE" = "$SHA" ]; then
+              echo "Deploy confirmed live: $SHA"
+              exit 0
+            fi
+          done
+          echo "::error::Timed out after ~15 min waiting for $SHA to go live. The deploy did not land."
+          exit 1

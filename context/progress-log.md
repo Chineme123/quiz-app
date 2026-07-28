@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [fix] Deploy workflow verifies the live version, so it stops false-failing (spec 0002)
+- **Date:** 2026-07-28
+- **Area:** infra / deploy
+- **What:** After the Contracts Dockerfile fix, the Railway deploy actually landed (production went from 404 to 401 on the 0010 results route), but the Deploy GitHub check still reported failure: `railway up --ci` exits 1 when it cannot stream the build logs, even though the build and deploy succeed. A plain health check cannot fix this — the previous deployment stays healthy when a build fails, so it would false-green a stale deploy, which is exactly the Contracts bug. So the deploy now confirms the real outcome **by version**: the app serves the deployed commit at `/version.txt` (a static file baked into wwwroot), and `deploy.yml` writes the commit SHA into `version.txt`, runs `railway up` tolerating its flaky exit, then polls the live `/version.txt` until it reports that SHA, failing after ~15 min if it never does. The check now passes only when the new code is genuinely serving, catches a stale or failed deploy, and ignores the log-stream flake.
+- **Notes:** Three small pieces: `version.txt` (a marker, "dev" locally), one Dockerfile COPY line, and the deploy.yml rewrite. Verified the marker plumbing with a full `docker build` + run (`/version.txt` serves the value as text/plain, not the SPA fallback). The Railway-specific parts (the `railway up` tolerance and the live poll) are verified by the next real deploy, watched.
+
 ### [fix] Dockerfile copies the Contracts project, so CD can deploy again (found by /check verify of 0002)
 - **Date:** 2026-07-28
 - **Area:** infra / deploy
