@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { guid } from '@/lib/api/schemas';
 import type { Role } from '@/lib/auth/session';
 
 // The dropdown vocabularies come straight from docs/uc14-ui-ux-brief.md. The server
@@ -19,7 +20,9 @@ export const INSTRUCTOR_TYPE_OPTIONS = INSTRUCTOR_TYPES.map((v) => ({ value: v, 
  * boundary so a drifting backend fails loud here instead of somewhere downstream.
  */
 export const profileSchema = z.object({
-  userId: z.uuid(),
+  // A plain .NET Guid over the wire, so the local `guid`, never `z.uuid()`: a seeded userId
+  // (zero version nibble) would otherwise fail the same way sign in did (spec 0006, session.ts).
+  userId: guid,
   displayName: z.string(),
   bio: z.string().nullish(),
   avatarUrl: z.string().nullish(),

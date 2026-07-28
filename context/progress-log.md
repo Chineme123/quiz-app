@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [fix] Seed accounts can sign in again — auth and profile wire schemas use `guid`, not `z.uuid()` (found by /check verify of 0011)
+- **Date:** 2026-07-28
+- **Area:** apps/frontend
+- **What:** The /check verify walk of spec 0011 found that **no seeded account** (`student@quiztin.dev`, `teacher@quiztin.dev`, all of them) could sign in through the UI, even though `POST /api/auth/login` returned **200 with a valid token** — the SPA showed "We could not sign you in." **Root cause:** `authSessionSchema` in `lib/auth/session.ts` validated `userId` with `z.uuid()`, which rejects the seeded .NET GUIDs (e.g. `22222222-0000-0000-0000-000000000002`: a zero version nibble, a valid `Guid` but not an RFC 4122 v4 UUID), so `apiFetch` threw at the schema boundary and the login mutation treated the healthy 200 as a failure. Switched `userId` to the local `guid` primitive (`lib/api/schemas.ts`) — the exact fix the api schemas already carry after the same trap took the quiz list down (spec 0006). Found and fixed the **identical second instance** in `features/profile/profile.schemas.ts` (`profileSchema.userId`), which broke Manage Profile for the same accounts the same way.
+- **Notes:** Real registered accounts were never affected (their DB ids are v4, which `z.uuid()` accepts), so this only ever bit the seed accounts — which is why every green test missed it: the page and flow tests mock the api module, so the wire schema never ran. Locked now by two new **unmocked** wire-schema tests (`lib/auth/session.test.ts`, `features/profile/profile.schemas.test.ts`), mirroring the `classrooms.schemas.test.ts` / `take.schemas.test.ts` guards that exist for exactly this. Verified live against `docker compose up`: the seed student now lands on `/dashboard`, and Manage Profile loads as "Sam Carter". Frontend **172 pass**, `tsc --noEmit` clean. These were the last two `z.uuid()` calls on a wire `userId`; the form schemas (`z.email()`, `z.url()`) are untouched. **Built on branch `fix/wire-guid-schema`.**
+
 ### [feature] Student results index built (spec 0011, tasks 1 to 5) — the last read surface of the core loop
 - **Date:** 2026-07-28
 - **Area:** backend / apps/frontend / db / docs / context
