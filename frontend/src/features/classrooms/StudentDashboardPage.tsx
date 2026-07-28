@@ -139,7 +139,8 @@ export function StudentDashboardPage() {
 
       {classes.length > 0 && (
         <p className="mt-6 font-body text-sm text-text-muted">
-          Looking for something to do? <Link to="/quizzes" className="text-primary">All your quizzes</Link> are in one place.
+          Looking for something to do? <Link to="/quizzes" className="text-primary">All your quizzes</Link> are
+          in one place, and <Link to="/results" className="text-primary">your results</Link> gather as you finish them.
         </p>
       )}
 

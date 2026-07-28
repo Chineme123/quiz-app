@@ -63,7 +63,7 @@ namespace Quiztin.Modules.Assessment.Application.Services
 
             // The one shared read, reduced to the invariant set: the latest submitted attempt per
             // (student, quiz), over currently enrolled students only.
-            var latest = ReduceToLatest(
+            var latest = ResultsCalculations.ReduceToLatest(
                 await _reads.GetSubmittedAttemptsAsync(shown.Select(q => q.Id).ToList(), studentIds));
 
             var rows = shown.Select(quiz =>
@@ -77,7 +77,7 @@ namespace Quiztin.Modules.Assessment.Application.Services
                 {
                     var avg = scores.Average(r => r.Score ?? 0m);
                     averageScore = Math.Round(avg, 2);
-                    averagePercent = totalPoints == 0 ? null : Math.Round(avg / totalPoints * 100m, 1);
+                    averagePercent = ResultsCalculations.Percent(avg, totalPoints);
                 }
 
                 return new QuizResultSummaryDto
@@ -113,7 +113,7 @@ namespace Quiztin.Modules.Assessment.Application.Services
             var studentIds = enrolled.Select(e => e.StudentId).ToList();
             var quizScope = new[] { quizId };
 
-            var latest = ReduceToLatest(await _reads.GetSubmittedAttemptsAsync(quizScope, studentIds));
+            var latest = ResultsCalculations.ReduceToLatest(await _reads.GetSubmittedAttemptsAsync(quizScope, studentIds));
             var open = (await _reads.GetOpenAttemptsAsync(quizScope, studentIds))
                 .Select(o => (o.StudentId, o.QuizId))
                 .ToHashSet();
@@ -128,7 +128,7 @@ namespace Quiztin.Modules.Assessment.Application.Services
             {
                 var avg = scores.Average(r => r.Score ?? 0m);
                 averageScore = Math.Round(avg, 2);
-                averagePercent = totalPoints == 0 ? null : Math.Round(avg / totalPoints * 100m, 1);
+                averagePercent = ResultsCalculations.Percent(avg, totalPoints);
             }
 
             // Per-question fraction correct over the latest submitted attempts only, so a retried
@@ -207,7 +207,7 @@ namespace Quiztin.Modules.Assessment.Application.Services
             var totalPointsByQuiz = shown.ToDictionary(q => q.Id, q => q.Questions.Sum(qq => qq.Points));
             var shownIds = shown.Select(q => q.Id).ToList();
 
-            var latest = ReduceToLatest(await _reads.GetSubmittedAttemptsAsync(shownIds, studentIds));
+            var latest = ResultsCalculations.ReduceToLatest(await _reads.GetSubmittedAttemptsAsync(shownIds, studentIds));
             var open = (await _reads.GetOpenAttemptsAsync(shownIds, studentIds))
                 .Select(o => (o.StudentId, o.QuizId))
                 .ToHashSet();
@@ -272,21 +272,6 @@ namespace Quiztin.Modules.Assessment.Application.Services
         }
 
         /// <summary>
-        /// Reduces every submitted attempt to the one that counts per (student, quiz): the latest
-        /// by SubmittedAt. Every aggregate is computed over this set, so a student who retried is
-        /// counted once, not once per attempt (AC-7, the core invariant).
-        /// </summary>
-        private static Dictionary<(Guid StudentId, Guid QuizId), SubmittedAttemptRow> ReduceToLatest(
-            IReadOnlyList<SubmittedAttemptRow> submitted)
-        {
-            return submitted
-                .GroupBy(r => (r.StudentId, r.QuizId))
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.OrderByDescending(r => r.SubmittedAt).First());
-        }
-
-        /// <summary>
         /// The status and score cell for one (student, quiz): the latest submitted score wins
         /// even over a newer open attempt (AC-7, AC-8); In progress shows only with an open attempt
         /// and no submitted one; otherwise Not taken. Percentages normalize the score to the quiz's
@@ -299,9 +284,7 @@ namespace Quiztin.Modules.Assessment.Application.Services
         {
             if (latest.TryGetValue((studentId, quizId), out var row))
             {
-                var percent = (totalPoints == 0 || row.Score == null)
-                    ? (decimal?)null
-                    : Math.Round(row.Score.Value / totalPoints * 100m, 1);
+                var percent = ResultsCalculations.Percent(row.Score, totalPoints);
                 return (Completed, row.Score, percent, row.AttemptId);
             }
 

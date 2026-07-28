@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { User, SignOut } from '@phosphor-icons/react';
+import { ChartBar, User, SignOut } from '@phosphor-icons/react';
 import { useAuth } from '@/lib/auth/useAuth';
 import { Icon } from '@/components/ui';
 import './ProfileMenu.css';
@@ -57,6 +57,17 @@ export function ProfileMenu() {
 
       {open && (
         <div className="qz-profilemenu__menu" role="menu">
+          {user?.role !== 'Teacher' && (
+            <Link
+              to="/results"
+              role="menuitem"
+              className="qz-profilemenu__item"
+              onClick={() => setOpen(false)}
+            >
+              <Icon icon={ChartBar} />
+              <span>My results</span>
+            </Link>
+          )}
           <Link
             to="/profile"
             role="menuitem"

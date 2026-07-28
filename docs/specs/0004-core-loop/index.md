@@ -9,7 +9,7 @@ The core loop is the product itself: a teacher makes a classroom and a quiz, a s
 
 ## Decision
 
-Treat the core loop as an umbrella of the five children listed below, and build them one at a time rather than in a single pass. Build the wedge first: the AI feedback thread (0005), the thinnest slice that proves real Claude feedback reaching a student. The three shared contracts below (AI integration and data minimization, grading feeds results, tenancy scoping) bind every child. Each child carries its own acceptance criteria and build plan; 0005 holds AC-1 through AC-12 and is ready to build.
+Treat the core loop as an umbrella of the six children listed below, and build them one at a time rather than in a single pass. Build the wedge first: the AI feedback thread (0005), the thinnest slice that proves real Claude feedback reaching a student. The three shared contracts below (AI integration and data minimization, grading feeds results, tenancy scoping) bind every child. Each child carries its own acceptance criteria and build plan; 0005 holds AC-1 through AC-12 and is ready to build.
 
 ## Structure
 
@@ -23,15 +23,17 @@ Children of this umbrella. Each is a separate spec; each is designed in its own 
 | 0006 Take quiz screen | Accepted | yes, merged | yes — `/check verify`, which caught two defects 82 green tests missed |
 | 0008 Classroom create and join | Accepted | yes, merged | **no** — a live walk during the build, never an independent pass |
 | 0009 Quiz authoring, generation, publish | In Progress | tasks 1 to 6 built and merged (PR #80, PR #84) | **no** — task 7 (the end-to-end verify) is still outstanding |
-| 0010 Teacher classroom results (UC10) | Proposed | no — designed, not built | no |
+| 0010 Teacher classroom results (UC10) | In Progress | yes, backend built and verified live | **no**, the signed in UI walk remains |
+| 0011 My results and progress (UC9, student) | In Progress | yes, backend built, tested, and live driven | **no**, the signed in UI walk remains |
 
-The loop is walkable end to end by real people now that 0009 has landed. UC10 (spec 0010) is the last child: designed and awaiting build; once it ships the umbrella closes.
+The loop is walkable end to end by real people now that 0009 has landed. UC10 (spec 0010) is built (backend verified live; its signed in UI walk remains). **UC9 (spec 0011), the student's own results index and progress, is the last child**: built (backend verified by tests and a live drive), with its signed in UI walk left for `/check verify`. Once that and the other outstanding verifies close, the umbrella closes.
 
 - [0005 AI feedback and student results](0005-ai-feedback-and-results/index.md): the wedge, built as the thinnest end to end thread. Real Claude feedback on the wrong answers of a graded attempt, shown on a student results screen (supports UC8 feedback and the UC9 student read). **Built and merged.**
 - [0006 Take quiz screen](0006-take-quiz-screen/index.md): the student take experience in the SPA, so a human drives the attempt rather than the API or the seeder (UC8 UI). Adds a list of available quizzes, a one question at a time screen with a navigator and a countdown, and answers saved to the server as they are picked. Overrides two locked foundation decisions (section 8 auto save, section 69 trigger 1); both carry follow ups to reconcile it. **Built and merged.**
 - [0008 Classroom create and join](0008-classroom-create-join/index.md): teacher creates a classroom and shares a code or link, any signed in user joins, which makes enrolment gating (FR7) real through the product (UC2, UC3). The dependency root for real, not seeded, preconditions. Adds role aware dashboards and full class management (rename, archive, regenerate code, leave). **Built and merged.**
 - [0009 Quiz authoring, AI generation, and publish](0009-quiz-authoring/index.md): the authoring side of the loop (UC6 real). Publish (the missing link that lets a quiz reach a student), manual question editing, real `claude-opus-4-8` generation behind the existing seam with the empty template fallback, file backed source material, server saved review drafts, and the full authoring UI. Kept as one large child at the engineer's direction; the heaviest child so far. **Tasks 1 to 6 built and merged (PR #80, PR #84); the end-to-end verify (task 7) is the one piece left, which is why the spec is still In Progress.**
-- [0010 Teacher classroom results](0010-teacher-classroom-results/index.md) (UC10): the classroom-wide results read for the owning teacher — per quiz completion and average, per question difficulty, and a per student roll up, all aggregated on read from the existing attempt data (no new table). **Note (spec 0007):** there is no separate ResultService or `resultdb` any more — results live in the Assessment module (UC9 is already served there), so this is a read within Assessment, not a cross-service projection. **Designed (spec 0010, Proposed); not yet built.** This is the last child; building it closes the umbrella.
+- [0010 Teacher classroom results](0010-teacher-classroom-results/index.md) (UC10): the classroom-wide results read for the owning teacher — per quiz completion and average, per question difficulty, and a per student roll up, all aggregated on read from the existing attempt data (no new table). **Note (spec 0007):** there is no separate ResultService or `resultdb` any more — results live in the Assessment module (the student's single attempt read is already served there), so this is a read within Assessment, not a cross-service projection. **Built (backend verified live; spec 0010 is In Progress, its signed in UI walk remains).**
+- [0011 My results and progress](0011-my-results/index.md) (UC9, student): the student's own results in one place, grouped by class, each finished quiz linking to the per attempt detail already built in spec 0005, plus a per class standing. Aggregated on read from the existing attempt data (no new table), scoped to the signed in student, reusing the 0010 read layer. This is the UC9 item foundation section 8 names as in scope: spec 0005 built only the single attempt screen, so this index and progress surface is the last read surface of the loop. **Built (backend verified by 6 real Postgres tests, an endpoint test, and a live drive; the SPA screen by 8 tests; spec 0011 is In Progress, its signed in UI walk left for `/check verify`).**
 
 ## Shared contracts
 
@@ -58,7 +60,7 @@ The cross child rules every loop child must honor. They live here so the childre
 
 ## Follow-up
 
-- [x] Design the next child. Done: the last named child, teacher classroom results (UC10), is designed as [spec 0010](0010-teacher-classroom-results/index.md) (a read within the Assessment module per spec 0007, not a separate service). **The core loop umbrella is now fully specced.** Once 0010 is built and verified, the umbrella can be Accepted.
+- [x] Design the loop's read surfaces. Done: teacher classroom results (UC10, [spec 0010](0010-teacher-classroom-results/index.md)) and the student's own results index and progress (UC9, [spec 0011](0011-my-results/index.md)) are both designed. **The core loop umbrella is now fully specced.** Once 0011 is built and the outstanding verifies close (0009 task 7, and the 0010 and 0011 signed in UI walks), the umbrella can be Accepted.
 - [ ] Keep foundation and `build-graph.md` reconciled as children land (for example, the stale scoring is fake lines, corrected in 0005).
 
 ## Rationale

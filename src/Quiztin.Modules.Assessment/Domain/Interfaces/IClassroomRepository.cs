@@ -35,6 +35,12 @@ namespace Quiztin.Modules.Assessment.Domain.Interfaces
         /// <summary>Active classrooms this user has joined. Archived ones drop off the list (AC-8).</summary>
         Task<IReadOnlyList<Classroom>> GetEnrolledAsync(Guid userId);
 
+        /// <summary>Every class this user is enrolled in, archived included, for their own results
+        /// (spec 0011, AC-7). Unlike GetEnrolledAsync (the active list, AC-8), archived classes stay:
+        /// archiving preserves history, and a student's graded work in an archived class is still
+        /// theirs to review.</summary>
+        Task<IReadOnlyList<Classroom>> GetEnrolledForResultsAsync(Guid userId);
+
         Task<bool> IsEnrolledAsync(Guid userId, Guid classroomId);
 
         /// <summary>False when the unique index says this user is already enrolled (AC-3).</summary>
