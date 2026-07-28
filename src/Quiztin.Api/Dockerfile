@@ -36,4 +36,8 @@ WORKDIR /app
 EXPOSE 8080
 COPY --from=build /app/publish .
 COPY --from=spa /spa/frontend/dist ./wwwroot
+# The deployed commit, served as a static file at /version.txt, so the Deploy workflow can
+# confirm the new code actually went live by polling for this SHA (rather than trusting
+# railway up's flaky build-log stream). "dev" locally; the CI deploy overwrites it with the SHA.
+COPY version.txt ./wwwroot/version.txt
 ENTRYPOINT ["dotnet", "Quiztin.Api.dll"]
