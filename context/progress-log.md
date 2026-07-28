@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [fix] Dockerfile copies the Contracts project, so CD can deploy again (found by /check verify of 0002)
+- **Date:** 2026-07-28
+- **Area:** infra / deploy
+- **What:** A /check verify sweep of spec 0002 found the Railway Deploy workflow had failed on the last two merges to main (PR #90, spec 0010; PR #91, the 413 fix), leaving production on **pre-0010 code** (confirmed live: the `/api/classrooms/{id}/results` route 404s on production but 401s locally). **Root cause:** spec 0010 added the `Quiztin.Modules.Identity.Contracts` project, referenced by both the Identity and Assessment modules, but `src/Quiztin.Api/Dockerfile` was never updated to copy it, so `dotnet restore` failed on Railway ("Quiztin.Modules.Identity.Contracts.csproj ... not found"). Added the two missing COPY lines (the csproj into the restore layer, the source into the publish layer), mirroring the other modules. Same class of drift as the CPM Dockerfile fix (`0c3d403`). **Verified with a real `docker build` of the .NET stage:** restore and publish now succeed with the Contracts project present.
+- **Notes:** Deploy is not a required status check, so the red deploys never blocked the merges (the blind spot a /check verify exists to catch). Local `dotnet build` and CI stayed green because they run with every project present; only the Dockerfile's COPY list drifted. Once this lands and deploys, production catches up to main (the 0010 results feature and the 413 fix).
+
 ### [fix] Oversized source upload now returns 413, not 400 (spec 0009, AC-7)
 - **Date:** 2026-07-27
 - **Area:** backend

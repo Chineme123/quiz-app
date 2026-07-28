@@ -21,10 +21,12 @@ WORKDIR /src
 COPY ["Directory.Packages.props", "./"]
 COPY ["src/Quiztin.Api/Quiztin.Api.csproj", "src/Quiztin.Api/"]
 COPY ["src/Quiztin.Modules.Identity/Quiztin.Modules.Identity.csproj", "src/Quiztin.Modules.Identity/"]
+COPY ["src/Quiztin.Modules.Identity.Contracts/Quiztin.Modules.Identity.Contracts.csproj", "src/Quiztin.Modules.Identity.Contracts/"]
 COPY ["src/Quiztin.Modules.Assessment/Quiztin.Modules.Assessment.csproj", "src/Quiztin.Modules.Assessment/"]
 RUN dotnet restore "src/Quiztin.Api/Quiztin.Api.csproj"
 COPY src/Quiztin.Api/ ./src/Quiztin.Api/
 COPY src/Quiztin.Modules.Identity/ ./src/Quiztin.Modules.Identity/
+COPY src/Quiztin.Modules.Identity.Contracts/ ./src/Quiztin.Modules.Identity.Contracts/
 COPY src/Quiztin.Modules.Assessment/ ./src/Quiztin.Modules.Assessment/
 RUN dotnet publish "src/Quiztin.Api/Quiztin.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
