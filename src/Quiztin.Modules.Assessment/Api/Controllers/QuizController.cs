@@ -3,6 +3,7 @@ using System.IO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Quiztin.Modules.Assessment.Api.Filters;
 using Quiztin.Modules.Assessment.Application.DTOs;
 using Quiztin.Modules.Assessment.Application.Facades;
 using Quiztin.Modules.Assessment.Application.Interfaces;
@@ -19,9 +20,10 @@ namespace Quiztin.Modules.Assessment.Api.Controllers
         private readonly IQuizAppService _quizService;
         private readonly TakeQuizFacade _takeQuizFacade;
 
-        // The source upload size cap (spec 0009, AC-7), enforced at the pipeline level by the
-        // attributes on the generate endpoint so an oversized body is rejected (413) before the
-        // action buffers it. Kept in step with GenerationOptions.MaxUploadBytes.
+        // The source upload size cap (spec 0009, AC-7). An oversized upload is rejected with 413
+        // before the action buffers it: the RejectOversizedUpload filter on the generate endpoint
+        // checks Content-Length before binding, with the request-size attributes as a backstop.
+        // Kept in step with GenerationOptions.MaxUploadBytes.
         private const long SourceUploadByteCap = 5 * 1024 * 1024;
 
         public QuizController(IQuizAppService quizService, TakeQuizFacade takeQuizFacade)
@@ -81,12 +83,14 @@ namespace Quiztin.Modules.Assessment.Api.Controllers
 
         // POST /api/quizzes/{quizId}/generate — multipart/form-data (spec 0009, AC-4, AC-7). Form
         // fields topic, difficulty, count, and optional sourceText, plus an optional file part
-        // (PDF or docx). The request size is capped at the pipeline level by the two attributes
-        // below, so an oversized body is rejected with 413 before the action buffers it. The batch
-        // is real claude-opus-4-8 output when generation is on and a key is present, else empty
-        // editable templates. Owner only (404); 409 once attempted; 400 for a blank topic or an
-        // unreadable file; 415 for a file whose real content is not PDF or docx.
+        // (PDF or docx). An oversized upload is rejected with 413 before the action buffers it: the
+        // RejectOversizedUpload filter checks Content-Length before binding (multipart binding on its
+        // own would surface a 400), and the two request-size attributes backstop a body streamed with
+        // no Content-Length. The batch is real claude-opus-4-8 output when generation is on and a key
+        // is present, else empty editable templates. Owner only (404); 409 once attempted; 400 for a
+        // blank topic or an unreadable file; 415 for a file whose real content is not PDF or docx.
         [HttpPost("quizzes/{quizId}/generate")]
+        [RejectOversizedUpload(SourceUploadByteCap)]
         [RequestSizeLimit(SourceUploadByteCap)]
         [RequestFormLimits(MultipartBodyLengthLimit = SourceUploadByteCap)]
         public async Task<IActionResult> GenerateQuestions(Guid quizId, [FromForm] GenerateQuestionsDto request, IFormFile? file)
