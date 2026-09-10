@@ -297,8 +297,13 @@ namespace Quiztin.Modules.Assessment.Application.Services
             if (input.MaxAttempts < 1)
                 return PublishResult.Failed(PublishOutcome.InvalidMaxAttempts);
 
-            quiz.AvailableFrom = input.AvailableFrom;
-            quiz.AvailableTo = input.AvailableTo;
+            // The window arrives as a naive wall-clock: a datetime-local input carries no zone, so
+            // model binding yields Kind=Unspecified. Label it UTC before persisting — Npgsql refuses
+            // a non-UTC DateTime to a `timestamp with time zone` column (the crash that made publish
+            // with a window fail), and the app treats these times as UTC everywhere else (Quiz.CanStart
+            // compares against DateTime.UtcNow), so the teacher's typed time round-trips unchanged.
+            quiz.AvailableFrom = AsUtc(input.AvailableFrom);
+            quiz.AvailableTo = AsUtc(input.AvailableTo);
             quiz.MaxAttempts = input.MaxAttempts;
             quiz.IsPublished = true;
             await _quizRepository.UpdateAsync(quiz);
@@ -307,6 +312,17 @@ namespace Quiztin.Modules.Assessment.Application.Services
             // lock state rather than assuming it is unlocked.
             return PublishResult.Ok(MapToDto(quiz, await _attemptRepository.HasAnyAttemptAsync(quiz.Id)));
         }
+
+        // A publish window arrives as a naive wall-clock (Kind=Unspecified). Label it UTC so it can be
+        // written to the `timestamp with time zone` columns — Npgsql only accepts UTC there — and so it
+        // matches the UTC the rest of the app uses; a value that already carries a zone is converted.
+        private static DateTime? AsUtc(DateTime? value) => value switch
+        {
+            null => null,
+            { Kind: DateTimeKind.Utc } => value,
+            { Kind: DateTimeKind.Local } => value.Value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value.Value, DateTimeKind.Utc),
+        };
 
         public async Task<PublishResult> UnpublishAsync(Guid quizId, Guid teacherId)
         {

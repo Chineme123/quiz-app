@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Testcontainers.PostgreSql;
 using Xunit;
+using Quiztin.Modules.Assessment.Application.DTOs;
+using Quiztin.Modules.Assessment.Application.Results;
+using Quiztin.Modules.Assessment.Application.Services;
 using Quiztin.Modules.Assessment.Domain.Entities;
 using Quiztin.Modules.Assessment.Infrastructure.Persistence;
 
@@ -109,6 +112,45 @@ namespace Quiztin.Modules.Assessment.Tests
                 .Where(q => q.QuizId == _quizId)
                 .ToListAsync();
             Assert.Equal(2, savedQuestions.Count);
+        }
+
+        [Fact]
+        public async Task Publish_WithANaiveDateWindow_SucceedsAndPersistsUtc()
+        {
+            // The datetime-local input a teacher fills in carries no time zone, so the value model
+            // binding hands PublishAsync has Kind=Unspecified. Writing that straight to the
+            // `timestamp with time zone` columns threw ("Cannot write DateTime with Kind=Unspecified
+            // ... only UTC is supported"), so publishing a quiz WITH an availability window failed
+            // with a 500 — the whole reason to publish a window. Publishing with no window worked, so
+            // every test that left the dates null stayed green and the in-memory provider hid it too.
+            // The fix labels the naive time UTC before persisting; this locks that it saves and reads
+            // back with the wall-clock unchanged. Needs Docker (available in CI).
+            var quizRepo = new QuizRepository(_context);
+            var toPublish = await quizRepo.GetByIdAsync(_quizId);
+            toPublish!.Questions.Add(new TrueFalseQuestion("The sky is blue.", 1, correctAnswer: true) { QuizId = _quizId });
+            await quizRepo.UpdateAsync(toPublish);
+
+            // Publish only touches the quiz and attempt repositories; the generation deps are unused.
+            var service = new QuizAppService(new QuizRepository(_context), new QuizAttemptRepository(_context), null!, null!, null!);
+
+            var from = new DateTime(2026, 9, 10, 9, 19, 0); // Kind=Unspecified, exactly like the bound value
+            var to = new DateTime(2026, 9, 10, 10, 20, 0);
+            Assert.Equal(DateTimeKind.Unspecified, from.Kind);
+
+            var result = await service.PublishAsync(
+                _quizId, _teacherId, new PublishQuizDto { AvailableFrom = from, AvailableTo = to, MaxAttempts = 1 });
+
+            // No throw, no validation failure: the publish went through.
+            Assert.Equal(PublishOutcome.Ok, result.Outcome);
+
+            // Read it back on a fresh context: the window persisted, labelled UTC, wall-clock unchanged.
+            using var verify = new QuizDbContext(
+                new DbContextOptionsBuilder<QuizDbContext>().UseNpgsql(_postgres.GetConnectionString()).Options);
+            var saved = await verify.Quizzes.FirstAsync(q => q.Id == _quizId);
+            Assert.True(saved.IsPublished);
+            Assert.Equal(new DateTime(2026, 9, 10, 9, 19, 0, DateTimeKind.Utc), saved.AvailableFrom);
+            Assert.Equal(DateTimeKind.Utc, saved.AvailableFrom!.Value.Kind);
+            Assert.Equal(new DateTime(2026, 9, 10, 10, 20, 0, DateTimeKind.Utc), saved.AvailableTo);
         }
     }
 }
