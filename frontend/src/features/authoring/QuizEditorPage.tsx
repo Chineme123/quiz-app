@@ -15,11 +15,7 @@ import {
   useQuiz,
   useUnpublishQuiz,
 } from './useAuthoringQueries';
-
-/** An ISO instant trimmed to what a datetime-local input understands. */
-function toInputValue(iso: string | null): string {
-  return iso === null ? '' : iso.slice(0, 16);
-}
+import { utcIsoToLocalInput, localInputToUtcIso } from './datetime';
 
 type DialogState =
   | { kind: 'add' }
@@ -57,8 +53,8 @@ export function QuizEditorPage() {
   const [maxAttempts, setMaxAttempts] = useState<string | null>(null);
 
   // Seed the publish fields from the quiz the first time it loads, then leave them to the teacher.
-  const fromValue = availableFrom ?? toInputValue(quiz?.availableFrom ?? null);
-  const toValue = availableTo ?? toInputValue(quiz?.availableTo ?? null);
+  const fromValue = availableFrom ?? utcIsoToLocalInput(quiz?.availableFrom ?? null);
+  const toValue = availableTo ?? utcIsoToLocalInput(quiz?.availableTo ?? null);
   const attemptsValue = maxAttempts ?? String(quiz?.maxAttempts ?? 1);
 
   function closeDialog() {
@@ -117,8 +113,8 @@ export function QuizEditorPage() {
     const attempts = Number(attemptsValue);
     publish.mutate(
       {
-        availableFrom: fromValue === '' ? null : fromValue,
-        availableTo: toValue === '' ? null : toValue,
+        availableFrom: localInputToUtcIso(fromValue),
+        availableTo: localInputToUtcIso(toValue),
         maxAttempts: Number.isFinite(attempts) ? attempts : 1,
       },
       {

@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [fix] Quiz availability window is now timezone-correct — a published quiz reaches students in their own local window (spec 0009)
+- **Date:** 2026-09-10
+- **Area:** apps/frontend
+- **What:** Follows directly from the publish 500 fix earlier today. That fix stopped the crash by labelling the naive datetime UTC, but the editor still treated the teacher's typed wall-clock **as** UTC. For a teacher not on UTC that shifted the whole window by their offset: a US-Central (UTC−5) teacher setting "available 9:19–10:20 AM" stored 09:19–10:20 **UTC** = 04:19–05:20 their local time, a pre-dawn window already in the past by the time they published — so `GET /api/quizzes/available` (which filters `AvailableFrom <= UtcNow <= AvailableTo`) correctly, but unhelpfully, showed the students **nothing**. Fixed the editor to bridge the two clocks explicitly: new `datetime.ts` with `localInputToUtcIso` (send the true UTC instant for the local time picked, via `new Date(local).toISOString()`) and `utcIsoToLocalInput` (show a stored UTC instant back in the browser's local time, replacing the old naive `iso.slice(0,16)`). `QuizEditorPage` uses both, so what the teacher types means their local time and round-trips unchanged. The backend `AsUtc` from the earlier fix stays as the defensive normaliser (a `…Z` instant binds as Kind=Utc, so it is a no-op).
+- **Notes:** Root cause found from the live time: it was 10:40 CDT (15:40 UTC) and the quiz's stored window ended 10:20 **UTC**, hours past. Verified: the conversion in the machine's real zone (CDT) maps 10:20 local → `15:20Z` and back to 10:20; a tz-independent round-trip test plus blank/invalid cases in `datetime.test.ts`; and a live end-to-end check — three quizzes published with an **open**, a **past**, and a **future** UTC window, the enrolled seed student's available list showed **only the open one**. Frontend authoring tests **25 pass**, `tsc --noEmit` clean. **Immediate unblock for a teacher hitting this before deploy:** publish with the date fields left **blank** (available immediately, no end), which is timezone-independent. **Built on branch `fix/publish-window-timezone`.**
+
 ### [fix] Publishing a quiz with an availability window no longer 500s — naive datetime labelled UTC (spec 0009)
 - **Date:** 2026-09-10
 - **Area:** backend
