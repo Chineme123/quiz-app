@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [docs] Reconciled the stale ResultService references to the modular monolith (spec 0007 ripple)
+- **Date:** 2026-09-11
+- **Area:** context / docs
+- **What:** Second half of the spec 0007 supersession ripple (run as a parallel background agent alongside the spec 0010 verify). `architecture.md` and `foundation.md` §6/§9 still described the pre-0007 five-service layout with a separate `ResultService` projecting from `QuizAttemptGradedEvent`. Reconciled to the built reality: one `Quiztin.Api` host, two modules (Identity, Assessment), results aggregated on read in the Assessment module (no separate service, no `resultdb`, no live projection). `architecture.md`: the top supersede note, the post-diagram prose, the `ResultService` service bullet, the grading→reporting paragraph, the keystone-unlock paragraph, and the "ResultService read-model shape" open question (now Resolved). `foundation.md`: §6 loop steps 5/6 and the Surfaces bullets (five microservices → one host, two modules), and the §9 keystone bullets. The agent verified in code that `DashboardProjectionUpdater` is still wired as a `QuizAttemptGradedEvent` observer but is a genuine no-op, and that `grep -rln ResultService src/` returns nothing.
+- **Notes:** Left the deeply curated `foundation.md` §7 decision rows and `architecture.md`'s Stack table + the other per-service bullets (AuthService/UserService/QuizService/NotificationService) alone — a full sweep of those is a bigger rewrite than this ripple, and was flagged in the PR for a later pass. Shipped as `#121`. Built by a parallel agent on branch `docs/reconcile-0007-resultservice`.
+
 ### [chore] Closed spec 0010 — the teacher results UI verified end to end (/check verify)
 - **Date:** 2026-09-11
 - **Area:** apps/frontend / docs
