@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [feat] Quiztin favicon — the wordmark's "Q." set in outlined real Fredoka (spec 0001 brand)
+- **Date:** 2026-09-11
+- **Area:** apps/frontend
+- **What:** Added the app favicon, which had been missing since the SPA foundation (`index.html` carried only font preconnects, no icon). The mark echoes the wordmark **"Quiztin."** — a **"Q."** where the period carries the brand-mark coral. Built from the **real Fredoka**, not a lookalike: downloaded the OFL Fredoka 600, and outlined the actual `Q` and `.` glyphs into vector paths (a favicon can't load Google Fonts, so the glyphs are embedded as paths rather than `<text>`). The `Q` is ink `--text-strong #211C15`; the period is `--brand-mark` coral-500 `#F26A41` (the canonical mark colour, matching the landing wordmark's dot); both sit on a cream `--sand-50 #FBF7F2` rounded tile with a hairline border, so the dark `Q` stays legible on light **and** dark browser tabs. Static asset `frontend/public/favicon.svg`, referenced from `index.html` with an SVG `icon` link plus a `theme-color`.
+- **Notes:** Verified rendering at 128/64/48/32/16 on light and dark grounds, and served (200) via the dev server. **Flagged inconsistency:** the app `Header` wordmark renders its period in `--accent` (coral-600 `#DD5530`) while the landing wordmark and the `--brand-mark` token use coral-500 `#F26A41`; the icon uses coral-500 (canonical). **Optional follow-ups:** a PNG `apple-touch-icon` + `.ico` for iOS home-screen / very old browsers (no PNG tooling in this environment); unify the `Header` period to `--brand-mark`. **Built on branch `feat/favicon`.**
+
 ### [fix] Quiz availability window is now timezone-correct — a published quiz reaches students in their own local window (spec 0009)
 - **Date:** 2026-09-10
 - **Area:** apps/frontend
