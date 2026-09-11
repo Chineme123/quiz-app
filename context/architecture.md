@@ -1,7 +1,7 @@
 # Quiztin — Architecture
 
 > How the pieces fit. For *why* any choice was made, see `foundation.md` (cited as §7 #N) — it wins if this file ever disagrees. Coding conventions live in `code-standards.md`; the stack details live in `library-docs.md`.
-> **⚠️ Superseded by [spec 0007](../docs/specs/0007-modular-monolith/index.md) (2026-07-18):** the multi-service shape and the YARP gateway described below are now a **modular monolith** — one `Quiztin.Api` host serving `/api` + the SPA, two module projects (`Quiztin.Modules.Identity`, `Quiztin.Modules.Assessment`), one `quiztin` database with a schema per module. No gateway, no per-service databases. Read the shape here through that lens until this file is fully swept.
+> **⚠️ Superseded by [spec 0007](../docs/specs/0007-modular-monolith/index.md) (2026-07-18):** the multi-service shape and the YARP gateway described below are now a **modular monolith** — one `Quiztin.Api` host serving `/api` + the SPA, two module projects (`Quiztin.Modules.Identity`, `Quiztin.Modules.Assessment`), one `quiztin` database with a schema per module. No gateway, no per-service databases. **`ResultService` is not a separate service** — UC9/UC10 results are the `Assessment` module's read/reporting side, aggregated on read (no projection, no `resultdb`). Read the shape here through that lens until this file is fully swept.
 
 ## Shape
 
@@ -31,7 +31,7 @@
     NotificationService — scaffold, deferred (not in v1).   External: Anthropic Claude API (§7 #6, security.md).
 ```
 
-The SPA talks only to the gateway. Grading happens in QuizService at submission; ResultService is a **read/reporting** service that projects from QuizService's `QuizAttemptGradedEvent` and serves the results screens (§7 #8).
+The SPA talks to the single `Quiztin.Api` host. Grading happens in the `Assessment` module at submission; results (UC9/UC10) are aggregated on read from that same module's attempt data — no projection, no separate service (spec 0007).
 
 ## Stack
 
@@ -78,7 +78,7 @@ Service responsibilities:
 - **AuthService** — mints HS256 JWTs; the one identity source. ✅ Built (PR #19): `AuthUser`, PBKDF2 hashing, register/login. ✅ Sessions (PR #23): `RefreshToken` (rotating, hashed, `SessionId` families, reuse detection), `refresh`/`logout`. Wires no JWT middleware or CORS by design (§ security §4). `AuthService.Tests` covers the rotation rules.
 - **UserService** — user profiles (UC14), role-aware.
 - **QuizService** — classrooms, enrolment, quizzes, questions, the **QuizAttempt lifecycle, and grading**. The heaviest service; the grading authority.
-- **ResultService** — **read/reporting only** (UC9/UC10). Consumes `QuizAttemptGradedEvent` into a read model; never grades. (Rebuild from scaffold.)
+- **ResultService** — folded into the **Assessment** module (spec 0007); no longer a separate service. UC9/UC10 results are read/reporting **aggregated on read** from Assessment's own attempt data — no consumed event, no separate read model.
 - **NotificationService** — deferred; no v1 loop step needs it.
 
 ## Data & tenancy model
@@ -86,11 +86,11 @@ Service responsibilities:
 - **Database-per-service** on one shared PostgreSQL instance (§7 #10). No cross-service DB joins; services talk over HTTP (via the gateway) or via events, not shared tables.
 - **Tenancy is enforced in application code, not the data layer** — every classroom/quiz/attempt query is scoped by the authenticated `Guid UserId` (JWT `NameIdentifier`, §7 #14). This is a **security boundary**: an unscoped query on a tenant table is a bug (see `code-standards.md`). Making this consistent and non-bypassable is a v1 requirement.
 - **EF Core conventions** (§7 #18): TPH for the Question hierarchy; `Options` as `jsonb` + `ValueComparer`; optimistic concurrency via Postgres `xmin`; `EnableRetryOnFailure` on every service.
-- **Grading→reporting** is **eventually consistent via a domain event** — QuizService commits the graded attempt, then dispatches `QuizAttemptGradedEvent` post-commit; ResultService projects it. This is an accepted at-least-once seam (no outbox in v1, §10).
+- **Grading and reporting now share the Assessment module and its attempt tables** — results (UC9/UC10) are **aggregated on read**, not via an eventually-consistent projection (spec 0007). `QuizAttemptGradedEvent` still dispatches post-commit in-process, but the observer that would have projected it (`DashboardProjectionUpdater`) is dormant no-op code left from the pre-0007 design; results reads don't depend on it, so the at-least-once/no-outbox seam (§10) no longer applies to results.
 
 ## Keystone unlock
 
-The **create→take→results→feedback loop** is the keystone. It's blocked today by (a) no valid migration for the attempt tables and (b) no results read-side. So the unlocks are, in order: **(1) the Postgres migration** (regenerate fresh, all entities) — nothing runs without it; **(2) the real scoring contract** — grading must see correct answers; **(3) ResultService's read projection** — closes the loop. Auth, the gateway, and the SPA wrap around this spine.
+The **create→take→results→feedback loop** is the keystone, and it is **now unlocked** (foundation.md §9). It was blocked by (a) no valid migration for the attempt tables and (b) no results read-side; both are resolved: **(1) the Postgres migration** (regenerated fresh, all entities) landed in Layer-0 — nothing runs without it; **(2) the real scoring contract** shipped (spec 0005) — grading sees correct answers; **(3) the Assessment module's on-read results aggregation** (spec 0007 folded ResultService in) — closes the loop. Auth, the host, and the SPA wrap around this spine.
 
 ## What lives where (quick rule)
 - Business logic & grading → the owning service's **Application/Domain**, never controllers.
@@ -101,7 +101,7 @@ The **create→take→results→feedback loop** is the keystone. It's blocked to
 
 ## Open build-time decisions
 *(record each in `progress-log.md` as a `decision` when made)*
-- Exact ResultService read-model shape (denormalized projection tables vs. read-through to QuizService for v1).
+- **Resolved (spec 0007; spec 0010 §7 #35; spec 0011 §7 #36):** results are aggregated on read in the Assessment module, directly from attempt data — no projection tables, no read-through to a separate service.
 - Whether the Claude client is a shared internal library or duplicated per service (QuizService generation + feedback both need it).
 - **Resolved (spec 0002 §7 #30):** gateway auth depth — services stay JWT-authoritative and the gateway forwards credentials; gateway-level validation is a later "both" hardening.
 - **Resolved (spec 0002 §7 #31):** databases on one Railway Postgres — one managed instance with four separate databases (authdb/userdb/quizdb/resultdb).

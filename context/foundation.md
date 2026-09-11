@@ -84,12 +84,12 @@ The central objects and their lifecycles. Detail (relationships, cardinalities) 
 2. **Join classroom (UC3):** student enrols (making FR7 real).
 3. **Create quiz (UC6, QuizService):** teacher configures a quiz, authors questions manually **or via AI generation** (Claude, with fallback), reviews, publishes.
 4. **Take quiz (UC8, QuizService):** enrolled student starts an attempt (`TakeQuizFacade`: enrolment check → availability/attempt-limit → idempotent command execution → **real scoring** → **AI feedback (with fallback)** → transactional save → post-commit graded event).
-5. **See results (UC9, ResultService):** student views their score + per-question breakdown + AI feedback.
-6. **Classroom results (UC10, ResultService):** teacher views classroom-wide results.
+5. **See results (UC9, Assessment module):** student views their score + per-question breakdown + AI feedback, aggregated on read (spec 0007 folded ResultService in).
+6. **Classroom results (UC10, Assessment module):** teacher views classroom-wide results, aggregated on read (spec 0007 folded ResultService in).
 
 **Surfaces:**
-- **Frontend:** a **React + Vite SPA** [LOCKED — §7 #5] in `frontend/`, reaching the backend through **one API gateway origin** (§7 #15), not five service ports. Figma/Claude-Design UI briefs already exist per UC.
-- **Backend:** five .NET microservices behind the gateway; Swagger per service for dev.
+- **Frontend:** a **React + Vite SPA** [LOCKED — §7 #5] in `frontend/`, reaching the backend at **one `Quiztin.Api` host origin** (spec 0007) — no gateway, no service ports to route. Figma/Claude-Design UI briefs already exist per UC.
+- **Backend:** one `Quiztin.Api` host with two modules (`Identity`, `Assessment`); Swagger for the host (spec 0007).
 
 ---
 
@@ -181,8 +181,8 @@ The heart of the file. Numbered so other files cite `foundation.md §7 #N`. Rows
 
 - **Keystone unlock:** the **create→take→results→feedback loop** — **now unlocked.** It once dead-ended at submission (the results surfaces UC9/UC10 were unbuilt, and the attempt tables had no valid migration). Both are resolved: the Postgres migration landed in Layer-0, and the UC9/UC10 reads were built on the Assessment module (spec 0007 folded ResultService in), so the loop runs create→take→results→feedback end to end. (Detail → `architecture.md`.)
 - **Tenancy / isolation:** DB-per-service on one shared Postgres instance; classroom/teacher isolation is enforced only in application code (ownership checks), not at the data layer. v1 keeps app-layer scoping but must make it **consistent and non-bypassable** (every query scoped by the authenticated principal, never a client-supplied ID).
-- **Frontend → backend:** one **YARP gateway** origin (§7 #16); the SPA never sees the 5-service sprawl or shifting ports.
-- **Grading vs reporting boundary:** QuizService grades at submission; ResultService projects from `QuizAttemptGradedEvent` and serves reads (§7 #8). The projection path (`DashboardProjectionUpdater`) is currently a no-op to implement.
+- **Frontend → backend:** one `Quiztin.Api` host origin (spec 0007, folded the YARP gateway in); the SPA never sees per-module internals or shifting ports.
+- **Grading vs reporting boundary:** the Assessment module grades at submission and serves UC9/UC10 reads, aggregated on read from that same attempt data — not via a projection (§7 #8 records the original QuizService/ResultService split; spec 0007 folded the read side in-module). `DashboardProjectionUpdater` (a `QuizAttemptGradedEvent` observer) is dormant no-op code left from the pre-0007 design; results reads don't depend on it.
 - **Explicit-over-magic seams to watch:** the Observer resolves handlers via DI rather than classic subject-attach; graded events dispatch **post-commit with no outbox** (acknowledged in code comments) — a real at-least-once gap, accepted for v1, flagged in §10.
 
 ---
