@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [docs] Reconciled the context record to the shipped v1 (foundation, build-graph, spec statuses)
+- **Date:** 2026-09-11
+- **Area:** context / docs
+- **What:** Ran `/sync`. It correctly found nothing in its own lane: this repo has no `AGENTS.md` and no `docs/scope/` by design, and `/sync` reconciles spec statuses from a scope that does not exist here. So the real stale record got reconciled by hand, following the context system golden rule (fix `foundation.md` first, then ripple). `foundation.md`: §3 Stage now reads "built across specs 0001 to 0011" with UC9 built and verified, and Outstanding is reduced to only spec 0010's signed in UI walk; §8 In(v1) markers corrected to what actually shipped (UC2/UC3, UC6 real AI generation, UC8 scoring and feedback, UC9, UC10 all `✅ built`); §9 keystone rewritten from "dead ends at submission, results surfaces unbuilt" to "now unlocked." `build-graph.md`: the keystone paragraph and the UC9 dependency now say built and the core loop is complete, and the stale "spec 0009 tasks 1 to 6 of 7, rest on a local branch" is corrected to all shipped. Spec `**Status**:` lines: `0009` and `0011` moved to `Accepted` (both verified; 0011 fully `/check verify`d this session).
+- **Notes:** Left honest, not overclaimed: spec `0010` and the `0004` umbrella stay `In Progress`, because 0010's signed in UI walk was never run (its backend is verified live). Running `/check verify` on the teacher results UI would close both. Flagged for a deeper pass (context system or `/architect`, broader than a status reconcile): `architecture.md` still draws the old five service layout and a separate `ResultService` to "rebuild from scaffold", and §6 of `foundation.md` still tags the loop's results steps with `ResultService`; all of that is the spec 0007 supersession (one `Quiztin.Api` host, two modules), which folded ResultService into the Assessment module. **Built on branch `docs/reconcile-v1-record`.**
+
 ### [feat] Quiztin favicon — the wordmark's "Q." set in outlined real Fredoka (spec 0001 brand)
 - **Date:** 2026-09-11
 - **Area:** apps/frontend
