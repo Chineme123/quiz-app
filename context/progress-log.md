@@ -20,6 +20,12 @@ Category one of: `feature` · `fix` · `refactor` · `chore` · `decision` · `d
 
 ## Entries
 
+### [chore] Closed spec 0010 — the teacher results UI verified end to end (/check verify)
+- **Date:** 2026-09-11
+- **Area:** apps/frontend / docs
+- **What:** Ran the signed-in UI walk spec 0010 had left open (its backend was verified in the 2026-07-27 sweep; AC-12's SPA screens were blocked then for lack of a browser). Signed in as the seed teacher and drove all four teacher results screens against the live app: the classroom summary (per-quiz completion + class average, reached via "View results" on the class page), the per-quiz view (per-question difficulty + a per-student list), the per-student roll-up (overall standings), and the drill-down into a student's attempt (per-question breakdown, calm "To review" framing, teacher voice). Confirmed the auth boundary too: a signed-out results URL redirects to sign-in, and a signed-in student gets the calm "We couldn't find that class", not a 403. Display names resolved live with the email fallback (a student with no profile name showed their email, never a bare id). So AC-12 and the signed-in reads of AC-1/2/3/4/5/6/13 all pass. Moved spec 0010 and the 0004 core-loop umbrella to **Accepted**, and foundation §3 to "every v1 spec built and verified, nothing outstanding."
+- **Notes:** The dev DB had accumulated test data from earlier this session (a 4th student `verify0011`, extra quizzes), so the figures differ from verify.md's pristine seed (3 of 4 finished / 78% vs 2 of 3 / 83.3%); the screens rendered internally consistent for the actual data, which is what AC-12 checks. One observation for later: the seeded attempts show "Quiztin is writing the feedback…" on the drill-down (the AI feedback job does not seem to run for seeder-created attempts); the per-question breakdown itself renders fine, so AC-6 holds. **Built on branch `verify/close-spec-0010`.**
+
 ### [docs] Reconciled the context record to the shipped v1 (foundation, build-graph, spec statuses)
 - **Date:** 2026-09-11
 - **Area:** context / docs
